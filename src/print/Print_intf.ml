@@ -15,6 +15,7 @@ module type PRINT = sig
   val printDepth : int option ref
   val printLength : int option ref
   val noShadow : bool ref
+  val showConstPath : bool ref
   val formatDec : IntSyn.dctx * IntSyn.dec -> Formatter.format
   val formatDecList : IntSyn.dctx * IntSyn.dec list -> Formatter.format
 

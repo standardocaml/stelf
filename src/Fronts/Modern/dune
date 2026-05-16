@@ -1,0 +1,4 @@
+(library
+ (name modern)
+ (public_name stelf.modern)
+ (libraries parser lexer paths names cst))

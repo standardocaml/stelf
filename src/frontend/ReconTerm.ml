@@ -141,9 +141,21 @@ end) : RECON_TERM = struct
       end
     end
 
+  let withConstPath show f =
+    let old = !Print.showConstPath in
+    Print.showConstPath := show;
+    try
+      let result = f () in
+      Print.showConstPath := old;
+      result
+    with exn ->
+      Print.showConstPath := old;
+      raise exn
+
   let rec formatExp (g_, u_) =
-    try Print.formatExp (g_, u_)
-    with unprintable_ -> F.string "%_unprintable_%"
+    withConstPath false (fun () ->
+        try Print.formatExp (g_, u_)
+        with unprintable_ -> F.string "%_unprintable_%")
 
   (* this is a hack, i know *)
   let queryMode = ref false
@@ -287,7 +299,8 @@ end) : RECON_TERM = struct
     | Scon_ of string * Paths.region
     | Omitapx_ of Apx.exp * Apx.exp * Apx.uni * Paths.region
     | Omitexact_ of IntSyn.exp * IntSyn.exp * Paths.region
-  [@@deriving show]
+    [@@deriving show {with_path = false}]
+
 
   and dec = Dec_ of string option * term * Paths.region
 
@@ -847,16 +860,18 @@ end) : RECON_TERM = struct
   (* Report mismatches after the entire process finishes -- yields better
      error messages *)
   let rec reportConstraints xnames_ =
-    try
-      begin match Print.evarCnstrsToStringOpt xnames_ with
-      | None -> ()
-      | Some constr -> print (("Constraints:\n" ^ constr) ^ "\n")
-      end
-    with unprintable_ -> print "%_constraints unprintable_%\n"
+    withConstPath false (fun () ->
+        try
+          begin match Print.evarCnstrsToStringOpt xnames_ with
+          | None -> ()
+          | Some constr -> print (("Constraints:\n" ^ constr) ^ "\n")
+          end
+        with unprintable_ -> print "%_constraints unprintable_%\n")
 
   let rec reportInst xnames_ =
-    try Msg.message (Print.evarInstToString xnames_ ^ "\n")
-    with unprintable_ -> Msg.message "%_unifier unprintable_%\n"
+    withConstPath false (fun () ->
+        try Msg.message (Print.evarInstToString xnames_ ^ "\n")
+        with unprintable_ -> Msg.message "%_unifier unprintable_%\n")
 
   let rec delayMismatch (g_, v1_, v2_, r2, location_msg, problem_msg) =
     addDelayed (function () ->

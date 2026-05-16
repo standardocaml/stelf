@@ -1,0 +1,5 @@
+(library
+ (name recon)
+ (public_name stelf.recon)
+ (libraries cst modules thm modes syntax)
+ (private_modules S))

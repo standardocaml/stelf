@@ -68,6 +68,9 @@ struct
   (* limit on number of arguments to print *)
   let noShadow = ref false
 
+  (* if false, omit constructor paths when printing terms *)
+  let showConstPath = ref true
+
   (* if true, don't print shadowed constants as ""%const%"" *)
   open! struct
     module I = IntSyn
@@ -187,11 +190,13 @@ struct
       | FX.Postfix _ -> 1
 
     let rec fmtConstPath (f, Names.Qid (ids, id)) =
-      F.hVbox
-        (foldr
-           (function id, fmt -> str0_ (Symbol.str id) :: sym "." :: fmt)
-           [ str0_ (f id) ]
-           ids)
+      if !showConstPath then
+        F.hVbox
+          (foldr
+             (function id, fmt -> str0_ (Symbol.str id) :: sym "." :: fmt)
+             [ str0_ (f id) ]
+             ids)
+      else str0_ (f id)
 
     let rec parmDec = function
       | d_ :: l_, 1 -> d_

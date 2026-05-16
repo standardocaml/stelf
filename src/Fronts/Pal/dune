@@ -1,0 +1,4 @@
+(library 
+ (name pal)
+ (public_name stelf.pal)
+ (libraries basis names modern lsp tui syntax paths cst))

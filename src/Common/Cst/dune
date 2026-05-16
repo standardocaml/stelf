@@ -1,0 +1,4 @@
+(library
+ (name cst)
+ (public_name stelf.cst)
+ (libraries lwt fmt paths base)) 

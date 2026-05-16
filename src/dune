@@ -27,7 +27,7 @@
   paths
   print
   prover
-  server
+  
   debug
   solvers
   stream

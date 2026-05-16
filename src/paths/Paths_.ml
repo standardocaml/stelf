@@ -10,17 +10,17 @@ include Paths_intf
 
 (* # 1 "src/paths/Paths_.fun.ml" *)
 open! Basis
-
+(* TODO Modernize this *)
 (* Paths, Occurrences, and Error Locations *)
 (* Author: Frank Pfenning *)
 module MakePaths () : PATHS = struct
-  type pos = int [@@deriving show]
+  type pos = int [@@deriving show {with_path = false}]
 
   (* characters, starting at 0 *)
-  type region = Reg of pos * pos [@@deriving show]
+  type region = Reg of pos * pos [@@deriving show {with_path = false}]
 
   (* r ::= (i,j) is interval [i,j) *)
-  type location = Loc of string * region [@@deriving show]
+  type location = Loc of string * region [@@deriving show {with_path = false}] (* TODO Make this use fpath *)
 
   (* loc ::= (filename, region) *)
   type nonrec linesInfo = pos list
@@ -94,7 +94,8 @@ module MakePaths () : PATHS = struct
   (* Paths, occurrences and occurrence trees only work well for normal forms *)
   (* In the general case, regions only approximate true source location *)
   (* Follow path through a term to obtain subterm *)
-  type path = Label of path | Body of path | Head | Arg of int * path | Here
+  type path = Label of path | Body of path | Head | Arg of int * path | Here 
+    
 
   (* [x:#] U or {x:#} V *)
   (* [x:V] # or {x:V} # *)

@@ -60,7 +60,7 @@ end) : METAABSTRACT with module MetaSyn = MetaAbstract__0.MetaSyn = struct
 
     let rec checkEmpty = function
       | [] -> ()
-      | cnstr_ -> begin
+      | cnstr_ -> Debug.msg Debug.Group.meta Debug.Level.Debug Fmt.(const string "Number of constraints:" ++ (const int @@ List.length cnstr_)) @@ begin 
           match C.simplify cnstr_ with
           | [] -> ()
           | _ -> raise (Error "Unresolved constraints")

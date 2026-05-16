@@ -5,10 +5,6 @@
 	[Grammar]; this layer stays focused on parser state, repetition, and error
 	reporting. *)
 
-module type PARSER = Parser_intf.PARSER
-module type S = Parser_intf.S
+module type PARSER = PARSER.PARSER
 
-module Make_Parser (N : sig type t end) (L : Lexer.LEXER) : PARSER with type node = N.t and module Lexer = L
-
-module Sugar (P : PARSER) : S with module Lexer = P.Lexer
- 
+module Parser : PARSER 
