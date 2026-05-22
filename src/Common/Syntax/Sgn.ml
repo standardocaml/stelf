@@ -28,8 +28,8 @@ struct
   type strDec = Ast.strDec
   type dctx = Ast.dctx
 
-  let sgnTable : conDec CTable.t = CTable.create (Common.Global.maxCid + 1)
-  let sgnStructArray : strDec MTable.t = MTable.create (Common.Global.maxMid + 1)
+  let table : conDec CTable.t = CTable.create (Common.Global.maxCid + 1)
+  let structArray : strDec MTable.t = MTable.create (Common.Global.maxMid + 1)
 
   let rec bvarSub (n, s) =
     match n, s with
@@ -75,73 +75,70 @@ struct
     | Ast.Shift n, Ast.Dot (_, s) -> comp (Ast.Shift (n - 1), s)
     | Ast.Shift n, Ast.Shift m -> Ast.Shift (n + m)
     | Ast.Dot (ft, s), s' -> Ast.Dot (frontSub (ft, s'), comp (s, s'))
+  
 
-  class sgn =
-    object (self)
-      method sgnReset () : unit =
+      let reset () : unit =
         begin
-          CTable.clear sgnTable;
-          MTable.clear sgnStructArray
+          CTable.clear table;
+          MTable.clear structArray
         end
 
-      method sgnSize () : int * int =
-        (CTable.length sgnTable, MTable.length sgnStructArray)
+      let size () : int * int =
+        (CTable.length table, MTable.length structArray)
 
-      method sgnAdd conDec : cid =
+      let add conDec : cid =
         let cid = Common.Cid.fresh () in
-        CTable.replace sgnTable cid conDec;
+        CTable.replace table cid conDec;
         cid
 
-      method sgnLookup (cid : cid) : conDec = CTable.find sgnTable cid
+      let lookup (cid : cid) : conDec = CTable.find table cid
 
-      method sgnApp (f : cid -> unit) : unit =
-        CTable.iter (fun cid _ -> f cid) sgnTable
+      let app (f : cid -> unit) : unit =
+        CTable.iter (fun cid _ -> f cid) table
 
-      method sgnStructAdd (strDec : strDec) : mid =
+      let structAdd (strDec : strDec) : mid =
         let mid = Common.Mid.fresh () in
-        MTable.replace sgnStructArray mid strDec;
+        MTable.replace structArray mid strDec;
         mid
 
-      method sgnStructLookup (mid : mid) : strDec = MTable.find sgnStructArray mid
+      let structLookup (mid : mid) : strDec = MTable.find structArray mid
 
-      method constType c : Ast.exp = Ast.conDecType (self#sgnLookup c)
+      let constType c : Ast.exp = Ast.conDecType (lookup c)
 
-      method constDef (c : Ast.cid) : Ast.exp =
+      let constDef (c : Ast.cid) : Ast.exp =
         begin
-          match self#sgnLookup c with
+          match lookup c with
           | Ast.ConDef (_, _, _, def, _, _, _) -> def
           | Ast.AbbrevDef (_, _, _, def, _, _) -> def
           | _ -> invalid_arg "constDef"
         end
 
-      method constImp c : int = Ast.conDecImp (self#sgnLookup c)
+      let constImp c : int = Ast.conDecImp (lookup c)
 
-      method constStatus (c : Ast.cid) : Ast.status = Ast.conDecStatus (self#sgnLookup c)
+      let constStatus (c : Ast.cid) : Ast.status = Ast.conDecStatus (lookup c)
 
-      method constUni (c : Ast.cid) : Ast.uni = Ast.conDecUni (self#sgnLookup c)
+      let constUni (c : Ast.cid) : Ast.uni = Ast.conDecUni (lookup c)
 
-      method constBlock (c : cid) : dctx * Ast.dec list = Ast.conDecBlock (self#sgnLookup c)
-    end
+      let constBlock (c : cid) : dctx * Ast.dec list = Ast.conDecBlock (lookup c)
+     
 
-  let sgn_ = new sgn
 
-  let sgnLookup cid = CTable.find sgnTable cid
 
   let rename (cid, new_name) =
     begin
-      match sgnLookup cid with
+      match lookup cid with
       | Ast.ConDec (_, parent, imp, status, exp, uni) ->
-          CTable.replace sgnTable cid (Ast.ConDec (new_name, parent, imp, status, exp, uni))
+          CTable.replace table cid (Ast.ConDec (new_name, parent, imp, status, exp, uni))
       | Ast.ConDef (_, parent, imp, def, exp, uni, anc) ->
-          CTable.replace sgnTable cid (Ast.ConDef (new_name, parent, imp, def, exp, uni, anc))
+          CTable.replace table cid (Ast.ConDef (new_name, parent, imp, def, exp, uni, anc))
       | Ast.AbbrevDef (_, parent, imp, def, exp, uni) ->
-          CTable.replace sgnTable cid (Ast.AbbrevDef (new_name, parent, imp, def, exp, uni))
+          CTable.replace table cid (Ast.AbbrevDef (new_name, parent, imp, def, exp, uni))
       | Ast.BlockDec (_, parent, g, ds) ->
-          CTable.replace sgnTable cid (Ast.BlockDec (new_name, parent, g, ds))
+          CTable.replace table cid (Ast.BlockDec (new_name, parent, g, ds))
       | Ast.BlockDef (_, parent, cids) ->
-          CTable.replace sgnTable cid (Ast.BlockDef (new_name, parent, cids))
+          CTable.replace table cid (Ast.BlockDef (new_name, parent, cids))
       | Ast.SkoDec (_, parent, imp, exp, uni) ->
-          CTable.replace sgnTable cid (Ast.SkoDec (new_name, parent, imp, exp, uni))
+          CTable.replace table cid (Ast.SkoDec (new_name, parent, imp, exp, uni))
     end
 
   let ctxDec (g, k) =
@@ -161,7 +158,7 @@ struct
         begin
           match ctxDec (g, k) with
           | Ast.BDec (_, (l, s)) ->
-              let (_, block_decls) = Ast.conDecBlock (CTable.find sgnTable l) in
+              let (_, block_decls) = Ast.conDecBlock (CTable.find table l) in
               let rec blockDec' (t, decls, n, j) =
                 match decls, n with
                 | d :: _, 1 -> decSub (d, t)

@@ -1,4 +1,5 @@
 (library 
  (name pal)
  (public_name stelf.pal)
- (libraries basis names modern lsp tui syntax paths cst))
+ (libraries basis names cmdliner modern lsp tui syntax paths cst recon
+            intsyn global timing print opsem m2 compile frontend lwt.unix))

@@ -38,7 +38,7 @@
  (libraries
   stream
   global
-  lambda
+  intsyn
   names
   modes
   paths
@@ -71,9 +71,9 @@
    -open
    Global.Global_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Names
    -open

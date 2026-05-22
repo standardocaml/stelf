@@ -4,8 +4,11 @@ module StubModSyn : Modules.Modsyn.MODSYN =
   (val (Obj.magic () : (module Modules.Modsyn.MODSYN)))
 
 module Make_ReconModule (M : S.S) : RECON_MODULE = struct
-  include M
-
+  module M = M
+  module Cst = M.Cst
+  module Ast = M.Ast
+  module Paths = M.Paths
+  
   module ModSyn = StubModSyn
 
   exception Error of string

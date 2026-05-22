@@ -13,9 +13,9 @@ open Relfun
 module type MTPROVER = sig
   exception Error of string
 
-  val init : int * Lambda.Intsyn.IntSyn.cid list -> unit
+  val init : int * IntSyn.cid list -> unit
   val auto : unit -> unit
   val print : unit -> unit
   val install :
-    (Lambda.Intsyn.IntSyn.conDec -> Lambda.Intsyn.IntSyn.cid) -> unit
+    (IntSyn.conDec -> IntSyn.cid) -> unit
 end

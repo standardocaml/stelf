@@ -1,0 +1,448 @@
+(*
+  STELF Grammar — EBNF with Implementation Notes
+  ================================================
+  This file defines the complete surface grammar for STELF, an OCaml port of Twelf.
+
+  Notation:
+    rule = ... ;          production rule
+    { x }                 zero or more repetitions of x
+    [ x ]                 optional x
+    x | y                 choice
+    ?...?                 regex literal (not EBNF meta-syntax)
+    (*  *)                comment (this file uses nested EBNF comments)
+
+  Implementation pointers:
+    - CST types:         src/Common/Cst/Cst.ml
+    - Parser primitives: src/Lang/Parsing/Parser.ml
+    - Modern parser:     src/Fronts/Modern/Modern.ml  (partially implemented)
+    - Legacy parser:     src/frontend/Parser.ml       (complete, Twelf-style)
+*)
+
+
+(* ─────────────────────────── Lexical primitives ─────────────────────────── *)
+
+id_char
+    (* One character that may appear in an identifier.
+       STELF identifiers are very permissive: every non-whitespace character is
+       valid *except* the structural delimiters `( ) [ ] { }` and the sigil `%`.
+       The escape `%%` followed by any single character is treated as ONE
+       identifier character, allowing `%%` to embed otherwise-reserved characters
+       (e.g. `%%[` or `%%(`) inside a name. *)
+    = ?([^\(\)\[\]\{\}\%\s]|(\%\%.))? (* Every non-whitespace charecter except for the following set: `()[]{}%` forms a valid identifier character, except that `%%` followed by any charecter is itself an identifier charecter *)
+    ;
+
+outer
+    (* Text that appears *between* commands in a source file.
+       `outer` is the "filler" that carries natural-language documentation,
+       blank lines, or anything else that is not a command.
+       A bare `%` starts a command keyword, so `outer` stops there.
+       `%%` followed by anything is again allowed as an escape. *)
+    = ?([^\%]|(\%\%.))+ ? (* Every non-`%` charecter forms a valid outer character, and so does `%%` followed by anything *)
+    ;
+
+number
+    (* An unsigned decimal integer literal.
+       Used in `%query` (bound counts) and `%prec` (precedence levels). *)
+    = ?[0-9]+? (* A number is one or more digits *)
+    ;
+
+
+(* ─────────────────────────── Identifiers ────────────────────────────────── *)
+
+mode = "%input" | "%output" | "%output1" (* Unique output *) | "%other" ;
+(* Mode annotations used in `%mode` and `{decl}` pi-types.
+   - `%input`   — argument is an input (must be ground at call site)
+   - `%output`  — argument is an output (may be a logic variable)
+   - `%output1` — unique output (exactly one solution)
+   - `%other`   — unconstrained
+   In `expr_trail`, a mode annotation may prefix a `{decl}` to declare the
+   polarity of a pi-type argument.
+   CST: `Cst.mode` = `Plus_ | Star_ | Minus_ | Minus1_` *)
+
+ident
+    (* A sequence of one or more `id_char`s.
+       The first character carries additional meaning (checked post-lexing):
+         - First char `_` AND length > 1 → implicit argument (e.g. `_T`).
+           Implicit arguments are automatically generalised by elaboration.
+         - First char `?` AND length > 1 → meta-variable / unification variable
+           (e.g. `?X`). Used during interactive proof search.
+         - Otherwise → a regular constant or bound variable name.
+       The single character `_` is NOT an ident; it is the wildcard `arg`
+       (see below). *)
+    = id_char , { id_char } (*
+    A sequence of identifier charecters
+    While the syntax of these does not change based off the charecters, there are a couple things that do:
+    - if the first charecter is `_` (and the length > 1), then this is a implicit arguement
+    - if the first charecter is `?` (and the length > 1), then this is an meta-variable
+    *)
+    ;
+
+arg
+    (* An argument position in a declaration.
+       Either a named variable (an `ident`) or the anonymous wildcard `_`.
+       Wildcards are erased and are not available in the body of the declaration. *)
+    = ident (* Named *)
+    | "_" (* Wildcard *)
+    ;
+
+decl
+    (* A unified declaration, replacing Twelf's `x : T` syntax.
+       The colon is always elided; the type follows the name directly.
+       The type is optional — a bare name stands for a declaration whose type
+       is inferred or irrelevant (e.g. inside `%block`).
+
+       Single-name form:
+         `x T`     declares variable `x` with type `T`
+         `x`       declares `x` with omitted/inferred type
+
+       Multi-name form (syntactic sugar):
+         `(x y z) T`  is equivalent to  `x T, y T, z T`
+         This desugaring happens in the parser; the CST records
+         `Dec_ (["x"; "y"; "z"], T, loc)`.
+
+       CST: `Cst.decl` = `Dec_ of string option list * term * loc`
+            (names are `string option` to accommodate wildcards)
+       Parser: `Modern.parse_decl` (implemented) *)
+    = "(" , arg , { arg } , ")" , [ expr ] (* Multi-declaration *)
+    | arg , [ expr ] (* Single declaration *)
+    ;
+
+id
+    (* A reference to a previously declared constant, with optional fixity bypass.
+
+       Unqualified form: just an `ident`.
+         - Uppercase-initial → `Ucid_` in the CST (bound variable / unification)
+         - Lowercase-initial → `Lcid_` in the CST (constant / defined name)
+
+       Qualified form: `%val(a b c)`
+         - Strips all fixity properties from the identifier, forcing it to be
+           treated as a plain applied constant regardless of any `%prec` declarations.
+         - The identifier list `a b c` is split: the last element is the name,
+           everything before it forms the module namespace path.
+           Example: `%val(Nat plus)` → namespace = ["Nat"], name = "plus".
+         - CST: `Quid_ of string list * string * loc`
+       Parser: `Modern.parse_id` / `Modern.parse_qualified` (implemented) *)
+    = ident (* Unqualified identifier *)
+    | "%val" , "(" , ident , { ident } , ")" (* Qualified identifier (removes and fixity properties, and also adds optional module quantification *)
+    ;
+
+
+(* ─────────────────────────── Expression grammar ─────────────────────────── *)
+
+(*
+  The expression grammar is split into three tiers to avoid ambiguity and
+  left-recursion, and to give lambdas / pi-types a clean "trailing" position:
+
+    expr1      — atomic / parenthesised:  identifiers and `( expr )`
+    expr_trail — things that MUST trail:  `[d] body` and `{d} body`
+    expr       — full expression:         sequences of expr1 + optional trail
+
+  Key design choices:
+    1. Infix operators are NOT resolved in the grammar. All juxtaposition is
+       parsed as left-associative application first (a flat `App_` spine), then
+       a separate fixity-resolution pass reinterprets infix/prefix/postfix
+       operators according to their `%prec` declarations.
+    2. A trailing expression (`expr_trail`) may appear at most once, at the end.
+       This avoids the classic ambiguity of `[x A] [y B] body`.
+    3. `%the T e` is explicit type ascription: the first argument is the TYPE,
+       the second is the EXPRESSION being ascribed.
+*)
+
+expr1 (* The form of simple expressions *)
+    (* Atomic expressions — safe to repeat without parentheses.
+       CST nodes produced: `Lcid_`, `Ucid_`, `Quid_` (from `id`),
+       or any `term` constructor (from the parenthesised form).
+       Parser: `Modern.parse_expr1` (implemented) *)
+    = id (* Constant value *)
+    | "(" , expr , ")" (* Parenthesized full expression *)
+    ;
+
+expr_trail (* Expressions that can _only_ appear as a trailing part of an expression *)
+    (* Binding forms that extend to the right as far as possible.
+       These CANNOT appear as the head of an application; they must come last.
+
+       Lambda: `[d] body`
+         Binds the variable(s) in `d` over `body`.
+         CST: `Cst.Lam_ (decl, body)`
+         Builder: `Cst.Term.lam`
+
+       Pi / Forall type: `{d} body`
+         The dependent product type. If `d` names a variable that appears free
+         in `body` it is a genuine dependent type; otherwise it is a simple
+         function type (equivalent to `->` in non-dependent position).
+         An optional `mode` annotation before `{` records the polarity for
+         mode-checking (only meaningful inside `%mode` declarations).
+         CST: `Cst.Pi_ (decl, body)`
+         Builder: `Cst.Term.pi`
+
+       Parser: `Modern.parse_expr_trail` (implemented) *)
+    = "[" , decl , "]" , expr (* Lambdas *)
+    | [mode] (* Only in mode declerations *), "{" , decl , "}" , expr (* Forall / pi types (depending on context) *)
+    ;
+
+expr (* Full expressions *)
+    (* A full expression is one of:
+         1. One or more atomic expressions (application spine):
+              `f a b c` → `App_(App_(App_(f,a),b),c)`
+            This also covers infix use: `a + b` is parsed as `App_(App_(a,+),b)`
+            and then fixity resolution rewrites it.
+         2. Zero or more atomic expressions followed by a trailing binding:
+              `f a [x T] body` → `App_(f, App_(a, Lam_(x:T, body)))`
+              `[x T] body`     → `Lam_(x:T, body)`   (no atoms before trail)
+         3. `%the T e` — explicit type ascription.
+              CST: `Hastype_ (e, T)`   (note: first arg to `%the` is the TYPE)
+
+       Parser: `Modern.parse_expr` and `Modern.parse_expr_app` (implemented) *)
+    = expr1 , { expr1 } (* Juxtaposition of expressions (note that this is also used for infix operations, which are resolved later *)
+    | { expr1 } , expr_trail (* A trailing expression (either a lambda or a forall/pi type) optionally preceeded by some expression 1. Note that this optional, and `[x] y` for example is a valid expression. This encompasses both it used as a trailing param and by itself *)
+    | "%the" , expr1 , expr (* Explicit type ascription (first arg is type, second is expression)  *)
+    ;
+
+
+(* ─────────────────────────── Command sub-grammars ───────────────────────── *)
+
+block_item
+    (* One item in a `%block` world declaration.
+       A block declaration introduces a context schema for coverage checking.
+       Each item is either:
+         - `{d}` — a "some" clause (existentially bound hypotheses)
+         - `[d]` — a "pi" clause (universally bound hypotheses)
+       Multiple items make up the schema of one block label. *)
+    = "{" , decl , "}" (* A judgement *)
+    | "[" , decl , "]" (* Some judgement *)
+    ;
+
+outer_value
+    (* Values that may appear as arguments to `%set` (REPL) or similar
+       configuration commands. Either a number or a bare identifier. *)
+    = number
+    | ident
+    ;
+
+params
+    (* Formal module parameters — the signature parameters declared when a
+       module is first introduced with `%module`.
+       Example: `%module MyMod (SigA SigB)` *)
+    = "(" , { id } , ")"
+    ;
+
+iparams
+    (* Instantiation parameters — the actual arguments provided when a
+       module is used with `%use`.
+       Example: `%use MyImpl MyMod (ConcreteA ConcreteB)` *)
+    = "(" , { id } , ")"
+    ;
+
+fixity
+    (* The associativity / position of an infix or affix operator, used with
+       `%prec`. Controls how the fixity-resolution pass rewrites flat application
+       spines:
+         %left    — left-associative infix:    `a + b + c` → `(a + b) + c`
+         %right   — right-associative infix:   `a -> b -> c` → `a -> (b -> c)`
+         %prefix  — prefix (unary):             `~ a`
+         %postfix — postfix (unary):            `a !`
+         %middle  — non-associative infix:      `a = b` (error if chained)
+         %none    — remove any fixity from the operator *)
+    = "%left"
+    | "%right"
+    | "%prefix"
+    | "%postfix"
+    | "%middle"
+    | "%none"
+    ;
+
+id_list
+    (* Either a single identifier or a parenthesised list of identifiers.
+       Used wherever a command takes one or more operator/type names. *)
+    = id | "(" , { id } , ")"
+    ;
+
+
+(* ─────────────────────────── Command groups ─────────────────────────────── *)
+
+repl_cmd
+    (* Commands that are only meaningful at the interactive REPL prompt.
+       They are NOT valid inside `.elf` source files.
+
+       %help [topic]    — print help, optionally for a specific topic/command
+       %get id          — display the current value of a REPL setting
+       %set id val      — set a REPL configuration value
+       %quit            — exit the REPL
+
+       CST: `Cst.cmd` constructors `HelpCmd_`, `GetCmd_`, `SetCmd_`, `QuitCmd_`
+            (under `Cst.Cmd.Repl`) *)
+    = "%help" , [ id ] (* Get help (for use at REPL) *)
+    | "%get" , ident (* Get the value of a variable (for use at REPL) *)
+    | "%set" , id , expr (* Set the value of a variable (for use at REPL) *)
+    | "%quit" (* Quit the REPL *)
+    ;
+
+
+mod_cmd
+    (* Module-system commands.
+
+       %module id params file
+         Declare a module named `id` with formal signature parameters `params`.
+         The body is an inline `file` (a sequence of commands).
+
+       %use id id iparams
+         Instantiate a module: `%use MyImpl MyMod (SigA SigB)` creates a
+         concrete instance named `MyImpl` of module `MyMod` applied to `SigA`
+         and `SigB`.
+
+       %open id id_list
+         Bring names from a module or signature into scope.
+
+       %eval cmd_list
+         Evaluate a block of commands in the current module context. *)
+    =
+    | "%module" , id , params , file
+    | "%use" , id , id , iparams
+    | "%open" , id , id_list
+    | "%eval" , cmd_list
+    ;
+
+def_dec_cmd
+    (* Definition and declaration commands — the primary way to add constants,
+       types, and definitions to the LF signature.
+
+       %term decl
+         Declare a term-level constant. `decl` gives the name and (optionally)
+         its LF type. CST: `Cst.Cmd.term` → `TermCmd_`.
+
+       %sort id { {decl} }
+         Declare a type family (sort) named `id`, with optional parameter
+         declarations in braces. CST: `Cst.Cmd.sort` → `SortCmd_`.
+
+       %decl expr
+         Raw elaboration-level declaration (expert use).
+
+       %define id expr
+         Define a name as an abbreviation for `expr`. Unlike `%term`, the
+         definition is transparent (unfolds during type checking).
+
+       %inline id expr
+         Like `%define`, but the definition is always unfolded eagerly.
+
+       %symbol id id
+         Associate a symbolic name with an identifier (used for notation).
+
+       %freeze id_list
+         Mark identifiers as frozen: no new clauses may be added.
+         Important for coverage and totality checking.
+
+       %thaw id_list
+         Unfreeze previously frozen identifiers, allowing new clauses. *)
+    =
+    | "%term" , decl
+    | "%sort" , id , { "{" , decl , "}" }
+
+    | "%decl" , expr
+    | "%define" , id , expr
+    | "%inline" , id , expr
+    | "%symbol" , id , id
+    | "%freeze" , id_list
+    | "%thaw" , id_list
+    ;
+
+world_cmd
+    (* World / coverage commands.  These declare the legal contexts for
+       coverage checking (i.e. what "worlds" a type family lives in).
+
+       %block id block_item*
+         Define a named block label: a context schema consisting of zero or
+         more `block_item`s (some/pi clauses). Multiple block labels are
+         combined into world declarations.
+
+       %union id ( id* )
+         Declare `id` as the union of the listed block labels.
+
+       %worlds ( id* ) expr
+         Assert that `expr` (a type family) is checked in the world defined
+         by the listed block labels. Required before coverage checking can
+         succeed. *)
+  = "%block" , id , { block_item }
+  | "%union", id, "(", {id}, ")"
+  | "%worlds", "(", {id}, ")", expr
+  ;
+
+query_cmd
+    (* Query and mode-checking commands.
+
+       %mode id hyps
+         Declare the mode (input/output polarity) for the type family `id`.
+         `hyps` is a mode spine — see `mode` and `Cst.Mode`.
+
+       %? expr
+         Pose an ad-hoc query at the REPL: find a proof/inhabitant of `expr`.
+
+       %query n (n|_) (n|_) expr
+         Run a logic programming query for `expr`.
+         Arguments: max solutions, max tries, max depth (or `_` for unlimited).
+
+       %querytabled n (n|_) (n|_) expr
+         Like `%query` but uses a tabled (memoised) evaluator.
+
+       %unique expr
+         Assert that the type `expr` has at most one inhabitant; fail otherwise.
+
+       CST: `Cst.query`, `Cst.Query_`, `Cst.QueryCmd_` *)
+    =
+    | "%mode" , id , hyps
+    | "%?" , expr
+    | "%query" , number , (number | "_") , (number | "_") , expr
+    | "%querytabled" , number , (number | "_") , (number | "_") , expr
+    | "%unique" , expr
+    ;
+
+logic_cmd
+    (* Logic / evaluation strategy commands.
+
+       %deterministic id_list
+         Mark the listed type families as deterministic: the logic engine will
+         commit to the first clause that matches (no backtracking). *)
+    =
+    | "%deterministic" , id_list
+    ;
+
+cmd
+    (* Top-level command.  Each command ends with `%.`.
+
+       %.
+         The explicit stop marker.  In a source file this ends the preceding
+         command; at the REPL it sends the current input for processing.
+
+       %prec fixity number id_list
+         Set the fixity and numeric precedence of one or more operators.
+         Higher numbers bind tighter.
+         Example: `%prec %left 10 + -.`
+                  `%prec %right 20 -> *.`
+         The fixity-resolution pass (run after parsing) uses these declarations
+         to rewrite flat application spines into properly-parenthesised trees. *)
+    =
+    | "%." (* Explicitly stop the current command (also at the repl send) *)
+    | "%prec" , fixity , number , id_list (* Set the fixity and precedence of some operators *)
+    ;
+
+cmd_list
+    (* An inline block of commands, embedded inside another construct (e.g. inside
+       `%module` or `%eval`).
+       The block is delimited by `%{` ... `%}`.
+       Between commands, `outer` text (documentation/whitespace) is allowed. *)
+    = "%{" , outer , { cmd , outer } , "%}"
+    ;
+
+file
+    (* A complete STELF source file.
+       The top level alternates between `outer` text (free documentation,
+       blank lines, ASCII art — anything not starting with a bare `%`) and
+       `cmd`s (keyword-driven declarations).
+       Each `cmd` is terminated by `%.`.
+       Example skeleton:
+           This file defines natural numbers.
+           %term nat : type.
+           %term z : nat.
+           %term s : nat -> nat.
+           Peano successor. *)
+    = outer , { cmd , outer }
+    ;

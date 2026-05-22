@@ -1,6 +1,10 @@
-module type RECON_TERM = sig 
+module type RECON_TERM = sig
   (*! structure IntSyn : INTSYN !*)
-  include S.S
+  module M : S.S
+  module Cst = M.Cst
+  module Ast = M.Ast
+  module Paths = M.Paths
+  module Syntax = M.Syntax
   exception Error of string
 
   val resetErrors : string -> unit
@@ -27,7 +31,7 @@ module type RECON_TERM = sig
   type job_ =
     | JNothing
     | JAnd of job_ * job_
-    | JWithCtx of Cst.decl Ast.ctx * job_
+    | JWithCtx of Ast.dec Ast.ctx * job_
     | JTerm of (Ast.exp * Paths.occExp) * Ast.exp * Ast.uni
     | JClass of (Ast.exp * Paths.occExp) * Ast.uni
     | JOf of

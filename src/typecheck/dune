@@ -9,7 +9,7 @@
   Strict_intf
   Typecheck_intf)
  (libraries
-  lambda
+  intsyn
   print
   paths
   names
@@ -21,9 +21,9 @@
    -open
    Basis
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Print
    -open

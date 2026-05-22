@@ -355,7 +355,7 @@ end) : INTERACTIVE = struct
       in
       let f_ = convertFor cL in
       let ws_ = map W.lookup cL in
-      let rec select c = try Lambda.Order.selLookup c with _ -> Lambda.Order.Lex [] in
+      let rec select c = try Intsyn.Order.selLookup c with _ -> Intsyn.Order.Lex [] in
       let tc_ = Tomega.transformTC (I.Null, f_, map select cL) in
       let (w_ :: _) = ws_ in
       let _ = focus_ := [ S.init (f_, w_) ] in

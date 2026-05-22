@@ -1,4 +1,4 @@
 (library
  (name tui)
  (public_name stelf.tui_fronts)
- (libraries frontend server fmt lambda-term lwt parser))
+ (libraries frontend server fmt lambda-term lwt parsing))

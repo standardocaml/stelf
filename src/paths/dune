@@ -9,7 +9,7 @@
   Origins_intf
   Origins)
  (libraries
-  lambda
+  intsyn
   global
   table
   basis)
@@ -20,9 +20,9 @@
    -open
    Basis
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Global
    -open

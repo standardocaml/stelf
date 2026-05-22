@@ -1,7 +1,10 @@
 module type RECON_CONDEC = RECON_CONDEC.RECON_CONDEC
 
 module Make_ReconConDec (M : S.S) : RECON_CONDEC = struct
-  include M
+  module M = M
+  module Cst = M.Cst
+  module Ast = M.Ast
+  module Paths = M.Paths
 
   exception Error of string
 

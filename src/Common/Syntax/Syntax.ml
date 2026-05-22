@@ -58,3 +58,6 @@ module type EXTSYN = sig
   module Global : Global.Global_intf.GLOBAL
   include (module type of ExtSyn(Global))
 end
+
+include Sgn 
+include Sgn_intf

@@ -9,7 +9,7 @@
   Tabledsyn_intf)
  (libraries
   table
-  lambda
+  intsyn
   print
   names
   paths
@@ -26,9 +26,9 @@
    -open
    Table.Table_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Print
    -open

@@ -143,13 +143,13 @@ struct
           T.Ex ((strengthenDec (d_, s), q_), strengthenFor (f_, I.dot1 s))
 
     let rec strengthenOrder = function
-        | Lambda.Order.Arg ((u_, s1), (v_, s2)), s ->
-          Lambda.Order.Arg
+        | Intsyn.Order.Arg ((u_, s1), (v_, s2)), s ->
+          Intsyn.Order.Arg
           ((u_, strengthenSub (s1, s)), (v_, strengthenSub (s2, s)))
-        | Lambda.Order.Simul os_, s ->
-          Lambda.Order.Simul (map (function o_ -> strengthenOrder (o_, s)) os_)
-        | Lambda.Order.Lex os_, s ->
-          Lambda.Order.Lex (map (function o_ -> strengthenOrder (o_, s)) os_)
+        | Intsyn.Order.Simul os_, s ->
+          Intsyn.Order.Simul (map (function o_ -> strengthenOrder (o_, s)) os_)
+        | Intsyn.Order.Lex os_, s ->
+          Intsyn.Order.Lex (map (function o_ -> strengthenOrder (o_, s)) os_)
 
     let rec strengthenTC = function
       | T.Base o_, s -> T.Base (strengthenOrder (o_, s))

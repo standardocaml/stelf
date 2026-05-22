@@ -4,7 +4,11 @@ module StubThmSyn : Thm.Thmsyn.THMSYN =
   (val (Obj.magic () : (module Thm.Thmsyn.THMSYN)))
 
 module Make_ReconThm (M : S.S) : RECON_THM = struct
-  include M
+  module M = M
+  module Cst = M.Cst
+  module Ast = M.Ast 
+  module Paths = M.Paths
+  module Syntax = M.Syntax
 
   module ThmSyn = StubThmSyn
 

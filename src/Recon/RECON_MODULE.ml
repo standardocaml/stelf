@@ -1,5 +1,8 @@
 module type RECON_MODULE = sig 
-include S.S 
+module M : S.S
+  module Cst = M.Cst 
+  module Ast = M.Ast
+  module Paths = M.Paths
   module ModSyn : Modules.Modsyn.MODSYN
 
   exception Error of string

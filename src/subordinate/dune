@@ -11,7 +11,7 @@
  (libraries
   global
   table
-  lambda
+  intsyn
   names
   basis)
  (flags
@@ -29,9 +29,9 @@
    -open
    Table.Table_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Names
    -open

@@ -12,7 +12,7 @@
   Thmsyn_intf)
  (libraries
   global
-  lambda
+  intsyn
   names
   formatter
   modes
@@ -30,9 +30,9 @@
    -open
    Global.Global_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Names
    -open

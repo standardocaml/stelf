@@ -23,7 +23,7 @@
   trail
   global
   domains
-  lambda
+  intsyn
   names
   modes
   table
@@ -49,9 +49,9 @@
    -open
    Domains.Domains_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Names
    -open

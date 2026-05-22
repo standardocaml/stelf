@@ -1,5 +1,8 @@
 module type RECON_MODE = sig 
-  include S.S 
+module M : S.S
+  module Cst = M.Cst 
+  module Ast = M.Ast
+  module Paths = M.Paths
   module Modes : Modes.Modesyn.MODESYN
   exception Error of string
 
@@ -7,3 +10,4 @@ module type RECON_MODE = sig
     Cst.modeDec -> (Ast.cid * Modes.modeSpine) * Paths.region
 end
 
+ 

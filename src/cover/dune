@@ -10,7 +10,7 @@
   Total_intf)
  (libraries
   global
-  lambda
+  intsyn
   names
   paths
   table
@@ -38,9 +38,9 @@
    -open
    Global.Global_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Names
    -open

@@ -2,4 +2,4 @@
  (name main)
  (public_name stelf.main)
  (modules main)
- (libraries stelf))
+ (libraries stelf server pal))

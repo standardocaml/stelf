@@ -18,7 +18,7 @@
  (libraries
   global
   table
-  lambda
+  intsyn
   formatter
   print
   names
@@ -40,9 +40,9 @@
    -open
    Table.Table_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Formatter
    -open

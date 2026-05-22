@@ -1,5 +1,8 @@
 module type RECON_CONDEC = sig 
-include S.S 
+module M : S.S
+  module Cst = M.Cst 
+  module Ast = M.Ast
+  module Paths = M.Paths
 
   exception Error of string
 

@@ -12,7 +12,7 @@
  (libraries
   global
   trail
-  lambda
+  intsyn
   names
   print
   formatter
@@ -36,9 +36,9 @@
    -open
    Trail.Trail_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Names
    -open

@@ -18,11 +18,8 @@ module Parser : PARSER = struct
 	let ( let| ) x f = let* x = x in whitespace *> f x
 	let ( and| ) p q = let* p = p in whitespace *> q >>= fun q -> return (p, q)
 	let ( let@ ) p f = let* (p, fc_start, fc_end) = with_fc p in (f (p, fc_start, fc_end))  
-
+	let given b p = if b then p else fail "failed test"
 	let inside x y p = 
-		let* _ = token x in 
-		let* res = p in 
-		let* _ = token y in  
-		return res
+		token x *> p <* token y
  
 end     

@@ -27,7 +27,7 @@
   Tomegaprint_intf)
  (libraries
   global
-  lambda
+  intsyn
   worldcheck
   cover
   formatter
@@ -50,9 +50,9 @@
    -open
    Global.Global_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Worldcheck
    -open

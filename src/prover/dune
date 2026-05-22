@@ -27,7 +27,7 @@
   State_intf)
  (libraries
   tomega_lib
-  lambda
+  intsyn
   global
   names
   print
@@ -55,9 +55,9 @@
    -open
    Tomega_lib.Tomega_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Global
    -open

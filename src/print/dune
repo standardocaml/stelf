@@ -19,7 +19,7 @@
   Symbol_intf
   Traverse_intf)
  (libraries
-  lambda
+  intsyn
   names
   formatter
   basis)
@@ -30,9 +30,9 @@
    -open
    Basis
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Names
    -open

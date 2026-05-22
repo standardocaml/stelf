@@ -8,7 +8,7 @@
   Index_
   Index_intf)
  (libraries
-  lambda
+  intsyn
   table
   global
   basis)
@@ -19,9 +19,9 @@
    -open
    Basis
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Table
    -open

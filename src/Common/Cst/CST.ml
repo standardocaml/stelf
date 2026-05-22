@@ -43,7 +43,7 @@ module type CST = sig
   type modeSpine
   (** Mode spine. *)
 
-  type term
+  type term 
   (** Term node. *)
 
   type conDec
@@ -69,7 +69,10 @@ module type CST = sig
 
   val mk_loc : int -> int -> loc
   (** Create a location from start and end lexer positions. *)
- 
+
+  val loc_to_region : loc -> Paths.region
+  (** Convert a source location to a Paths region. *)
+
   val ghost : loc
   (** Synthetic location used for generated nodes. *)
 
@@ -157,6 +160,7 @@ module type CST = sig
   (** Mode syntax constructors. *)
   module Mode : sig
     type mode
+    type term = modeTerm
 
     val plus : ?fc:loc -> unit -> mode
     (** Positive mode marker. *)
@@ -170,7 +174,7 @@ module type CST = sig
     val minus1 : ?fc:loc -> unit -> mode
     (** Strict negative mode marker. *)
 
-    type modedec
+    type modedec = modeDec
 
     (** Short mode syntax. *)
     module Short : sig
@@ -213,7 +217,6 @@ module type CST = sig
 
     val con_inst : ?fc:loc -> symbol * loc -> Term.t -> inst
     val str_inst : ?fc:loc -> symbol * loc -> strexp -> inst
-    val str_inst : ?fc:loc -> symbol * loc -> strexp -> inst
 
     type sigexp
 
@@ -225,7 +228,7 @@ module type CST = sig
 
     val sig_def : ?fc:loc -> string option -> sigexp -> sigdef
 
-    type structdec
+    type structdec = structDec
 
     val struct_decl : ?fc:loc -> string option -> sigexp -> structdec
     val struct_def : ?fc:loc -> string option -> strexp -> structdec
@@ -304,13 +307,13 @@ module type CST = sig
   (*! structure Paths : PATHS  !*)
   type order
 
-  val varg : Paths.region * string list -> order
-  val lex : Paths.region * order list -> order
-  val simul : Paths.region * order list -> order
+  val varg : loc * string list -> order
+  val lex : loc * order list -> order
+  val simul : loc * order list -> order
 
   type callpats
 
-  val callpats : (string * string option list * Paths.region) list -> callpats
+  val callpats : (string * string option list * loc) list -> callpats
 
   type tdecl
 
@@ -319,7 +322,7 @@ module type CST = sig
   (* -bp *)
   type predicate
 
-  val predicate : string * Paths.region -> predicate
+  val predicate : string * loc -> predicate
 
   (* -bp *)
   type rdecl
@@ -328,11 +331,11 @@ module type CST = sig
 
   type tableddecl
 
-  val tableddecl : string * Paths.region -> tableddecl
+  val tableddecl : string * loc -> tableddecl
 
   type keepTabledecl
 
-  val keepTabledecl : string * Paths.region -> keepTabledecl
+  val keepTabledecl : string * loc -> keepTabledecl
 
   type prove
 
@@ -364,4 +367,79 @@ module type CST = sig
 
   val wdecl : (string list * string) list * callpats -> wdecl
   end 
+
+  val show_term : term -> string
+  (** Debug-print a term to a string. *)
+
+  val pp_term : Stdlib.Format.formatter -> term -> unit
+  (** Pretty-print a term to a formatter. *)
+
+  (** Read-only deconstructors for opaque CST values. *)
+  module View : sig
+    val term_loc : term -> loc option
+
+    val term_lcid : term -> symbol option
+    val term_ucid : term -> symbol option
+    val term_quid : term -> symbol option
+    val term_scon : term -> string option
+    val term_evar : term -> string option
+    val term_fvar : term -> string option
+    val term_typ : term -> bool
+    val term_omitted : term -> bool
+
+    val term_arrow : term -> (term * term) option
+    val term_pi : term -> (decl * term) option
+    val term_lam : term -> (decl * term) option
+    val term_app : term -> (term * term) option
+    val term_has_type : term -> (term * term) option
+
+    val decl_fields : decl -> string option list * term * loc
+
+    val condec_constant_decl : conDec -> decl option
+    val condec_constant_def : conDec -> (string * term * term option) option
+    val condec_block_decl : conDec -> (string * decl list * decl list) option
+    val condec_block_def : conDec -> (string * symbol list) option
+
+    val query_fields : query -> string option * term
+    val define_fields : define -> string option * term * term option
+    val solve_fields : solve -> string option * term
+
+    val mode_view : mode -> [ `Plus | `Star | `Minus | `Minus1 ]
+    val mode_short : modeDec -> (symbol * (mode * string option) list) option
+    val mode_full : modeDec -> ((mode * string option) list * term) option
+
+    val struct_strexp_symbol : strexp -> symbol option
+    val struct_inst_con : inst -> (symbol * loc * term) option
+    val struct_inst_str : inst -> (symbol * loc * strexp) option
+    val struct_sigexp_id : sigexp -> string option
+    val struct_sigexp_where : sigexp -> (sigexp * inst list) option
+    val struct_sigdef_fields : sigdef -> string option * sigexp
+    val struct_structdecl_decl : structDec -> (string option * sigexp) option
+    val struct_structdecl_def : structDec -> (string option * strexp) option
+
+    val thm_order_varg : Thm.order -> (loc * string list) option
+    val thm_order_lex : Thm.order -> (loc * Thm.order list) option
+    val thm_order_simul : Thm.order -> (loc * Thm.order list) option
+
+    val thm_callpats : Thm.callpats -> (string * string option list * loc) list
+    val thm_tdecl : Thm.tdecl -> Thm.order * Thm.callpats
+    val thm_predicate : Thm.predicate -> string * loc
+    val thm_rdecl : Thm.rdecl -> Thm.predicate * Thm.order * Thm.order * Thm.callpats
+    val thm_tableddecl : Thm.tableddecl -> string * loc
+    val thm_keepTabledecl : Thm.keepTabledecl -> string * loc
+    val thm_prove : Thm.prove -> int * Thm.tdecl
+    val thm_establish : Thm.establish -> int * Thm.tdecl
+    val thm_assert : Thm.assert_ -> Thm.callpats
+
+    val thm_theorem_top : Thm.theorem -> bool
+    val thm_theorem_exists : Thm.theorem -> (Thm.decs * Thm.theorem) option
+    val thm_theorem_forall : Thm.theorem -> (Thm.decs * Thm.theorem) option
+    val thm_theorem_forallStar : Thm.theorem -> (Thm.decs * Thm.theorem) option
+    val thm_theorem_forallG : Thm.theorem -> ((Thm.decs * Thm.decs) list * Thm.theorem) option
+
+    val thm_decs_nil : Thm.decs
+    val thm_decs_list : Thm.decs -> decl list
+    val thm_theoremdec : Thm.theoremdec -> string * Thm.theorem
+    val thm_wdecl : Thm.wdecl -> (string list * string) list * Thm.callpats
+  end
 end

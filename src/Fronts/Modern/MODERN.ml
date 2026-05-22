@@ -4,7 +4,7 @@ module type MODERN = sig
     module Cst : Cst.CST with module Paths = Paths
     module Names : Names.Names_intf.NAMES
 
-    module Parser : Parser.PARSER
+    module Parser : Parsing.PARSER.PARSER
     type 'a t = 'a Parser.t
     exception ParseError of string
     val set_fixities : Names.namespace -> unit
@@ -29,9 +29,9 @@ module type MODERN = sig
     val parse_sigdef : unit -> Cst.Struct.sigdef t
     val parse_struct_dec : unit -> Cst.Struct.structdec t
     val parse_fixity : unit -> int t
-    val parse_query : unit -> Cst.query t 
-    val parse_define : unit -> Cst.define t
-    val parse_solve : unit -> Cst.solve t
+    val parse_query : unit -> Cst.Query.query t
+    val parse_define : unit -> Cst.Query.define t
+    val parse_solve : unit -> Cst.Query.solve t
 
 
 

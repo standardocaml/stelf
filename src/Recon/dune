@@ -1,5 +1,41 @@
+; FIXME: (private_modules S) was removed so that Pal.ml can apply Make_Recon
+; with an anonymous struct argument — OCaml cannot check conformance against a
+; private module type.  Restore once Pal.ml supplies a named module satisfying S.S.
 (library
  (name recon)
  (public_name stelf.recon)
- (libraries cst modules thm modes syntax)
- (private_modules S))
+ (libraries cst syntax modules thm modes names intsyn print typecheck timing msg global table basis debug solvers)
+ (flags
+  (:standard
+   -w
+   -A
+   -open
+   Basis
+   -open
+   Global
+   -open
+   Global.Global_
+   -open
+   Intsyn
+   -open
+   Intsyn.Lambda_
+   -open
+   Names
+   -open
+   Names.Names_
+   -open
+   Table
+   -open
+   Table.Table_
+   -open
+   Msg
+   -open
+   Msg.Msg_
+   -open
+   Print
+   -open
+   Print.Print_
+   -open
+   Debug))
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq ppx_deriving.ord)))

@@ -9,6 +9,7 @@
   SigintMlton
   SigintSmlnj
   Server_
+  Server
   Server_intf
   Sigint_intf)
  (libraries

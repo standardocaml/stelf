@@ -8,7 +8,7 @@
   Order_intf)
  (libraries
   table
-  lambda
+  intsyn
   basis)
  (flags
   (:standard
@@ -21,9 +21,9 @@
    -open
    Table.Table_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_))
+   Intsyn.Lambda_))
  (wrapped true)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq ppx_deriving.ord)))
