@@ -112,6 +112,11 @@ flows until that target is updated.
 
 ## Troubleshooting
 
+- `dune utop` is not a supported repl entrypoint for this repository.
+	Dune's utop target preloads `compiler-libs`, which collides with project
+	modules named `Lambda`, `Lexer`, and `Parser`. Use `make repl` or
+	`dune exec bin/main.exe` instead.
+
 - If dune cannot find dependencies, ensure your opam switch is active:
 
 	```bash

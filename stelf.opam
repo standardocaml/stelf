@@ -16,8 +16,12 @@ depends: [
   "basis"
   "lwt"
   "containers"
+  "base"
+  "angstrom"
   "alcotest" {with-test}
   "odoc" {with-doc}
+  "lambda-term"
+  "fmt"
   "logs" {>= "3.0.0"}
 ]
 build: [

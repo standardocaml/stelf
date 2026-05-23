@@ -1,3 +1,8 @@
+module type S = sig 
+  val use_color : bool 
+  val use_unicode : bool
+end
+
 module type REPL = sig 
   val stop : int -> unit
   (** Exit with a code *)
@@ -11,3 +16,4 @@ module type REPL = sig
   (** Show the REPL prompt. *)
   
 end  
+

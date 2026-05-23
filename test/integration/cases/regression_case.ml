@@ -40,10 +40,12 @@ let run_case ~unsafe ~success file =
   Frontend.Frontend_.Stelf.doubleCheck := true;
   fail_if ~should_fail:(not success) "double-check" file (run_make ~unsafe file)
 
-let test ?(unsafe = false) ?(success = true) ?title file =
+let test ?(unsafe = false) ?(skip = false) ?(success = true) ?title file =
+  
   let test_title =
     match title with
     | Some title -> title
     | None -> if unsafe then "testUnsafe " ^ file else "test " ^ file
   in
+  if skip then Alcotest.test_case test_title `Quick @@ Alcotest.skip else 
   Alcotest.test_case test_title `Slow (fun () -> run_case ~unsafe ~success file)

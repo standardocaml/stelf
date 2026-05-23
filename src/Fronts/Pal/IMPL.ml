@@ -1,6 +1,6 @@
 open! Basis
 
-module type PAL = sig
+module type IMPL = sig
   (** New parser layer: command-level parsing using the Modern parser. *)
   module Cmd : Modern.CMD.CMD
 
@@ -264,6 +264,8 @@ module type PAL = sig
 
     val set : string -> string -> unit
     (** Assign a named runtime option. *)
+
+    
   end
 
   (* -------------------------------------------------------------------- *)

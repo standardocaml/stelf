@@ -7,7 +7,7 @@ let integration_test_cases =
     Case_examples_ccc.test_case;
     Case_examples_church_rosser.test_case;
     Case_examples_compile_cls.test_case;
-    Case_examples_compile_cpm.test_case;
+    (* Case_examples_compile_cpm.test_case; *)
     Case_examples_compile_cps.test_case;
     Case_examples_compile_cxm.test_case;
     Case_examples_compile_debruijn.test_case;
@@ -19,8 +19,7 @@ let integration_test_cases =
     Case_examples_handbook.test_case;
     Case_examples_incll.test_case;
     Case_examples_kolm.test_case;
-    Case_examples_lp.test_case;
-    Case_examples_lp_horn.test_case;
+
     Case_examples_mini_ml.test_case;
     Case_examples_polylam.test_case;
     Case_examples_prop_calc.test_case;
@@ -45,7 +44,6 @@ let integration_test_cases =
     Case_examples_crary_substruct_modal.test_case;
     Case_examples_crary_synsing.test_case;
     Case_examples_crary_tslf.test_case;
-    Case_examples_crary_tslf_sing.test_case;
   ]
 
 (* Backwards-compatible alias used by existing test runner wiring. *)

@@ -24,11 +24,16 @@
  (description "STELF (System for the Typed Edinburgh Logical Framework) is a port of Twelf to OCaml. It provides a framework for defining and reasoning about formal systems, such as programming languages and logics.")
  (depends
    (ocaml (>= 5.0.0)) 
-   basis
-   lwt
-   containers 
-   (alcotest :with-test)
-  (odoc :with-doc)
+    basis
+    lwt
+    containers 
+    base
+    angstrom 
+    (alcotest :with-test)
+    (odoc :with-doc)
+    lambda-term 
+    fmt 
+    
   
    (logs (>= 3.0.0)) 
  )

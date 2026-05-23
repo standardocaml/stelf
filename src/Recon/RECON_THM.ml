@@ -1,15 +1,18 @@
-module type RECON_THM = sig 
-include S.S
-    module ThmSyn : Thm.Thmsyn.THMSYN
+module type RECON_THM = sig
+  module M : S.S
+  module Cst = M.Cst
+  module Ast = M.Ast
+  module Paths = M.Paths
+  module ThmSyn : Thm.Thmsyn.THMSYN
 
   exception Error of string
 
-  val tdeclTotDecl : ThmSyn.tDecl -> ThmSyn.tDecl * (Paths.region * Paths.region list)
-  val rdeclTorDecl : ThmSyn.rDecl -> ThmSyn.rDecl * (Paths.region * Paths.region list)
-  val tableddeclTotabledDecl : ThmSyn.tabledDecl -> ThmSyn.tabledDecl * Paths.region
+  val tdeclTotDecl : Cst.Thm.tdecl -> ThmSyn.tDecl * (Paths.region * Paths.region list)
+  val rdeclTorDecl : Cst.Thm.rdecl -> ThmSyn.rDecl * (Paths.region * Paths.region list)
+  val tableddeclTotabledDecl : Cst.Thm.tableddecl -> ThmSyn.tabledDecl * Paths.region
 
   val keepTabledeclToktDecl :
-    ThmSyn.keepTableDecl -> ThmSyn.keepTableDecl * Paths.region
+    Cst.Thm.keepTabledecl -> ThmSyn.keepTableDecl * Paths.region
 
   val theoremToTheorem : Cst.Thm.theorem -> ThmSyn.thDecl
   val theoremDecToTheoremDec : Cst.Thm.theoremdec -> string * ThmSyn.thDecl
@@ -21,5 +24,3 @@ include S.S
   val assertToAssert : Cst.Thm.assert_ -> ThmSyn.callpats * Paths.region list
   val wdeclTowDecl : Cst.Thm.wdecl -> ThmSyn.wDecl * Paths.region list
 end
-
- 
