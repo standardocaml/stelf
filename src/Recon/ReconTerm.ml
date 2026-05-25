@@ -552,7 +552,7 @@ end) = struct
         (Lam_ (tm1', tm2'), u2_, Arrow (v1_, v2_), l2_)
     | g_, (App_ (tm1, tm2) as tm) ->
         Debug.(
-          msg Group.approx Level.Debug
+          msg' ~src:Group.approx ~level:Level.Debug
           @@ Fmt.concat
                Fmt.
                  [
@@ -1110,7 +1110,7 @@ end) = struct
         let tm1', b1_, v1_ = inferExact (g_, tm1) in
         let e1_ = toElim b1_ in
         Debug.(
-          msg Group.approx Level.Debug
+          msg' ~src:Group.approx ~level:Level.Debug
           @@ Fmt.concat
                Fmt.
                  [

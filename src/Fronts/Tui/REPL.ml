@@ -1,15 +1,16 @@
 module type S = sig 
   val use_color : bool 
   val use_unicode : bool
-end
+  val verbosity : Display.Info.level 
 
+end
 module type REPL = sig 
+
+type response = Continue | Fail of string | Stop 
   val stop : int -> unit
   (** Exit with a code *)
 
-  val read : (string -> 'a Lwt.t option) -> 'a Lwt.t 
-  (** Reads from the terminal until a line break proceeds to give [Some _] as an answer, and returns that answer. 
-  Whether or not an answer should be given must be given synchronously, the actual answer is returned asynchronously. *)
+  val read : (string -> response Lwt.t) -> int Lwt.t  
 
 
   val show : Format.formatter -> unit
@@ -17,3 +18,4 @@ module type REPL = sig
   
 end  
 
+ 

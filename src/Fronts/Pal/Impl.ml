@@ -99,22 +99,42 @@ let install_condec (cd : Intsyn.IntSyn.conDec) : unit =
 (* Install module                                                        *)
 (* ------------------------------------------------------------------ *)
 
+module ModeTable  = Modes.Modes_.ModeTable
+module ModeCheck  = Modes.Modes_.ModeCheck
+module ModeDec    = Modes.Modedec.MakeModeDec ()
+module UniqueTable = Unique.Unique_.UniqueTable
+module Unique      = Unique.Unique_.Unique
+module WorldSyn    = Worldcheck.Worldcheck_.WorldSyn
+module ModSyn      = Modules.Modules_.ModSyn
+
+let factor_sort : Cst.decl list -> Cst.term = function
+  | [] -> Cst.Term.typ ()
+  | decls -> 
+    Cst.Term.pi decls (Cst.Term.typ ()) 
 module Install = struct
-  let install1 ?(filename = "<input>") (cmd : Cst.cmd) : unit =
+
+  let rec install1 ?(filename = "<input>") (cmd : Cst.cmd) : unit =
+    Debug.(msg' ~src:Group.pal ~level:Level.Debug Fmt.string "Installing command");
     let loc_of (l : Cst.loc) : Paths.location =
       Paths.Loc (filename, Cst.loc_to_region l)
     in
+    let name_to_cid label id =
+      match Names.constLookup (Names.Qid ([], id)) with
+      | None -> failwith ("Undeclared identifier " ^ id ^ " in " ^ label ^ " declaration")
+      | Some cid -> cid
+    in
     match cmd with
-    | Cst.SortCmd_ decls ->
-        List.app (fun decl ->
-          let (_, _, l) = Cst.View.decl_fields decl in
-          let condec = Cst.ConstantDecl_ decl in
-          (match Recon.ReconConDec.condecToConDec (condec, loc_of l, false) with
-          | (Some cd, _) -> install_condec cd
-          | (None, _) -> ())
-        ) decls
+    | Cst.SortCmd_ (id, decls) ->
+        Debug.(msg' ~src:Group.pal ~level:Level.Debug Fmt.(const string "Installing sort" ++ sp ++ string) id);
+        let kind = factor_sort decls in
+        let condec = Cst.ConDec.constant_decl (Cst.Decl.decl1 ([Some id]) kind) in
+          (match Recon.ReconConDec.condecToConDec (condec, loc_of Cst.ghost, false) with
+        | (Some cd, _) -> install_condec cd
+        | (None, _) -> ())
+      
     | Cst.TermCmd_ decl ->
-        let (_, _, l) = Cst.View.decl_fields decl in
+        Debug.(msg' ~src:Group.pal ~level:Level.Debug Fmt.string "Installing term command");
+        let (names, ty, l) = Cst.View.decl_fields decl in
         let condec = Cst.ConstantDecl_ decl in
         (match Recon.ReconConDec.condecToConDec (condec, loc_of l, false) with
         | (Some cd, _) -> install_condec cd
@@ -126,7 +146,7 @@ module Install = struct
         (match Recon.ReconConDec.condecToConDec (condec, loc_of l, false) with
         | (Some cd, _) -> install_condec cd
         | (None, _) -> ())
-    | Cst.QueryCmd_ q ->
+    | Cst.QueryCmd_ (_n, _b, _d, q) ->
         let (_, tm) = Cst.View.query_fields q in
         let l = match Cst.View.term_loc tm with Some l -> l | None -> Cst.ghost in
         let (v_, opt_name, xs_) = Recon.ReconQuery.queryToQuery (q, loc_of l) in
@@ -193,6 +213,231 @@ module Install = struct
         end
     | Cst.SetCmd_ (key, value) -> Options.set key value
     | Cst.VersionCmd_ -> msg (Frontend.Version.Version.version_string ^ "\n")
+    | Cst.EvalCmd_ cmds ->
+        List.app install1 cmds
+    | Cst.AdhocQueryCmd_ q ->
+        let (_, tm) = Cst.View.query_fields q in
+        let l = match Cst.View.term_loc tm with Some l -> l | None -> Cst.ghost in
+        let (v_, opt_name, xs_) = Recon.ReconQuery.queryToQuery (q, loc_of l) in
+        let g = Compile.Compile_.Compile.compileGoal (Intsyn.IntSyn.Null, v_) in
+        let solutions = ref 0 in
+        let exception Done in
+        let sc m_ =
+          incr solutions;
+          if !Global.Global_.Global.chatter >= 3 then begin
+            msg (Printf.sprintf "---------- Solution %d ----------\n" !solutions);
+            List.app (fun (e_, n) ->
+              msg (n ^ " = " ^ Print.Print_.expToString (Intsyn.IntSyn.Null, e_) ^ "\n")
+            ) xs_;
+            (match opt_name with
+            | None -> ()
+            | Some name ->
+              msg (name ^ " = " ^ Print.Print_.expToString (Intsyn.IntSyn.Null, m_) ^ "\n"))
+          end;
+          raise Done
+        in
+        (try
+           Opsem.Opsem_.AbsMachine.solve
+             ((g, Intsyn.IntSyn.id),
+              Compile.CompSyn.CompSyn.DProg (Intsyn.IntSyn.Null, Intsyn.IntSyn.Null),
+              sc)
+         with Done -> ());
+        if !solutions = 0 && !Global.Global_.Global.chatter >= 3 then
+          msg "No solution.\n"
+    | Cst.DeclCmd_ tm ->
+        let qid_opt =
+          match Cst.View.term_lcid tm with
+          | Some (ns, n) -> Some (Names.Qid (ns, n))
+          | None ->
+            match Cst.View.term_ucid tm with
+            | Some (ns, n) -> Some (Names.Qid (ns, n))
+            | None ->
+              match Cst.View.term_quid tm with
+              | Some (ns, n) -> Some (Names.Qid (ns, n))
+              | None -> None
+        in
+        begin match qid_opt with
+        | None -> msg "decl: expected an identifier\n"
+        | Some qid ->
+          begin match Names.constLookup qid with
+          | None -> msg (Names.qidToString qid ^ " has not been declared\n")
+          | Some cid ->
+            let condec = Intsyn.IntSyn.sgnLookup cid in
+            msg (Print.Print_.conDecToString condec ^ "\n")
+          end
+        end
+    | Cst.FreezeCmd_ ids ->
+        let cids = List.map (name_to_cid "freeze") ids in
+        let _ = Subordinate.Subordinate_.Subordinate.freeze cids in
+        ()
+    | Cst.ThawCmd_ ids ->
+        if not !unsafe then
+          failwith "%thaw not safe: Toggle `unsafe' flag";
+        let cids = List.map (name_to_cid "thaw") ids in
+        let _ = Subordinate.Subordinate_.Subordinate.thaw cids in
+        ()
+    | Cst.DeterministicCmd_ ids ->
+        let cids = List.map (name_to_cid "deterministic") ids in
+        List.app (fun cid -> Compile.CompSyn.CompSyn.detTableInsert (cid, true)) cids
+    | Cst.PrecCmd_ (fix, prec, ids) ->
+        let p = Names.Fixity.Strength prec in
+        let fixity =
+          match fix with
+          | Cst.Left_    -> Names.Fixity.Infix (p, Names.Fixity.Left)
+          | Cst.Right_   -> Names.Fixity.Infix (p, Names.Fixity.Right)
+          | Cst.Middle_  -> Names.Fixity.Infix (p, Names.Fixity.None)
+          | Cst.Prefix_  -> Names.Fixity.Prefix p
+          | Cst.Postfix_ -> Names.Fixity.Postfix p
+          | Cst.FNone_   -> Names.Fixity.Nonfix
+        in
+        List.app (fun id ->
+          let cid = name_to_cid "prec" id in
+          Names.installFixity (cid, fixity)
+        ) ids
+    | Cst.SymbolCmd_ (id, pref) ->
+        let cid = name_to_cid "symbol" id in
+        Names.installNamePref (cid, ([pref], [pref]))
+    | Cst.InlineCmd_ (name, tm) ->
+        let l = match Cst.View.term_loc tm with Some l -> l | None -> Cst.ghost in
+        let condec = Cst.ConstantDef_ (name, tm, None) in
+        (match Recon.ReconConDec.condecToConDec (condec, loc_of l, true) with
+        | (Some cd, _) -> install_condec cd
+        | (None, _) -> ())
+    | Cst.BlockCmd_ (id, items) ->
+        let pis   = Stdlib.List.filter_map
+          (function Cst.BlockPi_   d -> Some d | _ -> None) items in
+        let somes = Stdlib.List.filter_map
+          (function Cst.BlockSome_ d -> Some d | _ -> None) items in
+        let condec = Cst.BlockDecl_ (id, pis, somes) in
+        (match Recon.ReconConDec.condecToConDec (condec, loc_of Cst.ghost, false) with
+        | (Some cd, _) -> install_condec cd
+        | (None, _) -> ())
+    | Cst.ModeCmd_ (_id, md) ->
+        let (mdec, _r) = Recon.ReconMode.modeToMode md in
+        let (cid, _) = mdec in
+        (match ModeTable.modeLookup cid with
+        | Some _ when Subordinate.Subordinate_.Subordinate.frozen [cid] ->
+            failwith ("Cannot redeclare mode for frozen constant "
+              ^ Names.qidToString (Names.constQid cid))
+        | _ -> ());
+        ModeTable.installMode mdec;
+        ModeCheck.checkMode mdec
+    | Cst.UniqueCmd_ tm ->
+        let l = match Cst.View.term_loc tm with Some l -> l | None -> Cst.ghost in
+        let _ = loc_of l in
+        let mdec_opt =
+          match Cst.View.term_lcid tm with
+          | Some (ns, n) ->
+            begin match Names.constLookup (Names.Qid (ns, n)) with
+            | None -> None
+            | Some cid -> Some (cid, Modes.Modesyn.ModeSyn.Mnil)
+            end
+          | _ -> None
+        in
+        begin match mdec_opt with
+        | None -> msg "unique: expected a type family name\n"
+        | Some ((cid, _) as mdec) ->
+          UniqueTable.installMode mdec;
+          Unique.checkUnique mdec
+        end
+    | Cst.UnionCmd_ (id, ids) ->
+        let syms = List.map (fun s -> ([], s)) ids in
+        let condec = Cst.BlockDef_ (id, syms) in
+        (match Recon.ReconConDec.condecToConDec (condec, loc_of Cst.ghost, false) with
+        | (Some cd, _) -> install_condec cd
+        | (None, _) -> ())
+    | Cst.WorldsCmd_ (ids, tm) ->
+        let resolve_block id =
+          match Names.constLookup (Names.Qid ([], id)) with
+          | None -> failwith ("Undeclared block label " ^ id ^ " in worlds declaration")
+          | Some cid -> cid
+        in
+        let rec flatten = function
+          | [] -> []
+          | cid :: rest ->
+            (match Intsyn.IntSyn.sgnLookup cid with
+            | Intsyn.IntSyn.BlockDec _ -> cid :: flatten rest
+            | Intsyn.IntSyn.BlockDef (_, _, l) -> flatten (l @ rest)
+            | _ -> cid :: flatten rest)
+        in
+        let block_cids = flatten (List.map resolve_block ids) in
+        let w_ = Intsyn.Lambda_.Tomega.Worlds block_cids in
+        let family_cid_opt =
+          match Cst.View.term_lcid tm with
+          | Some (ns, n) -> Names.constLookup (Names.Qid (ns, n))
+          | None ->
+            match Cst.View.term_ucid tm with
+            | Some (ns, n) -> Names.constLookup (Names.Qid (ns, n))
+            | None ->
+              match Cst.View.term_quid tm with
+              | Some (ns, n) -> Names.constLookup (Names.Qid (ns, n))
+              | None -> None
+        in
+        begin match family_cid_opt with
+        | None -> failwith "%worlds: expected a type family name"
+        | Some a ->
+          WorldSyn.install (a, w_);
+          WorldSyn.worldcheck w_ a
+        end
+    | Cst.QueryTabledCmd_ (numSol, try_, _d, q) ->
+        let (_, tm) = Cst.View.query_fields q in
+        let l = match Cst.View.term_loc tm with Some l -> l | None -> Cst.ghost in
+        let (a_, opt_name, xs_) = Recon.ReconQuery.queryToQuery (q, loc_of l) in
+        let g = Compile.Compile_.Compile.compileGoal (Intsyn.IntSyn.Null, a_) in
+        let solutions = ref 0 in
+        let stages = ref 1 in
+        let exception Done in
+        let exceeds bound limit =
+          match limit with None -> false | Some n -> bound >= n
+        in
+        let sc _o_ =
+          incr solutions;
+          if !chatter >= 3 then begin
+            msg (Printf.sprintf "---------- Solution %d ----------\n" !solutions);
+            List.app (fun (e_, n) ->
+              msg (n ^ " = " ^ Print.Print_.expToString (Intsyn.IntSyn.Null, e_) ^ "\n")
+            ) xs_;
+            (match opt_name with
+            | None -> ()
+            | Some name ->
+              msg (name ^ " = " ^ Print.Print_.expToString (Intsyn.IntSyn.Null, a_) ^ "\n"))
+          end;
+          (match numSol with
+          | Some n when !solutions >= n -> raise Done
+          | _ -> ())
+        in
+        let dprog = Compile.CompSyn.CompSyn.DProg
+          (Intsyn.IntSyn.Null, Intsyn.IntSyn.Null) in
+        let rec loop () =
+          if exceeds (!stages - 1) try_ then raise Done;
+          if Opsem.Opsem_.Tabled_.nextStage () then begin
+            incr stages;
+            loop ()
+          end
+        in
+        Opsem.Opsem_.Tabled_.reset ();
+        Opsem.Opsem_.Tabled_.fillTable ();
+        (try
+           Opsem.Opsem_.Tabled_.solve ((g, Intsyn.IntSyn.id), dprog, sc);
+           loop ()
+         with Done -> ());
+        if !solutions = 0 && !chatter >= 3 then msg "No tabled solution.\n"
+    | Cst.OpenCmd_ (id, ids) ->
+        let se = Cst.Struct.str_exp (ids, id) in
+        let mid = Recon.ReconModule.strexpToStrexp se in
+        let ns = ModSyn.Names.getComponents mid in
+        let module_ = ModSyn.abstractModule (ns, Some mid) in
+        let action (cid, _) =
+          Index.Index_.Index.install Intsyn.IntSyn.Ordinary (Intsyn.IntSyn.Const cid);
+          Compile.Compile_.Compile.install Intsyn.IntSyn.Ordinary cid;
+          Subordinate.Subordinate_.Subordinate.install cid;
+          Subordinate.Subordinate_.Subordinate.installDef cid
+        in
+        ModSyn.installSig (module_, None, action, true)
+    | Cst.ModuleCmd_ _ ->
+        failwith "%module: module definitions not yet implemented in this frontend"
+    | Cst.UseCmd_ _ ->
+        failwith "%use: module instantiation not yet implemented in this frontend"
 
   let install ?(filename = "<input>") (cmds : Cst.cmd list) : unit =
     List.app (install1 ~filename) cmds
@@ -483,7 +728,7 @@ end
 (* ------------------------------------------------------------------ *)
 (* Interactive evaluation                                               *)
 (* ------------------------------------------------------------------ *)
-
+ 
 module Eval = struct
   let eval (cmd : Cst.cmd) : unit = Install.install1 cmd
 end

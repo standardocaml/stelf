@@ -399,7 +399,7 @@ module MakeApprox (Whnf : WHNF) : APPROX = struct
       end
     | u -> begin
         Debug.(
-          msg Group.approx Level.Debug
+          msg' ~src:Group.approx ~level:Level.Debug
           @@ Fmt.concat
                Fmt.
                  [

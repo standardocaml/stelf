@@ -29,13 +29,20 @@ module type MODERN = sig
     val parse_sigdef : unit -> Cst.Struct.sigdef t
     val parse_struct_dec : unit -> Cst.Struct.structdec t
     val parse_fixity : unit -> int t
-    val parse_query : unit -> Cst.Query.query t
+    val parse_query  : unit -> (int option * int option * int option * Cst.Query.query) t
     val parse_define : unit -> Cst.Query.define t
-    val parse_solve : unit -> Cst.Query.solve t
+    val parse_solve  : unit -> Cst.Query.solve t
 
+    val parse_bound       : unit -> int option t
+    val parse_id_list     : unit -> string list t
+    val parse_block_item  : unit -> Cst.block_item t
+    val parse_fixity_kw   : unit -> Cst.fixity t
+    val parse_params      : unit -> string list t
 
-
-    (* TODO Add rest of parsers *)
+    val parse_group     : 'a t -> 'a list t
+    val parse_parens    : 'a t -> 'a t
+    val parse_braced    : 'a t -> 'a t
+    val parse_bracketed : 'a t -> 'a t
 
     val debug_parser : 'a t -> string -> 'a [@@alert debug "This should only be used in the REPL"]
     val run : 'a t -> Names.namespace ref -> Cst.loc -> string -> 'a

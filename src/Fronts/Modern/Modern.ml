@@ -157,17 +157,45 @@ module Make_Modern
     let+ s = take_while1 (fun c -> c >= '0' && c <= '9') <* whitespace in
     int_of_string s
 
-  and parse_query () : Cst.Query.query t =
-    let+ term = parse_expr () in
-    Cst.Query.query None term
+  and parse_query () : (int option * int option * int option * Cst.Query.query) t =
+    let* n = parse_bound () in
+    let* b = parse_bound () in
+    let* d = parse_bound () in
+    let+ tm = parse_expr () in
+    (n, b, d, Cst.Query.query None tm)
 
   and parse_define () : Cst.Query.define t =
-    let+ term1 = parse_expr () in
-    Cst.Query.define None term1 None
+    let* id = parse_var () in
+    let+ tm = parse_expr () in
+    Cst.Query.define (Some id) tm None
 
   and parse_solve () : Cst.Query.solve t =
     let+ term = parse_expr () in
     Cst.Query.solve None term
+
+  and parse_bound () : int option t =
+    (token "_" *> return None)
+    <|> (let+ s = take_while1 (fun c -> c >= '0' && c <= '9') <* whitespace in
+         Some (int_of_string s))
+
+  and parse_id_list () : string list t =
+    (inside "(" ")" (many (parse_var ())))
+    <|> (let+ id = parse_var () in [id])
+
+  and parse_block_item () : Cst.block_item t =
+    (inside "{" "}" (let+ d = parse_decl () in Cst.BlockItem.some d))
+    <|> (inside "[" "]" (let+ d = parse_decl () in Cst.BlockItem.pi d))
+
+  and parse_fixity_kw () : Cst.fixity t =
+    (keyword "left"    *> return Cst.Fixity.left)
+    <|> (keyword "right"   *> return Cst.Fixity.right)
+    <|> (keyword "prefix"  *> return Cst.Fixity.prefix)
+    <|> (keyword "postfix" *> return Cst.Fixity.postfix)
+    <|> (keyword "middle"  *> return Cst.Fixity.middle)
+    <|> (keyword "none"    *> return Cst.Fixity.none)
+
+  and parse_params () : string list t =
+    inside "(" ")" (many (parse_var ()))
 
   and parse_group : 'a. 'a t -> 'a list t = fun p -> many p
   and parse_parens : 'a. 'a t -> 'a t = fun p -> inside "(" ")" p

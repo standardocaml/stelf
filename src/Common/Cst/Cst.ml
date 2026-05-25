@@ -75,18 +75,42 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
 
   type structDef = StructDef_ of string option * strexp
 
+  type fixity = Left_ | Right_ | Prefix_ | Postfix_ | Middle_ | FNone_
+
+  type block_item =
+    | BlockSome_ of decl
+    | BlockPi_   of decl
+
   (* Top-level commands *)
   type cmd =
-    | QueryCmd_ of query
-    | DefineCmd_ of define
-    | SolveCmd_ of solve
-    | SortCmd_ of decl list
-    | TermCmd_ of decl
+    | QueryCmd_         of int option * int option * int option * query
+    | QueryTabledCmd_   of int option * int option * int option * query
+    | AdhocQueryCmd_    of query
+    | UniqueCmd_        of term
+    | ModeCmd_          of string * modeDec
+    | DefineCmd_        of define
+    | DeclCmd_          of term
+    | InlineCmd_        of string * term
+    | SymbolCmd_        of string * string
+    | FreezeCmd_        of string list
+    | ThawCmd_          of string list
+    | SortCmd_          of string * decl list
+    | TermCmd_          of decl
+    | BlockCmd_         of string * block_item list
+    | UnionCmd_         of string * string list
+    | WorldsCmd_        of string list * term
+    | DeterministicCmd_ of string list
+    | ModuleCmd_        of string * string list * cmd list
+    | UseCmd_           of string * string * string list
+    | OpenCmd_          of string * string list
+    | EvalCmd_          of cmd list
+    | PrecCmd_          of fixity * int * string list
+    | SolveCmd_         of solve
     | StopCmd_
     | QuitCmd_
-    | HelpCmd_ of string option
-    | GetCmd_ of string
-    | SetCmd_ of string * string
+    | HelpCmd_          of string option
+    | GetCmd_           of string
+    | SetCmd_           of string * string
     | VersionCmd_
 
   (* Term constructor module *)
@@ -151,6 +175,9 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
 
     let[@warning "-16"] omitted ?fc:(loc_ = ghost) =
       Omitted_ loc_
+
+    let typ ?fc:(loc_ = ghost) () =
+      Typ_ loc_
   end
 
   (* Declaration constructor module *)
@@ -272,40 +299,52 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
 
   (* Command constructor module *)
   module Cmd = struct
-    let query ?fc:(loc_ = ghost) (Query_ (name_opt, term)) =
-      QueryCmd_ (Query_ (name_opt, term))
-
-    let define ?fc:(loc_ = ghost) (Define_ (name_opt, term1, term2_opt)) =
-      DefineCmd_ (Define_ (name_opt, term1, term2_opt))
-
-    let solve ?fc:(loc_ = ghost) (Solve_ (name_opt, term)) =
-      SolveCmd_ (Solve_ (name_opt, term))
-
-    let sort ?fc:(loc_ = ghost) decls =
-      SortCmd_ decls
-
-    let term ?fc:(loc_ = ghost) decl =
-      TermCmd_ decl
-
-    let stop ?fc:(loc_ = ghost) () =
-      StopCmd_
+    let query ?fc:(_ = ghost) ~n ~b ~d q = QueryCmd_ (n, b, d, q)
+    let query_tabled ?fc:(_ = ghost) ~n ~b ~d q = QueryTabledCmd_ (n, b, d, q)
+    let adhoc_query ?fc:(_ = ghost) q = AdhocQueryCmd_ q
+    let unique ?fc:(_ = ghost) tm = UniqueCmd_ tm
+    let mode ?fc:(_ = ghost) id md = ModeCmd_ (id, md)
+    let define ?fc:(_ = ghost) d = DefineCmd_ d
+    let decl_cmd ?fc:(_ = ghost) tm = DeclCmd_ tm
+    let inline ?fc:(_ = ghost) id tm = InlineCmd_ (id, tm)
+    let symbol ?fc:(_ = ghost) id1 id2 = SymbolCmd_ (id1, id2)
+    let freeze ?fc:(_ = ghost) ids = FreezeCmd_ ids
+    let thaw ?fc:(_ = ghost) ids = ThawCmd_ ids
+    let sort ?fc:(_ = ghost) id decls = SortCmd_ (id, decls)
+    let term ?fc:(_ = ghost) d = TermCmd_ d
+    let block ?fc:(_ = ghost) id items = BlockCmd_ (id, items)
+    let union ?fc:(_ = ghost) id ids = UnionCmd_ (id, ids)
+    let worlds ?fc:(_ = ghost) ids tm = WorldsCmd_ (ids, tm)
+    let deterministic ?fc:(_ = ghost) ids = DeterministicCmd_ ids
+    let module_cmd ?fc:(_ = ghost) id params cmds = ModuleCmd_ (id, params, cmds)
+    let use ?fc:(_ = ghost) id1 id2 ps = UseCmd_ (id1, id2, ps)
+    let open_cmd ?fc:(_ = ghost) id ids = OpenCmd_ (id, ids)
+    let eval ?fc:(_ = ghost) cmds = EvalCmd_ cmds
+    let prec ?fc:(_ = ghost) fix n ids = PrecCmd_ (fix, n, ids)
+    let solve ?fc:(_ = ghost) s = SolveCmd_ s
+    let stop ?fc:(_ = ghost) () = StopCmd_
 
     module Repl = struct
-      let quit ?fc:(loc_ = ghost) () =
-        QuitCmd_
-
-      let help ?fc:(loc_ = ghost) topic_opt =
-        HelpCmd_ topic_opt
-
-      let get ?fc:(loc_ = ghost) setting =
-        GetCmd_ setting
-
-      let set ?fc:(loc_ = ghost) setting value =
-        SetCmd_ (setting, value)
-
-      let version ?fc:(loc_ = ghost) () =
-        VersionCmd_
+      let quit    ?fc:(_ = ghost) ()    = QuitCmd_
+      let help    ?fc:(_ = ghost) t     = HelpCmd_ t
+      let get     ?fc:(_ = ghost) s     = GetCmd_ s
+      let set     ?fc:(_ = ghost) s v   = SetCmd_ (s, v)
+      let version ?fc:(_ = ghost) ()    = VersionCmd_
     end
+  end
+
+  module Fixity = struct
+    let left    = Left_
+    let right   = Right_
+    let prefix  = Prefix_
+    let postfix = Postfix_
+    let middle  = Middle_
+    let none    = FNone_
+  end
+
+  module BlockItem = struct
+    let some d = BlockSome_ d
+    let pi   d = BlockPi_   d
   end
 
   module Thm = struct
@@ -514,3 +553,4 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
 end   
 
 module Cst : CST = Make_Cst (Paths.Paths_)
+ 

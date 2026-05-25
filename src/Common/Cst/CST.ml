@@ -52,6 +52,12 @@ module type CST = sig
   type decl
   (** Binder declaration node. *)
 
+  type fixity
+  (** Fixity kind for %prec declarations. *)
+
+  type block_item
+  (** One item in a %block world declaration. *)
+
   type cmd
   (** Top-level command node. *)
 
@@ -123,6 +129,9 @@ module type CST = sig
 
     val omitted : ?fc:loc -> term
     (** Placeholder for an omitted term. *)
+
+    val typ : ?fc:loc -> unit -> term
+    (** The type of types. *)
   end
 
   (** Binder declaration constructors. *)
@@ -252,53 +261,106 @@ module type CST = sig
     (** Solve declaration. *)
   end
 
+  (** Fixity constructors. *)
+  module Fixity : sig
+    val left    : fixity
+    val right   : fixity
+    val prefix  : fixity
+    val postfix : fixity
+    val middle  : fixity
+    val none    : fixity
+  end
+
+  (** Block item constructors for %block declarations. *)
+  module BlockItem : sig
+    val some : decl -> block_item
+    (** [{decl}] — existentially bound hypothesis. *)
+
+    val pi : decl -> block_item
+    (** [[decl]] — universally bound hypothesis. *)
+  end
+
   (** Top-level command constructors. *)
   module Cmd : sig
-    val query : ?fc:loc -> Query.query -> cmd
-    (** Query command. *)
+    val query : ?fc:loc -> n:int option -> b:int option -> d:int option -> Query.query -> cmd
+    (** [%query n b d expr] — logic programming query with bounds. *)
+
+    val query_tabled : ?fc:loc -> n:int option -> b:int option -> d:int option -> Query.query -> cmd
+    (** [%querytabled n b d expr] — tabled query with bounds. *)
+
+    val adhoc_query : ?fc:loc -> Query.query -> cmd
+    (** [%? expr] — ad-hoc REPL query. *)
+
+    val unique : ?fc:loc -> term -> cmd
+    (** [%unique expr] — assert expr has at most one inhabitant. *)
+
+    val mode : ?fc:loc -> string -> modeDec -> cmd
+    (** [%mode id hyps] — declare input/output polarity. *)
 
     val define : ?fc:loc -> Query.define -> cmd
-    (** Define command.
+    (** [%define id expr] — transparent definition. *)
 
-        This corresponds to [%define t x y], as a surface variation of
-        [x : t = y]. *)
+    val decl_cmd : ?fc:loc -> term -> cmd
+    (** [%decl expr] — raw elaboration-level declaration. *)
 
-    val solve : ?fc:loc -> Query.solve -> cmd
-    (** Solve command. *)
+    val inline : ?fc:loc -> string -> term -> cmd
+    (** [%inline id expr] — always-unfolded definition. *)
 
-    val sort : ?fc:loc -> decl list -> cmd
-    (** Sort command.
+    val symbol : ?fc:loc -> string -> string -> cmd
+    (** [%symbol id id] — associate a symbolic name. *)
 
-        [%sort A {X1 A1} ... {Xn An}] corresponds internally to
-        [A : {X1 : A1} ... {Xn : An} type]. *)
+    val freeze : ?fc:loc -> string list -> cmd
+    (** [%freeze id_list] — freeze type families. *)
+
+    val thaw : ?fc:loc -> string list -> cmd
+    (** [%thaw id_list] — unfreeze type families. *)
+
+    val sort : ?fc:loc -> string -> decl list -> cmd
+    (** [%sort id {decl}+] — declare a type family. *)
 
     val term : ?fc:loc -> decl -> cmd
-    (** Term command.
+    (** [%term decl] — declare a term-level constant. *)
 
-        Binds one or more names to a type (surface form [%term ...]). *)
+    val block : ?fc:loc -> string -> block_item list -> cmd
+    (** [%block id block_item*] — define a named context schema. *)
+
+    val union : ?fc:loc -> string -> string list -> cmd
+    (** [%union id ids] — union of block labels. *)
+
+    val worlds : ?fc:loc -> string list -> term -> cmd
+    (** [%worlds ids expr] — assert expr lives in the named world. *)
+
+    val deterministic : ?fc:loc -> string list -> cmd
+    (** [%deterministic id_list] — mark type families as deterministic. *)
+
+    val module_cmd : ?fc:loc -> string -> string list -> cmd list -> cmd
+    (** [%module id params body] — declare a parameterised module. *)
+
+    val use : ?fc:loc -> string -> string -> string list -> cmd
+    (** [%use id id iparams] — instantiate a module. *)
+
+    val open_cmd : ?fc:loc -> string -> string list -> cmd
+    (** [%open id id_list] — bring names from a module into scope. *)
+
+    val eval : ?fc:loc -> cmd list -> cmd
+    (** [%eval %{ cmds %}] — evaluate a command block. *)
+
+    val prec : ?fc:loc -> fixity -> int -> string list -> cmd
+    (** [%prec fixity n id_list] — set operator fixity and precedence. *)
+
+    val solve : ?fc:loc -> Query.solve -> cmd
+    (** [%solve] — solve command. *)
 
     val stop : ?fc:loc -> unit -> cmd
-    (** Stop command.
-
-        It either returns control to outer mode or terminates a REPL command,
-        similar to [;;] in OCaml. *)
+    (** [%.] — end-of-command marker. *)
 
     (** REPL-specific commands. *)
     module Repl : sig
       val quit : ?fc:loc -> unit -> cmd
-      (** Quit the REPL. *)
-
       val help : ?fc:loc -> string option -> cmd
-      (** Show help, optionally for one topic. *)
-
       val get : ?fc:loc -> string -> cmd
-      (** Get the value of a setting. *)
-
       val set : ?fc:loc -> string -> string -> cmd
-      (** Set a named setting. *)
-
       val version : ?fc:loc -> unit -> cmd
-      (** Print version information. *)
     end
   end
 

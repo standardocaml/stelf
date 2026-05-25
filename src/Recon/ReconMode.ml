@@ -3,7 +3,7 @@ module type RECON_MODE = RECON_MODE.RECON_MODE
 module ModeDec = Modes.Modedec.MakeModeDec ()
 let ghost_region = Paths.Paths_.Paths.Reg (0, 0)
 
-module Make_ReconMode (M : S.S) : RECON_MODE = struct
+module Make_ReconMode (M : S.S) : RECON_MODE with module M = M = struct
   module M = M
   module Syntax = M.Syntax
   module Cst = M.Cst
