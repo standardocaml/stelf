@@ -4,7 +4,6 @@
 
 (* # 1 "src/tomega/Tomega_.sml.ml" *)
 open! Basis
-
 module Tomega : module type of Lambda_.Tomega
 module TomegaAbstract : TomegaAbstract_intf.TOMEGAABSTRACT
 module TomegaPrint : Tomegaprint.TOMEGAPRINT

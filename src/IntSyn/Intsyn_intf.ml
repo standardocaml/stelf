@@ -1,1 +1,1 @@
-module type INTSYN = Syntax.INTSYN 
+module type INTSYN = Syntax.INTSYN

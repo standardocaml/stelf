@@ -141,14 +141,14 @@ end) : ABSMACHINESBT = struct
               sc )
 
     and rSolve = function
-      | ps', (C.Eq q_, s), C.DProg (g_, dPool), sc -> begin
-          if Unify.unifiable (g_, ps', (q_, s)) then sc [] else ()
-        end
-      | ps', (C.Assign (q_, eqns), s), (C.DProg (g_, dPool) as dp), sc -> begin
-          match Assign.assignable (g_, ps', (q_, s)) with
+      | ps', (C.Eq q_, s), C.DProg (g_, dPool), sc ->
+          begin if Unify.unifiable (g_, ps', (q_, s)) then sc [] else ()
+          end
+      | ps', (C.Assign (q_, eqns), s), (C.DProg (g_, dPool) as dp), sc ->
+          begin match Assign.assignable (g_, ps', (q_, s)) with
           | Some cnstr -> aSolve ((eqns, s), dp, cnstr, function () -> sc [])
           | None -> ()
-        end
+          end
       | ps', (C.And (r, a_, g), s), (C.DProg (g_, dPool) as dp), sc ->
           let x_ = I.newEVar (g_, I.EClo (a_, s)) in
           rSolve
@@ -169,9 +169,9 @@ end) : ABSMACHINESBT = struct
             (ps', (r, I.Dot (I.Exp (I.EClo (x'_, I.Shift (-d))), s)), dp, sc)
 
     and aSolve = function
-      | (trivial_, s), dp, cnstr, sc -> begin
-          if Assign.solveCnstr cnstr then sc () else ()
-        end
+      | (trivial_, s), dp, cnstr, sc ->
+          begin if Assign.solveCnstr cnstr then sc () else ()
+          end
       | ( (C.UnifyEq (g'_, e1, n_, eqns), s),
           (C.DProg (g_, dPool) as dp),
           cnstr,
@@ -225,8 +225,8 @@ end) : ABSMACHINESBT = struct
         (((I.Root (ha_, s_), s) as ps'), (C.DProg (g_, dPool) as dp), sc) =
       let rec matchDProg = function
         | I.Null, _ -> ( ! ) mSig (ps', dp, sc)
-        | I.Decl (dPool', C.Dec (r, s, ha'_)), k -> begin
-            if eqHead (ha_, ha'_) then begin
+        | I.Decl (dPool', C.Dec (r, s, ha'_)), k ->
+            begin if eqHead (ha_, ha'_) then begin
               CsManager.trail (function () ->
                   rSolve
                     ( ps',
@@ -236,7 +236,7 @@ end) : ABSMACHINESBT = struct
               matchDProg (dPool', k + 1)
             end
             else matchDProg (dPool', k + 1)
-          end
+            end
         | I.Decl (dPool', parameter_), k -> matchDProg (dPool', k + 1)
       in
       let rec matchConstraint (solve_fn, try_) =

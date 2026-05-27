@@ -429,10 +429,11 @@ end) : Twelf_intf.STELF = struct
       let rec installAction ((cid, _) as data) =
         begin
           installConst IntSyn.Ordinary data;
-          begin if !Global.chatter >= 4 then
-            msg (Print.conDecToString (IntSyn.sgnLookup cid) ^ "\n")
-          else ()
-          end
+          Display.display'
+            (Display.Info.msg
+               ~level:(Display.Info.from_chatter 4)
+               (Display.Info.Form.string
+                  (Print.conDecToString (IntSyn.sgnLookup cid) ^ "\n")))
         end
       in
       let _ =
@@ -446,10 +447,11 @@ end) : Twelf_intf.STELF = struct
       let rec installAction ((cid, _) as data) =
         begin
           installConst IntSyn.Ordinary data;
-          begin if !Global.chatter >= 4 then
-            msg (Print.conDecToString (IntSyn.sgnLookup cid) ^ "\n")
-          else ()
-          end
+          Display.display'
+            (Display.Info.msg
+               ~level:(Display.Info.from_chatter 4)
+               (Display.Info.Form.string
+                  (Print.conDecToString (IntSyn.sgnLookup cid) ^ "\n")))
         end
       in
       let _ =
@@ -615,19 +617,20 @@ end) : Twelf_intf.STELF = struct
             with Subordinate.Error msg ->
               raise (Subordinate.Error (Paths.wrap (r, msg)))
           in
-          begin if !Global.chatter >= 3 then
-            msg
-              ("%subord"
-              ^ List.foldr
-                  (function
-                    | (a1, a2), s ->
-                        ((((" (" ^ Names.qidToString (Names.constQid a1)) ^ " ")
-                         ^ Names.qidToString (Names.constQid a2))
-                        ^ ")")
-                        ^ s)
-                  ".\n" cidpairs)
-          else ()
-          end
+          Display.display'
+            (Display.Info.msg
+               ~level:(Display.Info.from_chatter 3)
+               (Display.Info.Form.string
+                  ("%subord"
+                  ^ List.foldr
+                      (function
+                        | (a1, a2), s ->
+                            ((((" (" ^ Names.qidToString (Names.constQid a1))
+                              ^ " ")
+                             ^ Names.qidToString (Names.constQid a2))
+                            ^ ")")
+                            ^ s)
+                      ".\n" cidpairs)))
       | fileName, (Parser.FreezeDec qids, r) ->
           let rec toCid qid =
             begin match Names.constLookup qid with
@@ -650,24 +653,26 @@ end) : Twelf_intf.STELF = struct
               raise (Subordinate.Error (Paths.wrap (r, msg)))
           in
           begin
-            begin if !Global.chatter >= 3 then
-              msg
-                ("%freeze"
-                ^ List.foldr
-                    (function
-                      | a, s -> (" " ^ Names.qidToString (Names.constQid a)) ^ s)
-                    ".\n" cids)
-            else ()
-            end;
-            begin if !Global.chatter >= 4 then
-              msg
-                ("Frozen:"
-                ^ List.foldr
-                    (function
-                      | a, s -> (" " ^ Names.qidToString (Names.constQid a)) ^ s)
-                    "\n" frozen)
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    ("%freeze"
+                    ^ List.foldr
+                        (function
+                          | a, s ->
+                              (" " ^ Names.qidToString (Names.constQid a)) ^ s)
+                        ".\n" cids)));
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 4)
+                 (Display.Info.Form.string
+                    ("Frozen:"
+                    ^ List.foldr
+                        (function
+                          | a, s ->
+                              (" " ^ Names.qidToString (Names.constQid a)) ^ s)
+                        "\n" frozen)))
           end
       | fileName, (Parser.ThawDec qids, r) ->
           let _ =
@@ -697,24 +702,24 @@ end) : Twelf_intf.STELF = struct
               raise (Subordinate.Error (Paths.wrap (r, msg)))
           in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg
-                ("%thaw"
-                ^ List.foldr
-                    (function a, s -> (" " ^ cidToString a) ^ s)
-                    ".\n" cids)
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    ("%thaw"
+                    ^ List.foldr
+                        (function a, s -> (" " ^ cidToString a) ^ s)
+                        ".\n" cids)))
           in
           let _ =
-            begin if !Global.chatter >= 4 then
-              msg
-                ("Thawed"
-                ^ List.foldr
-                    (function a, s -> (" " ^ cidToString a) ^ s)
-                    "\n" thawed)
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 4)
+                 (Display.Info.Form.string
+                    ("Thawed"
+                    ^ List.foldr
+                        (function a, s -> (" " ^ cidToString a) ^ s)
+                        "\n" thawed)))
           in
           let _ = invalidate WorldSyn.uninstall thawed "world" in
           let _ = invalidate Thm.uninstallTerminates thawed "termination" in
@@ -741,17 +746,18 @@ end) : Twelf_intf.STELF = struct
           in
           begin
             List.app insertCid cids;
-            begin if !Global.chatter >= 3 then
-              msg
-                ((begin if !Global.chatter >= 4 then "%" else ""
-                  end
-                 ^ "%deterministic")
-                ^ List.foldr
-                    (function
-                      | a, s -> (" " ^ Names.qidToString (Names.constQid a)) ^ s)
-                    ".\n" cids)
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    ((begin if !Global.chatter >= 4 then "%" else ""
+                      end
+                     ^ "%deterministic")
+                    ^ List.foldr
+                        (function
+                          | a, s ->
+                              (" " ^ Names.qidToString (Names.constQid a)) ^ s)
+                        ".\n" cids)))
           end
       | fileName, (Parser.Compile qids, r) ->
           let rec toCid qid =
@@ -783,29 +789,30 @@ end) : Twelf_intf.STELF = struct
           let _ = TomegaTypeCheck.checkPrg (IntSyn.Null, (p_, f_)) in
           let rec f cid = IntSyn.conDecName (IntSyn.sgnLookup cid) in
           let _ =
-            begin if !Global.chatter >= 2 then
-              msg
-                (("\n" ^ TomegaPrint.funToString ((map f cids, projs), p_))
-                ^ "\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 2)
+                 (Display.Info.Form.string
+                    (("\n" ^ TomegaPrint.funToString ((map f cids, projs), p_))
+                    ^ "\n")))
           in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg
-                ((begin if !Global.chatter >= 4 then "%" else ""
-                  end
-                 ^ "%compile")
-                ^ List.foldr
-                    (function
-                      | a, s -> (" " ^ Names.qidToString (Names.constQid a)) ^ s)
-                    ".\n" cids)
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    ((begin if !Global.chatter >= 4 then "%" else ""
+                      end
+                     ^ "%compile")
+                    ^ List.foldr
+                        (function
+                          | a, s ->
+                              (" " ^ Names.qidToString (Names.constQid a)) ^ s)
+                        ".\n" cids)))
           in
           ()
-      | fileName, (Parser.FixDec ((qid, r), fixity), _) -> begin
-          match Names.constLookup qid with
+      | fileName, (Parser.FixDec ((qid, r), fixity), _) ->
+          begin match Names.constLookup qid with
           | None ->
               raise
                 (Names.Error
@@ -816,22 +823,22 @@ end) : Twelf_intf.STELF = struct
               try
                 begin
                   Names.installFixity (cid, fixity);
-                  begin if !Global.chatter >= 3 then
-                    msg
-                      ((((begin if !Global.chatter >= 4 then "%" else ""
-                          end
-                         ^ Names.Fixity.toString fixity)
-                        ^ " ")
-                       ^ Names.qidToString (Names.constQid cid))
-                      ^ ".\n")
-                  else ()
-                  end
+                  Display.display'
+                    (Display.Info.msg
+                       ~level:(Display.Info.from_chatter 3)
+                       (Display.Info.Form.string
+                          ((((begin if !Global.chatter >= 4 then "%" else ""
+                              end
+                             ^ Names.Fixity.toString fixity)
+                            ^ " ")
+                           ^ Names.qidToString (Names.constQid cid))
+                          ^ ".\n")))
                 end
               with Names.Error msg ->
                 raise (Names.Error (Paths.wrap (r, msg))))
-        end
-      | fileName, (Parser.NamePref ((qid, r), namePref), _) -> begin
-          match Names.constLookup qid with
+          end
+      | fileName, (Parser.NamePref ((qid, r), namePref), _) ->
+          begin match Names.constLookup qid with
           | None ->
               raise
                 (Names.Error
@@ -842,18 +849,18 @@ end) : Twelf_intf.STELF = struct
               try Names.installNamePref (cid, namePref)
               with Names.Error msg ->
                 raise (Names.Error (Paths.wrap (r, msg))))
-        end
+          end
       | fileName, (Parser.ModeDec mterms, r) ->
           let mdecs = List.map ReconMode.modeToMode mterms in
           let _ = ReconTerm.checkErrors r in
           let _ =
             List.app
               (function
-                | ((a, _) as mdec), r -> begin
-                    match ModeTable.modeLookup a with
+                | ((a, _) as mdec), r ->
+                    begin match ModeTable.modeLookup a with
                     | None -> ()
-                    | Some _ -> begin
-                        if Subordinate.frozen [ a ] then
+                    | Some _ ->
+                        begin if Subordinate.frozen [ a ] then
                           raise
                             (ModeTable.Error
                                (Paths.wrap
@@ -861,8 +868,8 @@ end) : Twelf_intf.STELF = struct
                                     "Cannot redeclare mode for frozen constant "
                                     ^ Names.qidToString (Names.constQid a) )))
                         else ()
-                      end
-                  end)
+                        end
+                    end)
               mdecs
           in
           let _ =
@@ -891,14 +898,14 @@ end) : Twelf_intf.STELF = struct
               mdecs
           in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg
-                (("%mode "
-                 ^ ModePrint.modesToString
-                     (List.map (function mdec, r -> mdec) mdecs))
-                ^ ".\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    (("%mode "
+                     ^ ModePrint.modesToString
+                         (List.map (function mdec, r -> mdec) mdecs))
+                    ^ ".\n")))
           in
           ()
       | fileName, (Parser.UniqueDec mterms, r) ->
@@ -930,14 +937,14 @@ end) : Twelf_intf.STELF = struct
               mdecs
           in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg
-                (("%unique "
-                 ^ ModePrint.modesToString
-                     (List.map (function mdec, r -> mdec) mdecs))
-                ^ ".\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    (("%unique "
+                     ^ ModePrint.modesToString
+                         (List.map (function mdec, r -> mdec) mdecs))
+                    ^ ".\n")))
           in
           ()
       | fileName, (Parser.CoversDec mterms, r) ->
@@ -954,14 +961,14 @@ end) : Twelf_intf.STELF = struct
               mdecs
           in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg
-                (("%covers "
-                 ^ ModePrint.modesToString
-                     (List.map (function mdec, r -> mdec) mdecs))
-                ^ ".\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    (("%covers "
+                     ^ ModePrint.modesToString
+                         (List.map (function mdec, r -> mdec) mdecs))
+                    ^ ".\n")))
           in
           ()
       | fileName, (Parser.TotalDec lterm, r) ->
@@ -977,10 +984,11 @@ end) : Twelf_intf.STELF = struct
                 raise (Subordinate.Error (Paths.wrap (r, msg)))
           in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg (("%total " ^ ThmPrint.tDeclToString t_) ^ ".\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    (("%total " ^ ThmPrint.tDeclToString t_) ^ ".\n")))
           in
           ()
       | fileName, (Parser.TerminatesDec lterm, _) ->
@@ -997,10 +1005,11 @@ end) : Twelf_intf.STELF = struct
             end
           in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg (("%terminates " ^ ThmPrint.tDeclToString t_) ^ ".\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    (("%terminates " ^ ThmPrint.tDeclToString t_) ^ ".\n")))
           in
           ()
       | fileName, (Parser.ReducesDec lterm, _) ->
@@ -1029,20 +1038,23 @@ end) : Twelf_intf.STELF = struct
           let t_, r = ReconThm.tableddeclTotabledDecl tdecl in
           let la_ = Thm.installTabled t_ in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg (("%tabled " ^ ThmPrint.tabledDeclToString t_) ^ ".\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    (("%tabled " ^ ThmPrint.tabledDeclToString t_) ^ ".\n")))
           in
           ()
       | fileName, (Parser.KeepTableDec tdecl, _) ->
           let t_, r = ReconThm.keepTabledeclToktDecl tdecl in
           let la_ = Thm.installKeepTable t_ in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg (("%keeptabled " ^ ThmPrint.keepTableDeclToString t_) ^ ".\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    (("%keeptabled " ^ ThmPrint.keepTableDeclToString t_)
+                    ^ ".\n")))
           in
           ()
       | fileName, (Parser.TheoremDec tdec, r) ->
@@ -1080,38 +1092,41 @@ end) : Twelf_intf.STELF = struct
           in
           let _ = ModeTable.installMode (cid, convert_mode_spine ms_) in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg (("%theorem " ^ Print.conDecToString e_) ^ "\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    (("%theorem " ^ Print.conDecToString e_) ^ "\n")))
           in
           ()
       | fileName, (Parser.ProveDec lterm, r) ->
           let ThmSyn.PDecl (depth, t_), rrs = ReconThm.proveToProve lterm in
           let la_ = Thm.installTerminates (t_, rrs) in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg
-                (((("%prove " ^ Int.toString depth) ^ " ")
-                 ^ ThmPrint.tDeclToString t_)
-                ^ ".\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    (((("%prove " ^ Int.toString depth) ^ " ")
+                     ^ ThmPrint.tDeclToString t_)
+                    ^ ".\n")))
           in
           let _ = Prover.init (depth, la_) in
           let _ =
-            begin if !Global.chatter >= 3 then
+            if !Global.chatter >= 3 then
               map
                 (function
                   | a ->
-                      msg
-                        (("%mode "
-                         ^ ModePrint.modeToString
-                             (a, valOf (ModeTable.modeLookup a)))
-                        ^ ".\n"))
+                      Display.display'
+                        (Display.Info.msg
+                           ~level:(Display.Info.from_chatter 3)
+                           (Display.Info.Form.string
+                              (("%mode "
+                               ^ ModePrint.modeToString
+                                   (a, valOf (ModeTable.modeLookup a)))
+                              ^ ".\n"))))
                 la_
             else [ () ]
-            end
           in
           let _ =
             try Prover.auto ()
@@ -1119,8 +1134,10 @@ end) : Twelf_intf.STELF = struct
               raise (Prover.Error (Paths.wrap (joinregion rrs, msg)))
           in
           let _ =
-            begin if !Global.chatter >= 3 then msg "%QED\n" else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string "%QED\n"))
           in
           begin
             Prover.install (function e_ ->
@@ -1143,18 +1160,20 @@ end) : Twelf_intf.STELF = struct
           in
           let _ = Prover.init (depth, la_) in
           let _ =
-            begin if !Global.chatter >= 3 then
+            if !Global.chatter >= 3 then
               map
                 (function
                   | a ->
-                      msg
-                        (("%mode "
-                         ^ ModePrint.modeToString
-                             (a, valOf (ModeTable.modeLookup a)))
-                        ^ ".\n"))
+                      Display.display'
+                        (Display.Info.msg
+                           ~level:(Display.Info.from_chatter 3)
+                           (Display.Info.Form.string
+                              (("%mode "
+                               ^ ModePrint.modeToString
+                                   (a, valOf (ModeTable.modeLookup a)))
+                              ^ ".\n"))))
                 la_
             else [ () ]
-            end
           in
           let _ =
             try Prover.auto ()
@@ -1173,24 +1192,27 @@ end) : Twelf_intf.STELF = struct
           let (ThmSyn.Callpats l_ as cp), rrs = ReconThm.assertToAssert aterm in
           let la_ = map (function c, p_ -> c) l_ in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg (("%assert " ^ ThmPrint.callpatsToString cp) ^ ".\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    (("%assert " ^ ThmPrint.callpatsToString cp) ^ ".\n")))
           in
           let _ =
-            begin if !Global.chatter >= 3 then
+            if !Global.chatter >= 3 then
               map
                 (function
                   | a ->
-                      msg
-                        (("%mode "
-                         ^ ModePrint.modeToString
-                             (a, valOf (ModeTable.modeLookup a)))
-                        ^ ".\n"))
+                      Display.display'
+                        (Display.Info.msg
+                           ~level:(Display.Info.from_chatter 3)
+                           (Display.Info.Form.string
+                              (("%mode "
+                               ^ ModePrint.modeToString
+                                   (a, valOf (ModeTable.modeLookup a)))
+                              ^ ".\n"))))
                 la_
             else [ () ]
-            end
           in
           Skolem.install la_
       | fileName, (Parser.WorldDec wdecl, _) ->
@@ -1200,8 +1222,8 @@ end) : Twelf_intf.STELF = struct
           let _ =
             ListPair.app
               (function
-                | (a, _), r -> begin
-                    if Subordinate.frozen [ a ] then
+                | (a, _), r ->
+                    begin if Subordinate.frozen [ a ] then
                       raise
                         (WorldSyn.Error
                            (Paths.wrapLoc
@@ -1209,17 +1231,17 @@ end) : Twelf_intf.STELF = struct
                                 "Cannot declare worlds for frozen family "
                                 ^ Names.qidToString (Names.constQid a) )))
                     else ()
-                  end)
+                    end)
               (cpa, rs)
           in
           let rec flatten arg__1 arg__2 =
             begin match (arg__1, arg__2) with
             | [], f_ -> f_
-            | cid :: l_, f_ -> begin
-                match IntSyn.sgnLookup cid with
+            | cid :: l_, f_ ->
+                begin match IntSyn.sgnLookup cid with
                 | IntSyn.BlockDec _ -> flatten l_ (cid :: f_)
                 | IntSyn.BlockDef (_, _, l'_) -> flatten (l_ @ l'_) f_
-              end
+                end
             end
           in
           let w_ =
@@ -1227,8 +1249,8 @@ end) : Twelf_intf.STELF = struct
               (flatten
                  (List.map
                     (function
-                      | qid -> begin
-                          match Names.constLookup qid with
+                      | qid ->
+                          begin match Names.constLookup qid with
                           | None ->
                               raise
                                 (Names.Error
@@ -1237,7 +1259,7 @@ end) : Twelf_intf.STELF = struct
                                         (valOf (Names.constUndef qid)))
                                    ^ "."))
                           | Some cid -> cid
-                        end)
+                          end)
                     qids)
                  [])
           in
@@ -1259,13 +1281,13 @@ end) : Twelf_intf.STELF = struct
             end
           in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg
-                (((("%worlds " ^ Print.worldsToString w_) ^ " ")
-                 ^ ThmPrint.callpatsToString cp)
-                ^ ".\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    (((("%worlds " ^ Print.worldsToString w_) ^ " ")
+                     ^ ThmPrint.callpatsToString cp)
+                    ^ ".\n")))
           in
           begin
             Timers.time Timers.worlds
@@ -1281,14 +1303,14 @@ end) : Twelf_intf.STELF = struct
           install1WithSig (fileName, None, declr)
       | fileName, ((Parser.Open _, _) as declr) ->
           install1WithSig (fileName, None, declr)
-      | fileName, (Parser.Use name, r) -> begin
-          match !context with
+      | fileName, (Parser.Use name, r) ->
+          begin match !context with
           | None -> CsManager.useSolver name
           | _ ->
               raise
                 (ModSyn.Error
                    (Paths.wrap (r, "%use declaration needs to be at top level")))
-        end
+          end
 
     and install1WithSig = function
       | fileName, moduleOpt, (Parser.SigDef sigdef, r) ->
@@ -1314,14 +1336,16 @@ end) : Twelf_intf.STELF = struct
               raise (ModSyn.Error (Paths.wrap (r, msg)))
           in
           let _ =
-            begin if !Global.chatter >= 3 then
-              msg (("%sig " ^ name) ^ " = { ... }.\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string (("%sig " ^ name) ^ " = { ... }.\n")))
           in
           ()
-      | fileName, moduleOpt, (Parser.StructDec structdec, r) -> begin
-          match ReconModule.structdecToStructDec (structdec, moduleOpt) with
+      | fileName, moduleOpt, (Parser.StructDec structdec, r) ->
+          begin match
+            ReconModule.structdecToStructDec (structdec, moduleOpt)
+          with
           | ReconModule.StructDec (idOpt, module_, wherecls) ->
               let module' =
                 foldl
@@ -1367,7 +1391,7 @@ end) : Twelf_intf.STELF = struct
                 end
               in
               ()
-        end
+          end
       | fileName, moduleOpt, (Parser.Include sigexp, r) ->
           let module_, wherecls =
             ReconModule.sigexpToSigexp (sigexp, moduleOpt)
@@ -1404,9 +1428,10 @@ end) : Twelf_intf.STELF = struct
       let oldContext = !context in
       let _ = context := Some namespace in
       let _ =
-        begin if !Global.chatter >= 4 then msg "\n% begin subsignature\n"
-        else ()
-        end
+        Display.display'
+          (Display.Info.msg
+             ~level:(Display.Info.from_chatter 4)
+             (Display.Info.Form.string "\n% begin subsignature\n"))
       in
       let rec install s = install' (Timers.time Timers.parsing S.expose s)
       and install' = function
@@ -1423,9 +1448,10 @@ end) : Twelf_intf.STELF = struct
           let s' = install s in
           let module_ = ModSyn.abstractModule (namespace, None) in
           let _ =
-            begin if !Global.chatter >= 4 then msg "% end subsignature\n\n"
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 4)
+                 (Display.Info.Form.string "% end subsignature\n\n"))
           in
           Value (module_, s')
         with exn -> Exception exn
@@ -1541,23 +1567,24 @@ end) : Twelf_intf.STELF = struct
         | Some fixity -> begin
             let fixity' = convert_fixity fixity in
             Names.installFixity (cid, fixity');
-            begin if !Global.chatter >= 3 then
-              msg
-                ((((begin if !Global.chatter >= 4 then "%" else ""
-                    end
-                   ^ Names.Fixity.toString fixity')
-                  ^ " ")
-                 ^ Names.qidToString (Names.constQid cid))
-                ^ ".\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 3)
+                 (Display.Info.Form.string
+                    ((((begin if !Global.chatter >= 4 then "%" else ""
+                        end
+                       ^ Names.Fixity.toString fixity')
+                      ^ " ")
+                     ^ Names.qidToString (Names.constQid cid))
+                    ^ ".\n")))
           end
         | None -> ()
         end
       in
       let _ =
         List.app
-          (function mdec -> ModeTable.installMmode (cid, convert_mode_spine mdec))
+          (function
+            | mdec -> ModeTable.installMmode (cid, convert_mode_spine mdec))
           mdecL
       in
       cid
@@ -1648,8 +1675,8 @@ end) : Twelf_intf.STELF = struct
           msg (id ^ " is not a well-formed qualified identifier\n");
           Abort
         end
-      | Some qid -> begin
-          match Names.constLookup qid with
+      | Some qid ->
+          begin match Names.constLookup qid with
           | None -> begin
               msg
                 (Names.qidToString (valOf (Names.constUndef qid))
@@ -1657,7 +1684,7 @@ end) : Twelf_intf.STELF = struct
               Abort
             end
           | Some cid -> decl' cid
-        end
+          end
       end
 
     and decl' cid =
@@ -1705,10 +1732,11 @@ end) : Twelf_intf.STELF = struct
       let rec read config =
         let rec appendUniq (l1, l2) =
           let rec appendUniq' = function
-            | x :: l2 -> begin
-                if List.exists (function y -> x = y) l1 then appendUniq' l2
+            | x :: l2 ->
+                begin if List.exists (function y -> x = y) l1 then
+                  appendUniq' l2
                 else x :: appendUniq' l2
-              end
+                end
             | [] -> List.rev l1
           in
           List.rev (appendUniq' (List.rev l2))
@@ -1729,16 +1757,18 @@ end) : Twelf_intf.STELF = struct
           withOpenIn config (function instream ->
               let configDir = OS.Path.dir config in
               let rec parseItem (sources, configs) item =
-                begin if isConfig item then begin
-                  if List.exists (function config' -> item = config') configs
+                begin if isConfig item then
+                  begin if
+                    List.exists (function config' -> item = config') configs
                   then (sources, configs)
                   else read' (sources, item :: configs) item
-                end
-                else begin
-                  if List.exists (function source' -> item = source') sources
+                  end
+                else
+                  begin if
+                    List.exists (function source' -> item = source') sources
                   then (sources, configs)
                   else (sources @ [ item ], configs)
-                end
+                  end
                 end
               in
               let rec parseLine (sources, configs) line =
@@ -1808,9 +1838,9 @@ end) : Twelf_intf.STELF = struct
       and append (pwdir, sources) =
         let rec fromFirstModified = function
           | [] -> []
-          | x :: xs as sources -> begin
-              if ModFile.modified x then sources else fromFirstModified xs
-            end
+          | x :: xs as sources ->
+              begin if ModFile.modified x then sources else fromFirstModified xs
+              end
         in
         let rec mkAbsolute p =
           (* (* Compat. *)  *)

@@ -1,6 +1,7 @@
 (* # 1 "src/frontend/Unknownexn.sig.ml" *)
 open! Basis
 include Unknownexn_intf
+
 (* # 1 "src/frontend/Unknownexn.fun.ml" *)
 open! Basis
 

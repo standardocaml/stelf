@@ -5,6 +5,7 @@
 (* # 1 "src/netserver/Netserver_.sml.ml" *)
 open! Basis
 include Netserver_intf
+
 (* filesystem directory where stelf examples are kept *)
 (* signature SERVER *)
 module NetServer : NETSERVER = struct
@@ -110,7 +111,7 @@ module NetServer : NETSERVER = struct
       | "polylam" -> true
       | "tapl-ch13" -> true
       | _ -> false
-    end
+      end
     then
       try
         begin

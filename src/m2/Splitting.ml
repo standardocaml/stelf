@@ -19,7 +19,10 @@ open Modetable
 module Splitting (Splitting__0 : sig
   module Global : GLOBAL
   module MetaSyn' : Metasyn.METASYN
-  module MetaAbstract : MetaAbstract_intf.METAABSTRACT with module MetaSyn = MetaSyn'
+
+  module MetaAbstract :
+    MetaAbstract_intf.METAABSTRACT with module MetaSyn = MetaSyn'
+
   module MetaPrint : MetaPrint_intf.METAPRINT with module MetaSyn = MetaSyn'
   module ModeTable : Modetable.MODETABLE
 
@@ -34,7 +37,8 @@ module Splitting (Splitting__0 : sig
 
   (*! sharing Print.IntSyn = MetaSyn'.IntSyn !*)
   module Unify : UNIFY
-end) : Splitting_intf.SPLITTING with module MetaSyn = Splitting__0.MetaSyn' = struct
+end) : Splitting_intf.SPLITTING with module MetaSyn = Splitting__0.MetaSyn' =
+struct
   open Splitting__0
   module MetaSyn = MetaAbstract.MetaSyn
 
@@ -188,8 +192,10 @@ end) : Splitting_intf.SPLITTING with module MetaSyn = Splitting__0.MetaSyn' = st
     and checkDec (m_, I.Dec (_, v_)) = checkExp (m_, v_)
 
     let rec modeEq = function
-      | Modes.Modesyn.ModeSyn.Marg (Modes.Modesyn.ModeSyn.Plus, _), M.Top -> true
-      | Modes.Modesyn.ModeSyn.Marg (Modes.Modesyn.ModeSyn.Minus, _), M.Bot -> true
+      | Modes.Modesyn.ModeSyn.Marg (Modes.Modesyn.ModeSyn.Plus, _), M.Top ->
+          true
+      | Modes.Modesyn.ModeSyn.Marg (Modes.Modesyn.ModeSyn.Minus, _), M.Bot ->
+          true
       | _ -> false
 
     let rec inheritBelow = function
@@ -197,11 +203,11 @@ end) : Splitting_intf.SPLITTING with module MetaSyn = Splitting__0.MetaSyn' = st
           inheritBelow (b', k' + 1, u'_, inheritBelowDec (b', k', d'_, bdd'_))
       | b', k', I.Pi ((d'_, _), v'_), bdd'_ ->
           inheritBelow (b', k' + 1, v'_, inheritBelowDec (b', k', d'_, bdd'_))
-      | b', k', I.Root (I.BVar n', s'_), (b'_, d, d') -> begin
-          if n' = k' + d' && n' > k' then
+      | b', k', I.Root (I.BVar n', s'_), (b'_, d, d') ->
+          begin if n' = k' + d' && n' > k' then
             inheritBelowSpine (b', k', s'_, (I.Decl (b'_, b'), d, d' - 1))
           else inheritBelowSpine (b', k', s'_, (b'_, d, d'))
-        end
+          end
       | b', k', I.Root (c_, s'_), bdd'_ -> inheritBelowSpine (b', k', s'_, bdd'_)
 
     and inheritBelowSpine = function
@@ -215,10 +221,10 @@ end) : Splitting_intf.SPLITTING with module MetaSyn = Splitting__0.MetaSyn' = st
     let rec skip = function
       | k, I.Lam (d_, u_), bdd'_ -> skip (k + 1, u_, skipDec (k, d_, bdd'_))
       | k, I.Pi ((d_, _), v_), bdd'_ -> skip (k + 1, v_, skipDec (k, d_, bdd'_))
-      | k, I.Root (I.BVar n, s_), (b'_, d, d') -> begin
-          if n = k + d && n > k then skipSpine (k, s_, (b'_, d - 1, d'))
+      | k, I.Root (I.BVar n, s_), (b'_, d, d') ->
+          begin if n = k + d && n > k then skipSpine (k, s_, (b'_, d - 1, d'))
           else skipSpine (k, s_, (b'_, d, d'))
-        end
+          end
       | k, I.Root (c_, s_), bdd'_ -> skipSpine (k, s_, bdd'_)
 
     and skipSpine = function
@@ -234,15 +240,15 @@ end) : Splitting_intf.SPLITTING with module MetaSyn = Splitting__0.MetaSyn' = st
       | b_, k, I.Pi ((d_, _), v_), k', I.Pi ((d'_, _), v'_), bdd'_ ->
           inheritExp
             (b_, k + 1, v_, k' + 1, v'_, inheritDec (b_, k, d_, k', d'_, bdd'_))
-      | b_, k, (I.Root (I.BVar n, s_) as v_), k', v'_, (b'_, d, d') -> begin
-          if n = k + d && n > k then
+      | b_, k, (I.Root (I.BVar n, s_) as v_), k', v'_, (b'_, d, d') ->
+          begin if n = k + d && n > k then
             skipSpine
               ( k,
                 s_,
                 inheritNewRoot
                   (b_, I.ctxLookup (b_, n - k), k, v_, k', v'_, (b'_, d, d')) )
-          else begin
-            if n > k + d then
+          else
+            begin if n > k + d then
               skipSpine
                 ( k,
                   s_,
@@ -251,8 +257,8 @@ end) : Splitting_intf.SPLITTING with module MetaSyn = Splitting__0.MetaSyn' = st
             else
               let (I.Root (c'_, s'_)) = v'_ in
               inheritSpine (b_, k, s_, k', s'_, (b'_, d, d'))
+            end
           end
-        end
       | b_, k, I.Root (c_, s_), k', I.Root (c'_, s'_), bdd'_ ->
           inheritSpine (b_, k, s_, k', s'_, bdd'_)
 
@@ -263,11 +269,11 @@ end) : Splitting_intf.SPLITTING with module MetaSyn = Splitting__0.MetaSyn' = st
           I.Root (I.BVar n, s_),
           k',
           (I.Root (I.BVar n', s'_) as v'_),
-          (b'_, d, d') ) -> begin
-          if n' = k' + d' && n' > k' then
+          (b'_, d, d') ) ->
+          begin if n' = k' + d' && n' > k' then
             inheritBelow (b, k', v'_, (b'_, d - 1, d'))
           else inheritBelow (b - 1, k', v'_, (b'_, d - 1, d'))
-        end
+          end
       | b_, b, k, v_, k', v'_, (b'_, d, d') ->
           inheritBelow (b - 1, k', v'_, (b'_, d - 1, d'))
 
@@ -335,7 +341,8 @@ end) : Splitting_intf.SPLITTING with module MetaSyn = Splitting__0.MetaSyn' = st
           inheritSpineMode (M.Top, mS, b_, k, s_, k', s'_, bdd'_) )
 
     and inheritSpineMode = function
-      | mode, Modes.Modesyn.ModeSyn.Mnil, b_, k, I.Nil, k', I.Nil, bdd'_ -> bdd'_
+      | mode, Modes.Modesyn.ModeSyn.Mnil, b_, k, I.Nil, k', I.Nil, bdd'_ ->
+          bdd'_
       | ( mode,
           Modes.Modesyn.ModeSyn.Mapp (m, mS),
           b_,
@@ -343,8 +350,8 @@ end) : Splitting_intf.SPLITTING with module MetaSyn = Splitting__0.MetaSyn' = st
           I.App (u_, s_),
           k',
           I.App (u'_, s'_),
-          bdd'_ ) -> begin
-          if modeEq (m, mode) then
+          bdd'_ ) ->
+          begin if modeEq (m, mode) then
             inheritSpineMode
               ( mode,
                 mS,
@@ -355,7 +362,7 @@ end) : Splitting_intf.SPLITTING with module MetaSyn = Splitting__0.MetaSyn' = st
                 s'_,
                 inheritExp (b_, k, u_, k', u'_, bdd'_) )
           else inheritSpineMode (mode, mS, b_, k, s_, k', s'_, bdd'_)
-        end
+          end
 
     let rec inheritSplitDepth
         ( (M.State (_, M.Prefix (g_, m_, b_), v_) as s_),

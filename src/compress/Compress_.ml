@@ -1,8 +1,9 @@
 (* # 1 "src/compress/Compress_.sig.ml" *)
 open! Basis
 
-(** `Compressed' terms with omitted redundant arguments *)
 include Compress_intf
+(** `Compressed' terms with omitted redundant arguments *)
+
 (* # 1 "src/compress/Compress_.fun.ml" *)
 open! Syntax
 open! Sgn
@@ -400,16 +401,16 @@ struct
     let rec optimize' arg__29 arg__30 =
       begin match (arg__29, arg__30) with
       | ms, [] -> rev ms
-      | ms, S.Plus :: ms' -> begin
-          if can_omit (rev ms @ (S.Minus :: ms')) then
+      | ms, S.Plus :: ms' ->
+          begin if can_omit (rev ms @ (S.Minus :: ms')) then
             optimize' (S.Minus :: ms) ms'
           else optimize' (S.Plus :: ms) ms'
-        end
-      | ms, S.Minus :: ms' -> begin
-          if can_omit (rev ms @ (S.Omit :: ms')) then
+          end
+      | ms, S.Minus :: ms' ->
+          begin if can_omit (rev ms @ (S.Omit :: ms')) then
             optimize' (S.Omit :: ms) ms'
           else optimize' (S.Minus :: ms) ms'
-        end
+          end
       end
     in
     let rec optimize ms = optimize' [] ms in
@@ -420,7 +421,9 @@ struct
         (List.tabulate
            ( total_args,
              function
-             | x -> begin if x < omitted_args then S.Minus else S.Plus end ))
+             | x ->
+                 begin if x < omitted_args then S.Minus else S.Plus
+                 end ))
     end
 
   (* Given a cid, return the ""ideal"" modes specified by stelf-
@@ -443,8 +446,9 @@ struct
     List.tabulate
       ( total_args,
         function
-        | x -> begin if x < omitted_args then (S.Omit : S.mode) else S.Minus end
-      )
+        | x ->
+            begin if x < omitted_args then (S.Omit : S.mode) else S.Minus
+            end )
 
   (* not likely to work if the mode-setting function f actually depends on
    properties of earlier sgn entries *)

@@ -5,8 +5,7 @@ module MakePrintOMDoc
     (Abstract : ABSTRACT)
     (Constraints : CONSTRAINTS)
     (Names : NAMES)
-    (Formatter_param : FORMATTER) :
-  PRINT_OMDOC
+    (Formatter_param : FORMATTER) : PRINT_OMDOC
 (*
   (* Printing *)
   (* Author: Frank Pfenning *)

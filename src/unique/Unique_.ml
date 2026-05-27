@@ -3,8 +3,9 @@ open! Basis
 
 (* Uniqueness Checking *)
 
-(** Author: Frank Pfenning *)
 include Unique_intf
+(** Author: Frank Pfenning *)
+
 (* raises Error(msg) *)
 (* signature UNIQUE *)
 
@@ -27,9 +28,7 @@ module MakeUnique
     (Names : NAMES)
     (Print : PRINT)
     (TypeCheck : TYPECHECK)
-    (Timers : Timers.TIMERS) :
-  UNIQUE =
-struct
+    (Timers : Timers.TIMERS) : UNIQUE = struct
   exception Error of string
 
   module Subordinate = Subordinate
@@ -46,8 +45,10 @@ struct
     module T = Tomega
 
     let rec chatter chlev f =
-      begin if !Global.chatter >= chlev then print (f ()) else ()
-      end
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter chlev)
+           (Display.Info.Form.string (f ())))
 
     let rec cName cid = N.qidToString (N.constQid cid)
 
@@ -449,20 +450,13 @@ end
 
 (* # 1 "src/unique/Unique_.sml.ml" *)
 open! Basis
-
 module UniqueTable = Modetable.MakeModeTable (TableInstances.IntRedBlackTree)
 
 module UniqueCheck =
   Modecheck.MakeModeCheck (UniqueTable) (Whnf) (Index) (Origins)
 
 module Unique =
-  MakeUnique
-    (Global)
-    (Whnf)
-    (Abstract)
-    (UnifyTrail)
-    (Constraints)
-    (UniqueTable)
+  MakeUnique (Global) (Whnf) (Abstract) (UnifyTrail) (Constraints) (UniqueTable)
     (UniqueCheck)
     (Index)
     (Subordinate_.Subordinate)

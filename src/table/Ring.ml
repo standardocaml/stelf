@@ -7,6 +7,7 @@ open Basis
 (* Rings (aka cyclic lists) *)
 (* Author: Carsten Schuermann *)
 include Ring_intf
+
 (* does not necessarily map f in order *)
 (* signature RING *)
 

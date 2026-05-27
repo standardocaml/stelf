@@ -48,17 +48,17 @@ module Whnf () : WHNF = struct
     exception Eta
 
     let rec etaContract = function
-      | Root (BVar k, s_), s, n -> begin
-          match bvarSub (k, s) with
-          | Idx k' -> begin
-              if k' > n then begin
+      | Root (BVar k, s_), s, n ->
+          begin match bvarSub (k, s) with
+          | Idx k' ->
+              begin if k' > n then begin
                 etaContract' (s_, s, n);
                 k' - n
               end
               else raise Eta
-            end
+              end
           | _ -> raise Eta
-        end
+          end
       | Lam (d_, u_), s, n -> etaContract (u_, dot1 s, n + 1)
       | EClo (u_, s'), s, n -> etaContract (u_, comp (s', s), n)
       | EVar ({ contents = Some u_ }, _, _, _), s, n -> etaContract (u_, s, n)
@@ -67,10 +67,10 @@ module Whnf () : WHNF = struct
 
     and etaContract' = function
       | Nil, s, 0 -> ()
-      | App (u_, s_), s, n -> begin
-          if etaContract (u_, s, 0) = n then etaContract' (s_, s, n - 1)
+      | App (u_, s_), s, n ->
+          begin if etaContract (u_, s, 0) = n then etaContract' (s_, s, n - 1)
           else raise Eta
-        end
+          end
       | SClo (s_, s'), s, n -> etaContract' (s_, comp (s', s), n)
       | _ -> raise Eta
 
@@ -135,17 +135,17 @@ module Whnf () : WHNF = struct
                 simplified")
 
     and whnfRoot = function
-      | (BVar k, s_), s -> begin
-          match bvarSub (k, s) with
+      | (BVar k, s_), s ->
+          begin match bvarSub (k, s) with
           | Idx k -> (Root (BVar k, SClo (s_, s)), id)
           | Exp u_ -> whnfRedex (whnf (u_, id), (s_, s))
-        end
-      | (Proj ((Bidx _ as b_), i), s_), s -> begin
-          match blockSub (b_, s) with
+          end
+      | (Proj ((Bidx _ as b_), i), s_), s ->
+          begin match blockSub (b_, s) with
           | Bidx k as b'_ -> (Root (Proj (b'_, i), SClo (s_, s)), id)
           | LVar _ as b'_ -> whnfRoot ((Proj (b'_, i), SClo (s_, s)), id)
           | Inst l_ -> whnfRedex (whnf (List.nth (l_, i - 1), id), (s_, s))
-        end
+          end
       | (Proj (LVar ({ contents = Some b_ }, sk, (l, t)), i), s_), s ->
           whnfRoot ((Proj (blockSub (b_, comp (sk, s)), i), SClo (s_, s)), id)
       | (Proj ((LVar (r, sk, (l, t)) as l_), i), s_), s ->
@@ -166,14 +166,14 @@ module Whnf () : WHNF = struct
       | EVar ({ contents = Some u_ }, _, _, _), s -> whnf (u_, s)
       | (EVar (r, _, Root _, _), s) as us_ -> us_
       | (EVar (r, _, Uni _, _), s) as us_ -> us_
-      | ((EVar (r, _, v_, _) as x_), s) as us_ -> begin
-          match whnf (v_, id) with
+      | ((EVar (r, _, v_, _) as x_), s) as us_ ->
+          begin match whnf (v_, id) with
           | Pi _, _ -> begin
               ignore (lowerEVar x_);
               whnf us_
             end
           | _ -> us_
-        end
+          end
       | EClo (u_, s'), s -> whnf (u_, comp (s', s))
       | (FgnExp _, Shift 0) as us_ -> us_
       | (FgnExp (csid_, fge_), s) as us_ ->
@@ -287,17 +287,17 @@ module Whnf () : WHNF = struct
       let rec lookup = function
         | n, Shift _, p -> None
         | n, Dot (Undef, s'), p -> lookup (n + 1, s', p)
-        | n, Dot (Idx k, s'), p -> begin
-            if k = p then Some n else lookup (n + 1, s', p)
-          end
+        | n, Dot (Idx k, s'), p ->
+            begin if k = p then Some n else lookup (n + 1, s', p)
+            end
       in
       let rec invert'' = function
         | 0, si -> si
-        | p, si -> begin
-            match lookup (1, s, p) with
+        | p, si ->
+            begin match lookup (1, s, p) with
             | Some k -> invert'' (p - 1, Dot (Idx k, si))
             | None -> invert'' (p - 1, Dot (Undef, si))
-          end
+            end
       in
       let rec invert' = function
         | n, Shift p -> invert'' (p, Shift n)

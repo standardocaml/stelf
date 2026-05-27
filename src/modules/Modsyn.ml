@@ -4,6 +4,7 @@ open! Basis
 (* Syntax for elaborated modules *)
 (* Author: Kevin Watkins *)
 include Modsyn_intf
+
 (* # 1 "src/modules/Modsyn.fun.ml" *)
 open! Basis
 open Origins

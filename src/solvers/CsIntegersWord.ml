@@ -116,11 +116,13 @@ end) : Cs.CS = struct
         | _ :: _ as chars -> List.all Char.isDigit chars
         | [] -> false
       in
-      begin if check (String.explode str) then begin
-        match StringCvt.scanString (W.scan StringCvt.Dec) str with
-        | Some d -> begin if numCheck d then Some d else None end
+      begin if check (String.explode str) then
+        begin match StringCvt.scanString (W.scan StringCvt.Dec) str with
+        | Some d ->
+            begin if numCheck d then Some d else None
+            end
         | None -> None
-      end
+        end
       else None
       end
 
@@ -169,14 +171,14 @@ end) : Cs.CS = struct
     let rec scanBinopPf oper string =
       let args = String.tokens (function c -> c = oper) string in
       begin match args with
-      | [ arg1; arg2 ] -> begin
-          match
+      | [ arg1; arg2 ] ->
+          begin match
             ( StringCvt.scanString (W.scan StringCvt.Dec) arg1,
               StringCvt.scanString (W.scan StringCvt.Dec) arg2 )
           with
           | Some d1, Some d2 -> Some (d1, d2)
           | _ -> None
-        end
+          end
       | _ -> None
       end
 
@@ -195,15 +197,15 @@ end) : Cs.CS = struct
     let rec parseAll string =
       begin match parseNumber string with
       | Some conDec -> Some conDec
-      | None -> begin
-          match parsePlusPf string with
+      | None ->
+          begin match parsePlusPf string with
           | Some conDec -> Some conDec
-          | None -> begin
-              match parseTimesPf string with
+          | None ->
+              begin match parseTimesPf string with
               | Some conDec -> Some conDec
               | None -> parseQuotPf string
-            end
-        end
+              end
+          end
       end
 
     type fixTerm =
@@ -214,27 +216,27 @@ end) : Cs.CS = struct
       | Expr of (exp * sub)
 
     let rec fromExpW = function
-      | (Root (FgnConst (cs, conDec), _), _) as us_ -> begin
-          if cs = !myID then
+      | (Root (FgnConst (cs, conDec), _), _) as us_ ->
+          begin if cs = !myID then
             let string = conDecName conDec in
             begin match scanNumber string with
             | Some d -> Num d
-            | None -> begin
-                match scanBinopPf '/' string with
+            | None ->
+                begin match scanBinopPf '/' string with
                 | Some (d1, d2) -> QuotPf (d1, d2)
-                | None -> begin
-                    match scanBinopPf '+' string with
+                | None ->
+                    begin match scanBinopPf '+' string with
                     | Some (d1, d2) -> PlusPf (d1, d2)
-                    | None -> begin
-                        match scanBinopPf '*' string with
+                    | None ->
+                        begin match scanBinopPf '*' string with
                         | Some (d1, d2) -> TimesPf (d1, d2)
                         | None -> Expr us_
-                      end
-                  end
-              end
+                        end
+                    end
+                end
             end
           else Expr us_
-        end
+          end
       | (Root (Def d, _), _) as us_ -> fromExpW (Whnf.expandDef us_)
       | us_ -> Expr us_
 
@@ -284,32 +286,32 @@ end) : Cs.CS = struct
           let us2_ = snd (s_, id) in
           let us3_ = trd (s_, id) in
           begin match (fromExp us1_, fromExp us2_, fromExp us3_) with
-          | Num d1, Num d2, Num d3 -> begin
-              if (d3 = W.(d1 + d2)) && plusCheck (d1, d2) then
+          | Num d1, Num d2, Num d3 ->
+              begin if (d3 = W.(d1 + d2)) && plusCheck (d1, d2) then
                 Some (plusPfExp (d1, d2))
               else None
-            end
-          | Expr us1_, Num d2, Num d3 -> begin
-              if
+              end
+          | Expr us1_, Num d2, Num d3 ->
+              begin if
                 W.(d3 >= d2)
                 && Unify.unifiable (g_, us1_, (numberExp W.(d3 - d2), id))
               then Some (plusPfExp (W.(d3 - d2), d2))
               else None
-            end
-          | Num d1, Expr us2_, Num d3 -> begin
-              if
+              end
+          | Num d1, Expr us2_, Num d3 ->
+              begin if
                 W.(d3 >= d1)
                 && Unify.unifiable (g_, us2_, (numberExp W.(d3 - d1), id))
               then Some (plusPfExp (d1, W.(d3 - d1)))
               else None
-            end
-          | Num d1, Num d2, Expr us3_ -> begin
-              if
+              end
+          | Num d1, Num d2, Expr us3_ ->
+              begin if
                 plusCheck (d1, d2)
                 && Unify.unifiable (g_, us3_, (numberExp W.(d1 + d2), id))
               then Some (plusPfExp (d1, d2))
               else None
-            end
+              end
           | _ ->
               let proof =
                 newEVar (g_, plusExp (eclo_ us1_, eclo_ us2_, eclo_ us3_))
@@ -344,44 +346,46 @@ end) : Cs.CS = struct
           let us2_ = snd (s_, id) in
           let us3_ = trd (s_, id) in
           begin match (fromExp us1_, fromExp us2_, fromExp us3_) with
-          | Num d1, Num d2, Num d3 -> begin
-              if (d3 = W.(d1 * d2)) && timesCheck (d1, d2) then
+          | Num d1, Num d2, Num d3 ->
+              begin if (d3 = W.(d1 * d2)) && timesCheck (d1, d2) then
                 Some (timesPfExp (d1, d2))
               else None
-            end
-          | Expr us1_, Num d2, Num d3 -> begin
-              if d3 = zero && Unify.unifiable (g_, us1_, (numberExp zero, id))
+              end
+          | Expr us1_, Num d2, Num d3 ->
+              begin if
+                d3 = zero && Unify.unifiable (g_, us1_, (numberExp zero, id))
               then Some (timesPfExp (zero, d2))
-              else begin
-                if
+              else
+                begin if
                   W.(d2 > zero)
                   && W.(d3 > zero)
                   && W.(d3 mod d2) = zero
                   && Unify.unifiable (g_, us1_, (numberExp (W.div (d3, d2)), id))
                 then Some (timesPfExp (W.div (d3, d2), d2))
                 else None
+                end
               end
-            end
-          | Num d1, Expr us2_, Num d3 -> begin
-              if d3 = zero && Unify.unifiable (g_, us2_, (numberExp zero, id))
+          | Num d1, Expr us2_, Num d3 ->
+              begin if
+                d3 = zero && Unify.unifiable (g_, us2_, (numberExp zero, id))
               then Some (timesPfExp (d1, zero))
-              else begin
-                if
+              else
+                begin if
                   W.(d1 > zero)
                   && W.(d3 > zero)
                   && W.(d3 mod d1) = zero
                   && Unify.unifiable (g_, us2_, (numberExp (W.div (d3, d1)), id))
                 then Some (timesPfExp (d1, W.div (d3, d1)))
                 else None
+                end
               end
-            end
-          | Num d1, Num d2, Expr us3_ -> begin
-              if
+          | Num d1, Num d2, Expr us3_ ->
+              begin if
                 timesCheck (d1, d2)
                 && Unify.unifiable (g_, us3_, (numberExp W.(d1 * d2), id))
               then Some (timesPfExp (d1, d2))
               else None
-            end
+              end
           | _ ->
               let proof =
                 newEVar (g_, timesExp (eclo_ us1_, eclo_ us2_, eclo_ us3_))
@@ -416,18 +420,18 @@ end) : Cs.CS = struct
           let us2_ = snd (s_, id) in
           let us3_ = trd (s_, id) in
           begin match (fromExp us1_, fromExp us2_, fromExp us3_) with
-          | Num d1, Num d2, Num d3 -> begin
-              if quotCheck (d1, d2) && d3 = W.div (d1, d2) then
+          | Num d1, Num d2, Num d3 ->
+              begin if quotCheck (d1, d2) && d3 = W.div (d1, d2) then
                 Some (quotPfExp (d1, d2))
               else None
-            end
-          | Num d1, Num d2, Expr us3_ -> begin
-              if
+              end
+          | Num d1, Num d2, Expr us3_ ->
+              begin if
                 quotCheck (d1, d2)
                 && Unify.unifiable (g_, us3_, (numberExp (W.div (d1, d2)), id))
               then Some (quotPfExp (d1, d2))
               else None
-            end
+              end
           | _ ->
               let proof =
                 newEVar (g_, quotExp (eclo_ us1_, eclo_ us2_, eclo_ us3_))
@@ -453,11 +457,11 @@ end) : Cs.CS = struct
         solvePlus
           (g_, App (eclo_ us1_, App (eclo_ us2_, App (eclo_ us3_, Nil))), k)
       with
-      | Some u_ -> begin
-          if Unify.unifiable (g_, us4_, (u_, id)) then
+      | Some u_ ->
+          begin if Unify.unifiable (g_, us4_, (u_, id)) then
             Some (proofPlusExp (eclo_ us1_, eclo_ us2_, eclo_ us3_, eclo_ us4_))
           else None
-        end
+          end
       | None -> None
       end
 
@@ -470,12 +474,12 @@ end) : Cs.CS = struct
         solveTimes
           (g_, App (eclo_ us1_, App (eclo_ us2_, App (eclo_ us3_, Nil))), k)
       with
-      | Some u_ -> begin
-          if Unify.unifiable (g_, us4_, (u_, id)) then
+      | Some u_ ->
+          begin if Unify.unifiable (g_, us4_, (u_, id)) then
             Some
               (proofTimesExp (eclo_ us1_, eclo_ us2_, eclo_ us3_, eclo_ us4_))
           else None
-        end
+          end
       | None -> None
       end
 
@@ -488,11 +492,11 @@ end) : Cs.CS = struct
         solveQuot
           (g_, App (eclo_ us1_, App (eclo_ us2_, App (eclo_ us3_, Nil))), k)
       with
-      | Some u_ -> begin
-          if Unify.unifiable (g_, us4_, (u_, id)) then
+      | Some u_ ->
+          begin if Unify.unifiable (g_, us4_, (u_, id)) then
             Some (proofQuotExp (eclo_ us1_, eclo_ us2_, eclo_ us3_, eclo_ us4_))
           else None
-        end
+          end
       | None -> None
       end
 

@@ -1,12 +1,12 @@
 module type RECON_QUERY = RECON_QUERY.RECON_QUERY
 
 module Make_ReconQuery
-    (M  : S.S)
-    (RT : RECON_TERM.RECON_TERM with module M = M)
-  : RECON_QUERY with module M = M = struct
-  module M    = M
-  module Cst  = M.Cst
-  module Ast  = M.Ast
+    (M : S.S)
+    (RT : RECON_TERM.RECON_TERM with module M = M) :
+  RECON_QUERY with module M = M = struct
+  module M = M
+  module Cst = M.Cst
+  module Ast = M.Ast
   module Paths = M.Paths
   module Syntax = M.Syntax
 
@@ -20,17 +20,14 @@ module Make_ReconQuery
     | Some name -> List.exists (fun (_, n) -> name = n) xs_
 
   let queryToQuery (q, loc) =
-    let Paths.Loc (filename, r) = loc in
-    let (opt_name, tm) = Cst.View.query_fields q in
+    let (Paths.Loc (filename, r)) = loc in
+    let opt_name, tm = Cst.View.query_fields q in
     let _ = Names.varReset IntSyn.Null in
     let _ = RT.resetErrors filename in
-    let (RT.JClass ((v_, _oc), l_)) =
-      RT.reconQuery (RT.jclass tm)
-    in
+    let (RT.JClass ((v_, _oc), l_)) = RT.reconQuery (RT.jclass tm) in
     let _ = RT.checkErrors r in
-    let _ = match l_ with
-      | IntSyn.Type -> ()
-      | _ -> error (r, "Query was not a type")
+    let _ =
+      match l_ with IntSyn.Type -> () | _ -> error (r, "Query was not a type")
     in
     let xs_ = Names.namedEVars () in
     let _ =
@@ -57,8 +54,10 @@ module Make_ReconQuery
     in
     let cd = Names.nameConDec cd in
     let _ =
-      if !Global.chatter >= 3 then
-        print_string (Print.conDecToString cd ^ "\n")
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter 3)
+           (Display.Info.Form.string (Print.conDecToString cd ^ "\n")))
     in
     let _ =
       if !Global.doubleCheck then begin
@@ -73,8 +72,7 @@ module Make_ReconQuery
   let finishSolve (nameOpt, r, m_, v_) =
     let i, (u'_, v'_) =
       try Abstract.abstractDef (m_, v_)
-      with Abstract.Error msg ->
-        raise (Abstract.Error (Paths.wrap (r, msg)))
+      with Abstract.Error msg -> raise (Abstract.Error (Paths.wrap (r, msg)))
     in
     let name = match nameOpt with None -> "_" | Some n -> n in
     let cd =
@@ -86,8 +84,10 @@ module Make_ReconQuery
     in
     let cd = Names.nameConDec cd in
     let _ =
-      if !Global.chatter >= 3 then
-        print_string (Print.conDecToString cd ^ "\n")
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter 3)
+           (Display.Info.Form.string (Print.conDecToString cd ^ "\n")))
     in
     let _ =
       if !Global.doubleCheck then begin
@@ -98,16 +98,14 @@ module Make_ReconQuery
     match nameOpt with None -> None | Some _ -> Some cd
 
   let solveToSolve (defines, sol, loc) =
-    let Paths.Loc (filename, r) = loc in
-    let (nameOpt, solve_tm) = Cst.View.solve_fields sol in
+    let (Paths.Loc (filename, r)) = loc in
+    let nameOpt, solve_tm = Cst.View.solve_fields sol in
     let _ = Names.varReset IntSyn.Null in
     let _ = RT.resetErrors filename in
     (* Build job: AND of all define jobs, then the solve type *)
     let mkd d =
-      let (_, tm1, tm2_opt) = Cst.View.define_fields d in
-      match tm2_opt with
-      | None -> RT.jterm tm1
-      | Some tm2 -> RT.jof (tm1, tm2)
+      let _, tm1, tm2_opt = Cst.View.define_fields d in
+      match tm2_opt with None -> RT.jterm tm1 | Some tm2 -> RT.jof (tm1, tm2)
     in
     let rec mkj = function
       | [] -> RT.jnothing
@@ -118,28 +116,30 @@ module Make_ReconQuery
       RT.reconQuery combined_job
     in
     let _ = RT.checkErrors r in
-    let _ = match l_ with
-      | IntSyn.Type -> ()
-      | _ -> error (r, "Query was not a type")
+    let _ =
+      match l_ with IntSyn.Type -> () | _ -> error (r, "Query was not a type")
     in
     (* Continuation: given proof term m_, iterate through defines and finish solve *)
-    let rec sc (m_, defs, jobs) = match (defs, jobs) with
-      | [], _ ->
-        (match finishSolve (nameOpt, r, m_, v_) with
-         | None -> []
-         | Some con_dec -> [(con_dec, None)])
-      | def :: rest_defs, RT.JAnd (RT.JTerm ((u_, oc1), v_d, l_d), rest_jobs) ->
-        let (opt_name, _, _) = Cst.View.define_fields def in
-        (match finishDefine (opt_name, ((u_, oc1), (v_d, None), l_d)) with
-         | None, _ -> sc (m_, rest_defs, rest_jobs)
-         | Some con_dec, ocd_opt ->
-           (con_dec, ocd_opt) :: sc (m_, rest_defs, rest_jobs))
-      | def :: rest_defs, RT.JAnd (RT.JOf ((u_, oc1), (v_d, oc2), l_d), rest_jobs) ->
-        let (opt_name, _, _) = Cst.View.define_fields def in
-        (match finishDefine (opt_name, ((u_, oc1), (v_d, Some oc2), l_d)) with
-         | None, _ -> sc (m_, rest_defs, rest_jobs)
-         | Some con_dec, ocd_opt ->
-           (con_dec, ocd_opt) :: sc (m_, rest_defs, rest_jobs))
+    let rec sc (m_, defs, jobs) =
+      match (defs, jobs) with
+      | [], _ -> (
+          match finishSolve (nameOpt, r, m_, v_) with
+          | None -> []
+          | Some con_dec -> [ (con_dec, None) ])
+      | def :: rest_defs, RT.JAnd (RT.JTerm ((u_, oc1), v_d, l_d), rest_jobs)
+        -> (
+          let opt_name, _, _ = Cst.View.define_fields def in
+          match finishDefine (opt_name, ((u_, oc1), (v_d, None), l_d)) with
+          | None, _ -> sc (m_, rest_defs, rest_jobs)
+          | Some con_dec, ocd_opt ->
+              (con_dec, ocd_opt) :: sc (m_, rest_defs, rest_jobs))
+      | ( def :: rest_defs,
+          RT.JAnd (RT.JOf ((u_, oc1), (v_d, oc2), l_d), rest_jobs) ) -> (
+          let opt_name, _, _ = Cst.View.define_fields def in
+          match finishDefine (opt_name, ((u_, oc1), (v_d, Some oc2), l_d)) with
+          | None, _ -> sc (m_, rest_defs, rest_jobs)
+          | Some con_dec, ocd_opt ->
+              (con_dec, ocd_opt) :: sc (m_, rest_defs, rest_jobs))
       | _ -> assert false
     in
     (v_, fun m_ -> sc (m_, defines, defines'))

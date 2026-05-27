@@ -6,8 +6,7 @@ module MakeCompile
     (SubTree : Subtree.SUBTREE)
     (CPrint : Cprint.CPRINT)
     (Print : PRINT)
-    (Names : NAMES) :
-  COMPILE
+    (Names : NAMES) : COMPILE
 (*
   (*! structure IntSyn' : INTSYN !*)
   (*! structure CompSyn' : COMPSYN !*)
@@ -24,5 +23,4 @@ module MakeCompile
 module CPrint : Cprint.CPRINT
 module SubTree : Subtree.SUBTREE
 module Compile : COMPILE
-
 module Assign__ : Assign.ASSIGN

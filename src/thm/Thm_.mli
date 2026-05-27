@@ -6,8 +6,7 @@ module Make_Thm
     (TabledSyn : Tabledsyn.TABLEDSYN)
     (ModeTable : Modetable.MODETABLE)
     (Order : ORDER)
-    (ThmPrint : Thmprint.THMPRINT) :
-  THM with module ThmSyn = ThmSyn'
+    (ThmPrint : Thmprint.THMPRINT) : THM with module ThmSyn = ThmSyn'
 (*
   (*! sharing Order.IntSyn = ThmSyn'.ModeSyn.IntSyn !*)
 *)

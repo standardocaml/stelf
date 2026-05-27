@@ -6,6 +6,7 @@
 
 open Basis
 include Msg_intf
+
 module Msg : MSG = struct
   let default = print
   let messageFunc = ref default

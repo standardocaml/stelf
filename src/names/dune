@@ -3,14 +3,8 @@
 (library
  (name names)
  (public_name stelf.names)
- (modules
-  Names_
-  Names_intf)
- (libraries
-  table
-  global
-  intsyn
-  basis)
+ (modules Names_ Names_intf)
+ (libraries display table global intsyn basis)
  (flags
   (:standard
    -w

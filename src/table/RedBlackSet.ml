@@ -109,18 +109,18 @@ module RBSet : RBSET = struct
             nItems := n + 1;
             Red (entry, Empty, Empty)
           end
-        | Red (((key1, _datum1) as entry1), left, right) -> begin
-            match compare (key, key1) with
+        | Red (((key1, _datum1) as entry1), left, right) ->
+            begin match compare (key, key1) with
             | Equal -> Red (entry1, left, right)
             | Less -> Red (entry1, ins left, right)
             | Greater -> Red (entry1, left, ins right)
-          end
-        | Black (((key1, _datum1) as entry1), left, right) -> begin
-            match compare (key, key1) with
+            end
+        | Black (((key1, _datum1) as entry1), left, right) ->
+            begin match compare (key, key1) with
             | Equal -> Black (entry1, left, right)
             | Less -> restore_left (Black (entry1, ins left, right))
             | Greater -> restore_right (Black (entry1, left, ins right))
-          end
+            end
       in
       let dict' =
         begin match ins dict with
@@ -143,24 +143,24 @@ module RBSet : RBSET = struct
       let oldEntry = ref None in
       let rec ins = function
         | Empty -> Red (entry, Empty, Empty)
-        | Red (((key1, _datum1) as entry1), left, right) -> begin
-            match compare (key, key1) with
+        | Red (((key1, _datum1) as entry1), left, right) ->
+            begin match compare (key, key1) with
             | Equal -> begin
                 oldEntry := Some entry1;
                 Red (entry, left, right)
               end
             | Less -> Red (entry1, ins left, right)
             | Greater -> Red (entry1, left, ins right)
-          end
-        | Black (((key1, _datum1) as entry1), left, right) -> begin
-            match compare (key, key1) with
+            end
+        | Black (((key1, _datum1) as entry1), left, right) ->
+            begin match compare (key, key1) with
             | Equal -> begin
                 oldEntry := Some entry1;
                 Black (entry, left, right)
               end
             | Less -> restore_left (Black (entry1, ins left, right))
             | Greater -> restore_right (Black (entry1, left, ins right))
-          end
+            end
       in
       let dict', _oldEntry' =
         begin
@@ -313,13 +313,13 @@ module RBSet : RBSET = struct
       in
       begin match s1 with
       | Empty -> Set (n2, s2)
-      | _ -> begin
-          match s2 with
+      | _ ->
+          begin match s2 with
           | Empty -> Set (n1, s1)
           | _ ->
               let n, result = union' (start s1, start s2, 0, Zero) in
               Set (n, linkAll result)
-        end
+          end
       end
 
     let intersection (Set (_, s1), Set (_, s2)) =
@@ -354,7 +354,7 @@ module RBSet : RBSET = struct
         | t1, (Empty, _) -> ins (t1, n, result)
         | (tree1, r1), (tree2, r2) ->
             let ((x, _d1) as e1) = getEntry tree1 in
-            let (y, _d2) = getEntry tree2 in
+            let y, _d2 = getEntry tree2 in
             begin match compare (x, y) with
             | Less -> diff (r1, t2, n + 1, addItem (e1, result))
             | Equal -> diff (r1, r2, n, result)
@@ -448,8 +448,8 @@ module RBSet : RBSET = struct
             let ((y, d2) as e2) = getEntry tree2 in
             begin match compare (x, y) with
             | Less -> split (r1, t2, nr, (n1 + 1, addItem (e1, result1)), nr2)
-            | Equal -> begin
-                match f_ d1 d2 with
+            | Equal ->
+                begin match f_ d1 d2 with
                 | None ->
                     split
                       ( r1,
@@ -459,7 +459,7 @@ module RBSet : RBSET = struct
                         (n2 + 1, addItem (e2, result2)) )
                 | Some d ->
                     split (r1, r2, (n + 1, addItem ((x, d), result)), nr1, nr2)
-              end
+                end
             | Greater -> split (t1, r2, nr, nr1, (n2 + 1, addItem (e2, result2)))
             end
         end

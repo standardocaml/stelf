@@ -75,18 +75,18 @@ end) : TABLE with type key = RedBlackTree__0.key' = struct
     let insert (dict, ((key, _datum) as entry)) =
       let rec ins = function
         | Empty -> Red (entry, Empty, Empty)
-        | Red (((key1, _datum1) as entry1), left, right) -> begin
-            match compare (key, key1) with
+        | Red (((key1, _datum1) as entry1), left, right) ->
+            begin match compare (key, key1) with
             | Equal -> Red (entry, left, right)
             | Less -> Red (entry1, ins left, right)
             | Greater -> Red (entry1, left, ins right)
-          end
-        | Black (((key1, _datum1) as entry1), left, right) -> begin
-            match compare (key, key1) with
+            end
+        | Black (((key1, _datum1) as entry1), left, right) ->
+            begin match compare (key, key1) with
             | Equal -> Black (entry, left, right)
             | Less -> restore_left (Black (entry1, ins left, right))
             | Greater -> restore_right (Black (entry1, left, ins right))
-          end
+            end
       in
       begin match ins dict with
       | Red ((_, Red _, _) as t) -> Black t
@@ -173,18 +173,18 @@ end) : TABLE with type key = RedBlackTree__0.key' = struct
       in
       let rec del = function
         | Empty, _z -> raise NotFound
-        | Black (((key1, _datum1) as entry1), a, b), z -> begin
-            match compare (key, key1) with
+        | Black (((key1, _datum1) as entry1), a, b), z ->
+            begin match compare (key, key1) with
             | Equal -> joinBlack (a, b, z)
             | Less -> del (a, Leftb (entry1, b, z))
             | Greater -> del (b, Rightb (a, entry1, z))
-          end
-        | Red (((key1, _datum1) as entry1), a, b), z -> begin
-            match compare (key, key1) with
+            end
+        | Red (((key1, _datum1) as entry1), a, b), z ->
+            begin match compare (key, key1) with
             | Equal -> joinRed (a, b, z)
             | Less -> del (a, Leftr (entry1, b, z))
             | Greater -> del (b, Rightr (a, entry1, z))
-          end
+            end
       in
       try
         begin
@@ -197,24 +197,24 @@ end) : TABLE with type key = RedBlackTree__0.key' = struct
       let oldEntry = ref None in
       let rec ins = function
         | Empty -> Red (entry, Empty, Empty)
-        | Red (((key1, _datum1) as entry1), left, right) -> begin
-            match compare (key, key1) with
+        | Red (((key1, _datum1) as entry1), left, right) ->
+            begin match compare (key, key1) with
             | Equal -> begin
                 oldEntry := Some entry1;
                 Red (entry, left, right)
               end
             | Less -> Red (entry1, ins left, right)
             | Greater -> Red (entry1, left, ins right)
-          end
-        | Black (((key1, _datum1) as entry1), left, right) -> begin
-            match compare (key, key1) with
+            end
+        | Black (((key1, _datum1) as entry1), left, right) ->
+            begin match compare (key, key1) with
             | Equal -> begin
                 oldEntry := Some entry1;
                 Black (entry, left, right)
               end
             | Less -> restore_left (Black (entry1, ins left, right))
             | Greater -> restore_right (Black (entry1, left, ins right))
-          end
+            end
       in
       begin
         oldEntry := None;

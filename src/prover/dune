@@ -26,6 +26,7 @@
   Split_intf
   State_intf)
  (libraries
+  display
   tomega_lib
   intsyn
   global

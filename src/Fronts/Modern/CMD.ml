@@ -1,13 +1,9 @@
 module type CMD = sig
-
-  module Modern : MODERN.MODERN
-  module Parser = Modern.Parser
-  module Cst = Modern.Cst
-  module Paths = Modern.Paths
-  module Names = Modern.Names
+  module Cst : Cst.CST
+  module Modern : MODERN.MODERN with module Cst = Cst
 
   type 'a t = 'a Modern.t
-  val parse1 : unit -> Cst.cmd t
-  val parse : unit -> Cst.cmd list t  
 
-end 
+  val parse1 : unit -> Cst.cmd t
+  val parse : unit -> Cst.cmd list t
+end

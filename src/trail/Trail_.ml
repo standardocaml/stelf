@@ -4,8 +4,9 @@ open Basis
 
 (* Trailing Abstract Operations *)
 
-(** Author: Roberto Virga *)
 include Trail_intf
+(** Author: Roberto Virga *)
+
 (* signature TRAIL *)
 
 (* # 1 "src/trail/Trail_.fun.ml" *)

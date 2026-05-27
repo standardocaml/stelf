@@ -96,10 +96,10 @@ end) : Cs.CS = struct
             end
           in
           Root (Const cid, Nil)
-      | Sum (m, mon :: []) -> begin
-          if m = false then toExpMon mon
+      | Sum (m, mon :: []) ->
+          begin if m = false then toExpMon mon
           else xorExp (toExp (Sum (m, [])), toExpMon mon)
-        end
+          end
       | Sum (m, (mon :: monL as monLL)) ->
           xorExp (toExp (Sum (m, monL)), toExpMon mon)
 
@@ -114,13 +114,12 @@ end) : Cs.CS = struct
 
     and sameExpW = function
       | ((Root (h1_, s1_), s1) as us1_), ((Root (h2_, s2_), s2) as us2_) ->
-        begin
-          match (h1_, h2_) with
+          begin match (h1_, h2_) with
           | BVar k1, BVar k2 -> k1 = k2 && sameSpine ((s1_, s1), (s2_, s2))
           | FVar (n1, _, _), FVar (n2, _, _) ->
               n1 = n2 && sameSpine ((s1_, s1), (s2_, s2))
           | _ -> false
-        end
+          end
       | ( (((EVar (r1, g1_, v1_, cnstrs1) as u1_), s1) as us1_),
           (((EVar (r2, g2_, v2_, cnstrs2) as u2_), s2) as us2_) ) ->
           r1 == r2 && sameSub (s1, s2)
@@ -174,10 +173,10 @@ end) : Cs.CS = struct
     let rec iffSum (sum1, sum2) = notSum (xorSum (sum1, sum2))
 
     let rec fromExpW = function
-      | (FgnExp (cs, fe), _) as us_ -> begin
-          if cs = !myID then normalizeSum (extractSum fe)
+      | (FgnExp (cs, fe), _) as us_ ->
+          begin if cs = !myID then normalizeSum (extractSum fe)
           else Sum (false, [ Mon [ us_ ] ])
-        end
+          end
       | us_ -> Sum (false, [ Mon [ us_ ] ])
 
     and fromExp us_ = fromExpW (Whnf.whnf us_)
@@ -208,18 +207,18 @@ end) : Cs.CS = struct
     let rec findMon f (g_, Sum (m, monL)) =
       let rec findMon' = function
         | [], monL2 -> None
-        | mon :: monL1, monL2 -> begin
-            match f (g_, mon, Sum (m, monL1 @ monL2)) with
+        | mon :: monL1, monL2 ->
+            begin match f (g_, mon, Sum (m, monL1 @ monL2)) with
             | Some _ as result -> result
             | None -> findMon' (monL1, mon :: monL2)
-          end
+            end
       in
       findMon' (monL, [])
 
     let rec unifySum (g_, sum1, sum2) =
       let rec invertMon = function
-        | g_, Mon (((EVar (r, _, _, _) as lhs_), s) :: []), sum -> begin
-            if Whnf.isPatSub s then
+        | g_, Mon (((EVar (r, _, _, _) as lhs_), s) :: []), sum ->
+            begin if Whnf.isPatSub s then
               let ss = Whnf.invert s in
               let rhs_ = toFgn sum in
               begin if Unify.invertible (g_, (rhs_, id), ss, r) then
@@ -227,21 +226,21 @@ end) : Cs.CS = struct
               else None
               end
             else None
-          end
+            end
         | _ -> None
       in
       begin match xorSum (sum2, sum1) with
       | Sum (false, []) -> Succeed []
       | Sum (true, []) -> Fail
-      | sum -> begin
-          match findMon invertMon (g_, sum) with
+      | sum ->
+          begin match findMon invertMon (g_, sum) with
           | Some (g_a, lhs_a, rhs_a, ss_a) ->
               Succeed [ Assign (g_a, lhs_a, rhs_a, ss_a) ]
           | None ->
               let u_ = toFgn sum in
               let cnstr = ref (Eqn (g_, u_, falseExp ())) in
               Succeed [ Delay (u_, cnstr) ]
-        end
+          end
       end
 
     and toFgn = function
@@ -268,11 +267,11 @@ end) : Cs.CS = struct
 
     let rec equalTo arg__7 arg__8 =
       begin match (arg__7, arg__8) with
-      | MyIntsynRep sum, u2_ -> begin
-          match xorSum (normalizeSum sum, fromExp (u2_, id)) with
+      | MyIntsynRep sum, u2_ ->
+          begin match xorSum (normalizeSum sum, fromExp (u2_, id)) with
           | Sum (m, []) -> m = false
           | _ -> false
-        end
+          end
       | fe, _ -> raise (UnexpectedFgnExp fe)
       end
 

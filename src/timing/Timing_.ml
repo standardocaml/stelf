@@ -17,6 +17,7 @@ open Basis
    somewhere.
 *)
 include Timing_intf
+
 (* signature TIMING *)
 module Timing : TIMING = struct
   (* user and system time add up to total CPU time used *)

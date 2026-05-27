@@ -19,7 +19,8 @@ module Parser (Parser__0 : sig
     ParseCondec_intf.PARSE_CONDEC with module ExtConDec = ExtConDec'
 
   (*! sharing ParseConDec.Lexer = Parsing'.Lexer !*)
-  module ParseQuery : ParseQuery_intf.PARSE_QUERY with module ExtQuery = ExtQuery'
+  module ParseQuery :
+    ParseQuery_intf.PARSE_QUERY with module ExtQuery = ExtQuery'
 
   (*! sharing ParseQuery.Lexer = Parsing'.Lexer !*)
   module ParseFixity : ParseFixity_intf.PARSE_FIXITY with module Names = Names'

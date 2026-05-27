@@ -4,6 +4,7 @@ open! Basis
 (* fquery: Executing logic programs via functional interpretation *)
 (* Author: Carsten Schuermann *)
 include Fquery_intf
+
 (* may raise AbortQuery(msg) *)
 (* signature SOLVE *)
 
@@ -55,18 +56,23 @@ end) : FQUERY with module ExtQuery = Fquery__0.ReconQuery = struct
       ReconQuery.queryToQuery (quy, Paths.Loc (fileName, r))
     in
     let _ =
-      begin if !Global.chatter >= 3 then print "%fquery" else ()
-      end
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter 3)
+           (Display.Info.Form.string "%fquery"))
     in
     let _ =
-      begin if !Global.chatter >= 3 then print " " else ()
-      end
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter 3)
+           (Display.Info.Form.string " "))
     in
     let _ =
-      begin if !Global.chatter >= 3 then
-        print (Timers.time Timers.printing expToString (IntSyn.Null, v_) ^ ".\n")
-      else ()
-      end
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter 3)
+           (Display.Info.Form.string
+              (Timers.time Timers.printing expToString (IntSyn.Null, v_) ^ ".\n")))
     in
     let k, v1_ = Abstract.abstractDecImp v_ in
     let g_, v2_ = lower (k, I.Null, v1_) in

@@ -1,12 +1,12 @@
 module type RECON_CONDEC = RECON_CONDEC.RECON_CONDEC
 
 module Make_ReconConDec
-    (M  : S.S)
-    (RT : RECON_TERM.RECON_TERM with module M = M)
-  : RECON_CONDEC with module M = M = struct
-  module M    = M
-  module Cst  = M.Cst
-  module Ast  = M.Ast
+    (M : S.S)
+    (RT : RECON_TERM.RECON_TERM with module M = M) :
+  RECON_CONDEC with module M = M = struct
+  module M = M
+  module Cst = M.Cst
+  module Ast = M.Ast
   module Paths = M.Paths
 
   exception Error of string
@@ -41,191 +41,216 @@ module Make_ReconConDec
     let g0' = Names.ctxName g0 in
     let g1' = Names.ctxLUName g1 in
     let g2' = Names.ctxLUName g2 in
-    let some_part = match g1' with
+    let some_part =
+      match g1' with
       | IntSyn.Null -> ""
       | _ -> "some " ^ Print.ctxToString (g0', g1') ^ "\n"
     in
-    Print.ctxToString (IntSyn.Null, g0') ^ "\n"
-    ^ some_part
-    ^ "pi "
+    Print.ctxToString (IntSyn.Null, g0')
+    ^ "\n" ^ some_part ^ "pi "
     ^ Print.ctxToString (ctxAppend g0' g1', g2')
 
   let checkFreevars (g0, (g1, g2), r) =
     match g0 with
     | IntSyn.Null -> ()
     | _ ->
-      let _ = Names.varReset IntSyn.Null in
-      let g0' = Names.ctxName g0 in
-      let g1' = Names.ctxLUName g1 in
-      let g2' = Names.ctxLUName g2 in
-      error (r,
-        "Free variables in context block after term reconstruction:\n"
-        ^ ctxBlockToString (g0', (g1', g2')))
+        let _ = Names.varReset IntSyn.Null in
+        let g0' = Names.ctxName g0 in
+        let g1' = Names.ctxLUName g1 in
+        let g2' = Names.ctxLUName g2 in
+        error
+          ( r,
+            "Free variables in context block after term reconstruction:\n"
+            ^ ctxBlockToString (g0', (g1', g2')) )
 
   let condecToConDec (condec, loc, abbFlag) =
-    let Paths.Loc (filename, r) = loc in
+    let (Paths.Loc (filename, r)) = loc in
 
     (* Case A: %sort / %term  — constant type declaration *)
     match Cst.View.condec_constant_decl condec with
     | Some decl ->
-      let (names, tm, _fc) = Cst.View.decl_fields decl in
-      let name =
-        let rec find_name = function
-          | [] -> raise (Error "Anonymous top-level constant declaration")
-          | None :: rest -> find_name rest
-          | Some n :: _ -> n
+        let names, tm, _fc = Cst.View.decl_fields decl in
+        let name =
+          let rec find_name = function
+            | [] -> raise (Error "Anonymous top-level constant declaration")
+            | None :: rest -> find_name rest
+            | Some n :: _ -> n
+          in
+          find_name names
         in
-        find_name names
-      in
-      let _ = Names.varReset IntSyn.Null in
-      let _ = RT.resetErrors filename in
-      let (RT.JClass ((v_, oc), l_)) =
-        RT.recon (RT.jclass tm)
-      in
-      let _ = RT.checkErrors r in
-      let i, v'_ =
-        try Abstract.abstractDecImp v_
-        with Abstract.Error msg ->
-          raise (Abstract.Error (Paths.wrap (r, msg)))
-      in
-      let cd =
-        Names.nameConDec
-          (IntSyn.ConDec (name, None, i, IntSyn.Normal, v'_, l_))
-      in
-      let ocd = Paths.dec (i, oc) in
-      let _ =
-        if !Global.chatter >= 3 then
-          Msg.message (Print.conDecToString cd ^ "\n")
-      in
-      let _ =
-        if !Global.doubleCheck then begin
-          try Typecheck.Typecheck_.TypeCheck.check (v'_, IntSyn.Uni l_)
-          with Typecheck.Typecheck_.TypeCheck.Error msg ->
-            Printf.eprintf "DOUBLE-CHECK FAIL on ConDec %s: %s\n%!" name msg;
-            raise (Typecheck.Typecheck_.TypeCheck.Error msg)
-        end
-      in
-      (Some cd, Some ocd)
-
-    | None ->
-    (* Case B: constant definition / abbreviation *)
-    match Cst.View.condec_constant_def condec with
-    | Some (name, tm1, tm2_opt) ->
-      let _ = Names.varReset IntSyn.Null in
-      let _ = RT.resetErrors filename in
-      let f = match tm2_opt with
-        | None -> RT.jterm tm1
-        | Some tm2 -> RT.jof (tm1, tm2)
-      in
-      let f' = RT.recon f in
-      let (u_, oc1), (v_, oc2_opt), l_ = match f' with
-        | RT.JTerm ((u_, oc1), v_, l_) -> ((u_, oc1), (v_, None), l_)
-        | RT.JOf ((u_, oc1), (v_, oc2), l_) -> ((u_, oc1), (v_, Some oc2), l_)
-        | _ -> assert false
-      in
-      let _ = RT.checkErrors r in
-      let i, (u''_, v''_) =
-        try Abstract.abstractDef (u_, v_)
-        with Abstract.Error msg ->
-          raise (Abstract.Error (Paths.wrap (r, msg)))
-      in
-      let opt_name = if name = "_" then None else Some name in
-      let ocd = Paths.def (i, oc1, oc2_opt) in
-      let cd =
-        if abbFlag then
+        let _ = Names.varReset IntSyn.Null in
+        let _ = RT.resetErrors filename in
+        let (RT.JClass ((v_, oc), l_)) = RT.recon (RT.jclass tm) in
+        let _ = RT.checkErrors r in
+        let i, v'_ =
+          try Abstract.abstractDecImp v_
+          with Abstract.Error msg ->
+            raise (Abstract.Error (Paths.wrap (r, msg)))
+        in
+        let cd =
           Names.nameConDec
-            (IntSyn.AbbrevDef (name, None, i, u''_, v''_, l_))
-        else begin
-          Typecheck.Typecheck_.Strict.check ((u''_, v''_), None);
-          Names.nameConDec
-            (IntSyn.ConDef (name, None, i, u''_, v''_, l_, IntSyn.ancestor u''_))
-        end
-      in
-      let _ =
-        if !Global.chatter >= 3 then
-          Msg.message (Print.conDecToString cd ^ "\n")
-      in
-      let _ =
-        if !Global.doubleCheck then begin
-          (try Typecheck.Typecheck_.TypeCheck.check (v''_, IntSyn.Uni l_)
-           with Typecheck.Typecheck_.TypeCheck.Error msg ->
-             Printf.eprintf "DOUBLE-CHECK FAIL on ConDef %s (type): %s\n%!" name msg;
-             raise (Typecheck.Typecheck_.TypeCheck.Error msg));
-          try Typecheck.Typecheck_.TypeCheck.check (u''_, v''_)
-          with Typecheck.Typecheck_.TypeCheck.Error msg ->
-            Printf.eprintf "DOUBLE-CHECK FAIL on ConDef %s (term): %s\n%!" name msg;
-            raise (Typecheck.Typecheck_.TypeCheck.Error msg)
-        end
-      in
-      (Option.map (fun _ -> cd) opt_name, Some ocd)
-
-    | None ->
-    (* Case C: block declaration *)
-    match Cst.View.condec_block_decl condec with
-    | Some (name, lsome, lblock) ->
-      let gsome = makectx lsome in
-      let gblock = makectx lblock in
-      let r' = match (RT.ctxRegion gsome, RT.ctxRegion gblock) with
-        | Some r1, Some r2 -> Paths.join (r1, r2)
-        | _, Some r2 -> r2
-        | Some r1, None -> r1
-        | None, None -> r
-      in
-      let _ = Names.varReset IntSyn.Null in
-      let _ = RT.resetErrors filename in
-      let j = RT.jwithctx (gsome, RT.jwithctx (gblock, RT.jnothing)) in
-      let (RT.JWithCtx (gsome_, RT.JWithCtx (gblock_, _))) =
-        RT.recon j
-      in
-      let _ = RT.checkErrors r in
-      let g0_, ctxs =
-        try Abstract.abstractCtxs [gsome_; gblock_]
-        with Constraints.Error c_ ->
-          raise (error (r',
-            "Constraints remain in context block after term reconstruction:\n"
-            ^ ctxBlockToString (IntSyn.Null, (gsome_, gblock_))
-            ^ "\n"
-            ^ Print.cnstrsToString c_))
-      in
-      let (gsome'_, gblock'_) = match ctxs with
-        | [a; b] -> (a, b)
-        | _ -> assert false
-      in
-      let _ = checkFreevars (g0_, (gsome'_, gblock'_), r') in
-      let bd =
-        Names.nameConDec
-          (IntSyn.BlockDec (name, None, gsome'_, ctxToList gblock'_))
-      in
-      let _ =
-        if !Global.chatter >= 3 then
-          Msg.message (Print.conDecToString bd ^ "\n")
-      in
-      (Some bd, None)
-
-    | None ->
-    (* Case D: block definition *)
-    match Cst.View.condec_block_def condec with
-    | Some (name, worlds) ->
-      let w' = List.map (fun (ids, id) -> Names.Qid (ids, id)) worlds in
-      let cids = List.map (function
-        | qid -> match Names.constLookup qid with
-          | None ->
-            raise (Names.Error
-              ("Undeclared label "
-               ^ Names.qidToString (valOf (Names.constUndef qid))
-               ^ "."))
-          | Some cid -> cid)
-        w'
-      in
-      let bd = Names.nameConDec (IntSyn.BlockDef (name, None, cids)) in
-      let _ =
-        if !Global.chatter >= 3 then
-          Msg.message (Print.conDecToString bd ^ "\n")
-      in
-      (Some bd, None)
-
-    | None ->
-      raise (Error "condecToConDec: unrecognised conDec variant")
+            (IntSyn.ConDec (name, None, i, IntSyn.Normal, v'_, l_))
+        in
+        let ocd = Paths.dec (i, oc) in
+        let _ =
+          Display.display'
+            (Display.Info.msg
+               ~level:(Display.Info.from_chatter 3)
+               (Display.Info.Form.string (Print.conDecToString cd ^ "\n")))
+        in
+        let _ =
+          if !Global.doubleCheck then
+            begin try Typecheck.Typecheck_.TypeCheck.check (v'_, IntSyn.Uni l_)
+            with Typecheck.Typecheck_.TypeCheck.Error msg ->
+              Printf.eprintf "DOUBLE-CHECK FAIL on ConDec %s: %s\n%!" name msg;
+              raise (Typecheck.Typecheck_.TypeCheck.Error msg)
+            end
+        in
+        (Some cd, Some ocd)
+    | None -> (
+        (* Case B: constant definition / abbreviation *)
+        match Cst.View.condec_constant_def condec with
+        | Some (name, tm1, tm2_opt) ->
+            let _ = Names.varReset IntSyn.Null in
+            let _ = RT.resetErrors filename in
+            let f =
+              match tm2_opt with
+              | None -> RT.jterm tm1
+              | Some tm2 -> RT.jof (tm1, tm2)
+            in
+            let f' = RT.recon f in
+            let (u_, oc1), (v_, oc2_opt), l_ =
+              match f' with
+              | RT.JTerm ((u_, oc1), v_, l_) -> ((u_, oc1), (v_, None), l_)
+              | RT.JOf ((u_, oc1), (v_, oc2), l_) ->
+                  ((u_, oc1), (v_, Some oc2), l_)
+              | _ -> assert false
+            in
+            let _ = RT.checkErrors r in
+            let i, (u''_, v''_) =
+              try Abstract.abstractDef (u_, v_)
+              with Abstract.Error msg ->
+                raise (Abstract.Error (Paths.wrap (r, msg)))
+            in
+            let opt_name = if name = "_" then None else Some name in
+            let ocd = Paths.def (i, oc1, oc2_opt) in
+            let cd =
+              if abbFlag then
+                Names.nameConDec
+                  (IntSyn.AbbrevDef (name, None, i, u''_, v''_, l_))
+              else begin
+                Typecheck.Typecheck_.Strict.check ((u''_, v''_), None);
+                Names.nameConDec
+                  (IntSyn.ConDef
+                     (name, None, i, u''_, v''_, l_, IntSyn.ancestor u''_))
+              end
+            in
+            let _ =
+              Display.display'
+                (Display.Info.msg
+                   ~level:(Display.Info.from_chatter 3)
+                   (Display.Info.Form.string (Print.conDecToString cd ^ "\n")))
+            in
+            let _ =
+              if !Global.doubleCheck then begin
+                (try Typecheck.Typecheck_.TypeCheck.check (v''_, IntSyn.Uni l_)
+                 with Typecheck.Typecheck_.TypeCheck.Error msg ->
+                   Printf.eprintf
+                     "DOUBLE-CHECK FAIL on ConDef %s (type): %s\n%!" name msg;
+                   raise (Typecheck.Typecheck_.TypeCheck.Error msg));
+                try Typecheck.Typecheck_.TypeCheck.check (u''_, v''_)
+                with Typecheck.Typecheck_.TypeCheck.Error msg ->
+                  Printf.eprintf "DOUBLE-CHECK FAIL on ConDef %s (term): %s\n%!"
+                    name msg;
+                  raise (Typecheck.Typecheck_.TypeCheck.Error msg)
+              end
+            in
+            (Option.map (fun _ -> cd) opt_name, Some ocd)
+        | None -> (
+            (* Case C: block declaration *)
+            match Cst.View.condec_block_decl condec with
+            | Some (name, lsome, lblock) ->
+                let gsome = makectx lsome in
+                let gblock = makectx lblock in
+                let r' =
+                  match (RT.ctxRegion gsome, RT.ctxRegion gblock) with
+                  | Some r1, Some r2 -> Paths.join (r1, r2)
+                  | _, Some r2 -> r2
+                  | Some r1, None -> r1
+                  | None, None -> r
+                in
+                let _ = Names.varReset IntSyn.Null in
+                let _ = RT.resetErrors filename in
+                let j =
+                  RT.jwithctx (gsome, RT.jwithctx (gblock, RT.jnothing))
+                in
+                let (RT.JWithCtx (gsome_, RT.JWithCtx (gblock_, _))) =
+                  RT.recon j
+                in
+                let _ = RT.checkErrors r in
+                let g0_, ctxs =
+                  try Abstract.abstractCtxs [ gsome_; gblock_ ]
+                  with Constraints.Error c_ ->
+                    raise
+                      (error
+                         ( r',
+                           "Constraints remain in context block after term \
+                            reconstruction:\n"
+                           ^ ctxBlockToString (IntSyn.Null, (gsome_, gblock_))
+                           ^ "\n" ^ Print.cnstrsToString c_ ))
+                in
+                let gsome'_, gblock'_ =
+                  match ctxs with [ a; b ] -> (a, b) | _ -> assert false
+                in
+                let _ = checkFreevars (g0_, (gsome'_, gblock'_), r') in
+                let bd =
+                  Names.nameConDec
+                    (IntSyn.BlockDec (name, None, gsome'_, ctxToList gblock'_))
+                in
+                let _ =
+                  Display.display'
+                    (Display.Info.msg
+                       ~level:(Display.Info.from_chatter 3)
+                       (Display.Info.Form.string
+                          (Print.conDecToString bd ^ "\n")))
+                in
+                (Some bd, None)
+            | None -> (
+                (* Case D: block definition *)
+                match Cst.View.condec_block_def condec with
+                | Some (name, worlds) ->
+                    let w' =
+                      List.map (fun (ids, id) -> Names.Qid (ids, id)) worlds
+                    in
+                    let cids =
+                      List.map
+                        (function
+                          | qid -> (
+                              match Names.constLookup qid with
+                              | None ->
+                                  raise
+                                    (Names.Error
+                                       ("Undeclared label "
+                                       ^ Names.qidToString
+                                           (valOf (Names.constUndef qid))
+                                       ^ "."))
+                              | Some cid -> cid))
+                        w'
+                    in
+                    let bd =
+                      Names.nameConDec (IntSyn.BlockDef (name, None, cids))
+                    in
+                    let _ =
+                      Display.display'
+                        (Display.Info.msg
+                           ~level:(Display.Info.from_chatter 3)
+                           (Display.Info.Form.string
+                              (Print.conDecToString bd ^ "\n")))
+                    in
+                    (Some bd, None)
+                | None ->
+                    raise (Error "condecToConDec: unrecognised conDec variant"))
+            ))
 
   let internalInst _ = raise Match
   let externalInst _ = raise Match

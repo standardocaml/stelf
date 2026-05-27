@@ -18,7 +18,8 @@ module ParseQuery (ParseQuery__0 : sig
   module ExtQuery' : ReconQuery_intf.EXTQUERY
 
   (*! sharing ExtQuery'.Paths = Parsing'.Lexer.Paths !*)
-  module ParseTerm : ParseTerm_intf.PARSE_TERM with module ExtSyn = ExtQuery'.ExtSyn
+  module ParseTerm :
+    ParseTerm_intf.PARSE_TERM with module ExtSyn = ExtQuery'.ExtSyn
 end) : PARSE_QUERY with module ExtQuery = ParseQuery__0.ExtQuery' = struct
   (*! structure Parsing = Parsing' !*)
   module ExtQuery = ParseQuery__0.ExtQuery'

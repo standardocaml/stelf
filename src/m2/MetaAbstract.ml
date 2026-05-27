@@ -60,11 +60,15 @@ end) : METAABSTRACT with module MetaSyn = MetaAbstract__0.MetaSyn = struct
 
     let rec checkEmpty = function
       | [] -> ()
-      | cnstr_ -> Debug.msg' ~src:Debug.Group.meta ~level:Debug.Level.Debug Fmt.(const string "Number of constraints:" ++ (const int @@ List.length cnstr_)) @@ begin 
-          match C.simplify cnstr_ with
+      | cnstr_ ->
+          Debug.msg' ~src:Debug.Group.meta ~level:Debug.Level.Debug
+            Fmt.(
+              const string "Number of constraints:"
+              ++ (const int @@ List.length cnstr_))
+          @@ begin match C.simplify cnstr_ with
           | [] -> ()
           | _ -> raise (Error "Unresolved constraints")
-        end
+          end
 
     let rec typecheck (MetaSyn.Prefix (g_, m_, b_), v_) =
       TypeCheck.typeCheck (g_, (v_, I.Uni I.Type))
@@ -77,9 +81,9 @@ end) : METAABSTRACT with module MetaSyn = MetaAbstract__0.MetaSyn = struct
     let rec atxLookup = function
       | I.Null, _ -> None
       | I.Decl (m_, Bv), r -> atxLookup (m_, r)
-      | I.Decl (m_, (Ev (r', _, _) as e_)), r -> begin
-          if r == r' then Some e_ else atxLookup (m_, r)
-        end
+      | I.Decl (m_, (Ev (r', _, _) as e_)), r ->
+          begin if r == r' then Some e_ else atxLookup (m_, r)
+          end
 
     let rec raiseType = function
       | 0, g_, v_ -> v_
@@ -138,8 +142,8 @@ end) : METAABSTRACT with module MetaSyn = MetaAbstract__0.MetaSyn = struct
           g_,
           (I.EVar (r, gx_, v_, cnstrs), s),
           mode,
-          ((a_, depth) as adepth_) ) -> begin
-          match atxLookup (a_, r) with
+          ((a_, depth) as adepth_) ) ->
+          begin match atxLookup (a_, r) with
           | None ->
               let _ = checkEmpty !cnstrs in
               let lGp' = I.ctxLength gx_ - lG0 + depth in
@@ -162,7 +166,7 @@ end) : METAABSTRACT with module MetaSyn = MetaAbstract__0.MetaSyn = struct
           | Some (Ev (_, v_, _)) ->
               let lGp' = countPi v_ in
               collectSub (lG0, g_, lGp', s, mode, adepth_)
-        end
+          end
       | lGO, g_, (I.FgnExp (csid_, fge_), s), mode, adepth_ ->
           I.FgnExpStd.fold (csid_, fge_)
             (function
@@ -269,9 +273,9 @@ end) : METAABSTRACT with module MetaSyn = MetaAbstract__0.MetaSyn = struct
 
     let rec lookupEV (a_, r) =
       let rec lookupEV' = function
-        | I.Decl (a_, Ev (r, v_, _)), r', k -> begin
-            if r == r' then (k, v_) else lookupEV' (a_, r', k + 1)
-          end
+        | I.Decl (a_, Ev (r, v_, _)), r', k ->
+            begin if r == r' then (k, v_) else lookupEV' (a_, r', k + 1)
+            end
         | I.Decl (a_, Bv), r', k -> lookupEV' (a_, r', k + 1)
       in
       lookupEV' (a_, r, 1)
@@ -298,12 +302,12 @@ end) : METAABSTRACT with module MetaSyn = MetaAbstract__0.MetaSyn = struct
               abstractExp
                 (a_, I.Decl (g_, I.decSub (d_, s)), depth + 1, (u_, I.dot1 s))
             )
-      | a_, g_, depth, (I.Root ((I.BVar k as c_), s_), s) -> begin
-          if k > depth then
+      | a_, g_, depth, (I.Root ((I.BVar k as c_), s_), s) ->
+          begin if k > depth then
             let k' = lookupBV (a_, k - depth) in
             I.Root (I.BVar (k' + depth), abstractSpine (a_, g_, depth, (s_, s)))
           else I.Root (c_, abstractSpine (a_, g_, depth, (s_, s)))
-        end
+          end
       | a_, g_, depth, (I.Root (c_, s_), s) ->
           I.Root (c_, abstractSpine (a_, g_, depth, (s_, s)))
       | a_, g_, depth, (I.EVar (r, _, v_, _), s) ->

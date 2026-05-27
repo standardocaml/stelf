@@ -18,11 +18,7 @@
   PrintXml_intf
   Symbol_intf
   Traverse_intf)
- (libraries
-  intsyn
-  names
-  formatter
-  basis)
+ (libraries display intsyn names formatter basis)
  (flags
   (:standard
    -w

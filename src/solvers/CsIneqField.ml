@@ -88,11 +88,13 @@ end) : Cs.CS = struct
       begin if
         Stdlib.( > ) stringLen suffixLen
         && String.substring (string, numLen, suffixLen) = suffix
-      then begin
-        match fromString (String.substring (string, 0, numLen)) with
-        | Some d -> begin if d > zero then Some (gtNConDec d) else None end
+      then
+        begin match fromString (String.substring (string, 0, numLen)) with
+        | Some d ->
+            begin if d > zero then Some (gtNConDec d) else None
+            end
         | None -> None
-      end
+        end
       else None
       end
 
@@ -343,9 +345,9 @@ end) : Cs.CS = struct
       let exception Found of int in
       let rec find (i, (l : label)) =
         begin match l.owner with
-        | Var (_g_, mon') -> begin
-            if compatibleMon (mon, mon') then raise (Found i) else ()
-          end
+        | Var (_g_, mon') ->
+            begin if compatibleMon (mon, mon') then raise (Found i) else ()
+            end
         | _ -> ()
         end
       in
@@ -391,23 +393,23 @@ end) : Cs.CS = struct
         let candidates =
           Array.foldl
             (function
-              | i, (l : label), rest -> begin
-                  if i <> row && (not (dead l)) && const i = constRow then
+              | i, (l : label), rest ->
+                  begin if i <> row && (not (dead l)) && const i = constRow then
                     i :: rest
                   else rest
-                end)
+                  end)
             []
             (tableau.rlabels, 0, nRows ())
         in
         let rec filter = function
           | _j, _l, [] -> []
-          | j, (l : label), candidates -> begin
-              if not (dead l) then
+          | j, (l : label), candidates ->
+              begin if not (dead l) then
                 List.filter
                   (function i -> coeff (i, j) = coeff (row, j))
                   candidates
               else candidates
-            end
+              end
         in
         begin match
           Array.foldl filter candidates (tableau.clabels, 0, nCols ())
@@ -421,18 +423,20 @@ end) : Cs.CS = struct
           let non_null =
             Array.foldl
               (function
-                | j, (l : label), rest -> begin
-                    if not (dead l) then
+                | j, (l : label), rest ->
+                    begin if not (dead l) then
                       let value = coeff (row, j) in
                       begin if value <> zero then (j, value) :: rest else rest
                       end
                     else rest
-                  end)
+                    end)
               []
               (tableau.clabels, 0, nCols ())
           in
           begin match non_null with
-          | (j, value) :: [] -> begin if value = one then Some j else None end
+          | (j, value) :: [] ->
+              begin if value = one then Some j else None
+              end
           | _ -> None
           end
         else None
@@ -440,9 +444,11 @@ end) : Cs.CS = struct
       in
       begin match isSubsumedByRow () with
       | Some i -> Some (Row i)
-      | None -> begin
-          match isSubsumedByCol () with Some j -> Some (Col j) | None -> None
-        end
+      | None ->
+          begin match isSubsumedByCol () with
+          | Some j -> Some (Col j)
+          | None -> None
+          end
       end
 
     let rec findPivot row =
@@ -508,21 +514,21 @@ end) : Cs.CS = struct
       begin
         Array.modify
           (function
-            | i, value -> begin
-                if i = row then -(value * pCoeffInverse)
+            | i, value ->
+                begin if i = row then -(value * pCoeffInverse)
                 else value - (pConst * pCol i * pCoeffInverse)
-              end)
+                end)
           (tableau.consts, 0, nRows ());
         begin
           Array2.modify Array2.ColMajor
             (function
-              | i, j, value -> begin
-                  match (i = row, j = col) with
+              | i, j, value ->
+                  begin match (i = row, j = col) with
                   | true, true -> pCoeffInverse
                   | true, false -> -(value * pCoeffInverse)
                   | false, true -> value * pCoeffInverse
                   | false, false -> value - (pRow j * pCol i * pCoeffInverse)
-                end)
+                  end)
             {
               base = tableau.coeffs;
               row = 0;
@@ -541,10 +547,10 @@ end) : Cs.CS = struct
 
     let rec maximizeRow row =
       let value = const row in
-      begin if value <= zero then begin
-        match findPivot row with
-        | Some (i, j) -> begin
-            if i <> row then begin
+      begin if value <= zero then
+        begin match findPivot row with
+        | Some (i, j) ->
+            begin if i <> row then begin
               Trail.log (tableau.trail, Pivot (i, j));
               begin
                 pivot (i, j);
@@ -552,9 +558,9 @@ end) : Cs.CS = struct
               end
             end
             else Unbounded j
-          end
+            end
         | None -> Maximized value
-      end
+        end
       else Positive
       end
 
@@ -675,8 +681,8 @@ end) : Cs.CS = struct
         end
       in
       let rec killRow (i, (l : label)) =
-        begin if not (dead l) then begin
-          if isConstant i then begin
+        begin if not (dead l) then
+          begin if isConstant i then begin
             Trail.log (tableau.trail, Kill (Row i));
             begin
               (Array.sub (tableau.rlabels, i)).dead := true;
@@ -693,8 +699,8 @@ end) : Cs.CS = struct
               end
             end
           end
-          else begin
-            match isSubsumed i with
+          else
+            begin match isSubsumed i with
             | Some pos' ->
                 let l' = label pos' in
                 begin
@@ -713,8 +719,8 @@ end) : Cs.CS = struct
                   end
                 end
             | None -> ()
+            end
           end
-        end
         else ()
         end
       in
@@ -727,20 +733,20 @@ end) : Cs.CS = struct
       | (Col col as pos), restr ->
           let l = label pos in
           begin if dead l then unifyRestr (restr, geq00 ())
-          else begin
-            match restriction l with
+          else
+            begin match restriction l with
             | Some (Restr (_, proof', _)) -> unifyRestr (restr, proof')
             | None ->
                 let non_null =
                   Array.foldl
                     (function
-                      | i, (l : label), rest -> begin
-                          if not (dead l) then
+                      | i, (l : label), rest ->
+                          begin if not (dead l) then
                             let value = coeff (i, col) in
                             begin if value <> zero then i :: rest else rest
                             end
                           else rest
-                        end)
+                          end)
                     []
                     (tableau.rlabels, 0, nRows ())
                 in
@@ -757,16 +763,16 @@ end) : Cs.CS = struct
                     (label (Col col)).restr := Some restr
                   end
                 end
-          end
+            end
           end
       | (Row row as pos), restr ->
           let l = label pos in
           begin if dead l then unifyRestr (restr, geqN0 (const row))
-          else begin
-            match restriction l with
+          else
+            begin match restriction l with
             | Some (Restr (_, proof', _)) -> unifyRestr (restr, proof')
-            | None -> begin
-                match maximizeRow row with
+            | None ->
+                begin match maximizeRow row with
                 | Unbounded col -> begin
                     Trail.log (tableau.trail, Restrict (Row row));
                     begin
@@ -783,8 +789,8 @@ end) : Cs.CS = struct
                     Trail.log (tableau.trail, Restrict (Row row));
                     (Array.sub (tableau.rlabels, row)).restr := Some restr
                   end
-                | Maximized value -> begin
-                    if value = zero then begin
+                | Maximized value ->
+                    begin if value = zero then begin
                       Trail.log (tableau.trail, Restrict (Row row));
                       begin
                         (Array.sub (tableau.rlabels, row)).restr := Some restr;
@@ -792,9 +798,9 @@ end) : Cs.CS = struct
                       end
                     end
                     else raise Error
-                  end
-              end
-          end
+                    end
+                end
+            end
           end
 
     and insertEqual (g_, pos, sum) =
@@ -818,26 +824,27 @@ end) : Cs.CS = struct
         Trail.log (tableau.trail, UpdateOwner (pos, l.owner, l.tag));
         begin
           setOwnership (pos, Exp (g_, sum), ref 0);
-          begin if dead l then begin
-            match pos with
-            | Row row -> begin
-                if isConstant row then unifySum (g_, sum, const row)
-                else begin
-                  match isSubsumed row with Some pos' -> update (g_, pos', sum)
+          begin if dead l then
+            begin match pos with
+            | Row row ->
+                begin if isConstant row then unifySum (g_, sum, const row)
+                else
+                  begin match isSubsumed row with
+                  | Some pos' -> update (g_, pos', sum)
+                  end
                 end
-              end
             | Col _col -> unifySum (g_, sum, zero)
-          end
+            end
           else
             let rec isVar = function
-              | Sum (m, (Mon (n, _) as mon) :: []) -> begin
-                  if m = zero && n = one then Some mon else None
-                end
+              | Sum (m, (Mon (n, _) as mon) :: []) ->
+                  begin if m = zero && n = one then Some mon else None
+                  end
               | _sum -> None
             in
             begin match isVar sum with
-            | Some mon -> begin
-                match findMon mon with
+            | Some mon ->
+                begin match findMon mon with
                 | Some _ -> insertEqual (g_, pos, sum)
                 | None ->
                     let tag = ref 0 in
@@ -849,7 +856,7 @@ end) : Cs.CS = struct
                         delayMon (mon, ref (makeCnstr tag))
                       end
                     end
-              end
+                end
             | None -> insertEqual (g_, pos, sum)
             end
           end
@@ -860,16 +867,18 @@ end) : Cs.CS = struct
       let rec member (x, l) = List.exists (function y -> x = y) l in
       let rec test l = restricted l && not (dead l) in
       let rec reachable = function
-        | (Row row as pos) :: candidates, tried, closure -> begin
-            if member (pos, tried) then reachable (candidates, tried, closure)
+        | (Row row as pos) :: candidates, tried, closure ->
+            begin if member (pos, tried) then
+              reachable (candidates, tried, closure)
             else
               let new_candidates =
                 Array.foldl
                   (function
-                    | col, _, candidates -> begin
-                        if coeff (row, col) <> zero then Col col :: candidates
+                    | col, _, candidates ->
+                        begin if coeff (row, col) <> zero then
+                          Col col :: candidates
                         else candidates
-                      end)
+                        end)
                   []
                   (tableau.clabels, 0, nCols ())
               in
@@ -878,17 +887,19 @@ end) : Cs.CS = struct
                 end
               in
               reachable (new_candidates @ candidates, pos :: tried, closure')
-          end
-        | (Col col as pos) :: candidates, tried, closure -> begin
-            if member (pos, tried) then reachable (candidates, tried, closure)
+            end
+        | (Col col as pos) :: candidates, tried, closure ->
+            begin if member (pos, tried) then
+              reachable (candidates, tried, closure)
             else
               let candidates' =
                 Array.foldl
                   (function
-                    | row, _, candidates -> begin
-                        if coeff (row, col) <> zero then Row row :: candidates
+                    | row, _, candidates ->
+                        begin if coeff (row, col) <> zero then
+                          Row row :: candidates
                         else candidates
-                      end)
+                        end)
                   []
                   (tableau.rlabels, 0, nRows ())
               in
@@ -897,7 +908,7 @@ end) : Cs.CS = struct
                 end
               in
               reachable (candidates' @ candidates, pos :: tried, closure')
-          end
+            end
         | [], _, closure -> closure
       in
       let rec restrExp pos =
@@ -1020,7 +1031,9 @@ end) : Cs.CS = struct
       | g_, s_, 0 -> (
           let rec solveGt0 w_ =
             begin match isConstantExp w_ with
-            | Some d -> begin if d > zero then gtNExp d else raise Error end
+            | Some d ->
+                begin if d > zero then gtNExp d else raise Error
+                end
             | None ->
                 let proof = newEVar (g_, gt0 w_) in
                 let _ =
@@ -1053,7 +1066,9 @@ end) : Cs.CS = struct
       | g_, s_, 0 -> (
           let rec solveGeq0 w_ =
             begin match isConstantExp w_ with
-            | Some d -> begin if d >= zero then geqN0 d else raise Error end
+            | Some d ->
+                begin if d >= zero then geqN0 d else raise Error
+                end
             | None ->
                 let proof = newEVar (g_, geq0 w_) in
                 let _ =

@@ -5,8 +5,7 @@ module MakePrintTwega
     (Abstract : ABSTRACT)
     (Constraints : CONSTRAINTS)
     (Names : NAMES)
-    (Formatter_param : FORMATTER) :
-  PRINT_TWEGA
+    (Formatter_param : FORMATTER) : PRINT_TWEGA
 (*
   (* Printing *)
   (* Author: Frank Pfenning *)

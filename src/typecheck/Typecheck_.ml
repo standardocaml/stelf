@@ -3,8 +3,9 @@ open! Basis
 
 (* Type Checking *)
 
-(** Author: Carsten Schuermann *)
 include Typecheck_intf
+(** Author: Carsten Schuermann *)
+
 (* signature TYPECHECK *)
 
 (* # 1 "src/typecheck/Typecheck_.fun.ml" *)
@@ -16,10 +17,8 @@ module MakeTypeCheck
     (Conv : CONV)
     (Whnf : WHNF)
     (Names : NAMES)
-    (Print : PRINT) :
-  TYPECHECK =
-struct
-(*
+    (Print : PRINT) : TYPECHECK = struct
+  (*
   (*! structure IntSyn' : INTSYN !*)
   (*! sharing Conv.IntSyn = IntSyn' !*)
   (*! sharing Whnf.IntSyn = IntSyn'  !*)
@@ -156,10 +155,10 @@ struct
 
     and checkSub = function
       | IntSyn.Null, I.Shift 0, IntSyn.Null -> ()
-      | I.Decl (g_, d_), I.Shift k, IntSyn.Null -> begin
-          if k > 0 then checkSub (g_, I.Shift (k - 1), I.Null)
+      | I.Decl (g_, d_), I.Shift k, IntSyn.Null ->
+          begin if k > 0 then checkSub (g_, I.Shift (k - 1), I.Null)
           else raise (Error "Substitution not well-typed")
-        end
+          end
       | g'_, I.Shift k, g_ ->
           checkSub (g'_, I.Dot (I.Idx (k + 1), I.Shift (k + 1)), g_)
       | g'_, I.Dot (I.Idx k, s'), I.Decl (g_, I.Dec (_, v2_)) ->
@@ -182,11 +181,11 @@ struct
           let _ = checkSub (g'_, t, g_) in
           let (I.BDec (_, (l', s'))) = I.ctxDec (g'_, w) in
           begin if l <> l' then raise (Error "Incompatible block labels found")
-          else begin
-            if Conv.convSub (I.comp (s, t), s') then ()
+          else
+            begin if Conv.convSub (I.comp (s, t), s') then ()
             else
               raise (Error "Substitution in block declaration not well-typed")
-          end
+            end
           end
       | g'_, I.Dot (I.Block (I.Inst i_), t), I.Decl (g_, I.BDec (_, (l, s))) ->
           let _ = checkSub (g'_, t, g_) in

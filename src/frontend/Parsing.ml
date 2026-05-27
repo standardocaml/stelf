@@ -4,6 +4,7 @@ open! Basis
 (* General basis for parsing modules *)
 (* Author: Frank Pfenning *)
 include Parsing_intf
+
 (* always raises Error *)
 (* signature PARSING *)
 
@@ -39,12 +40,12 @@ end
 (*! sharing Lexer'.Stream = Stream' !*)
 (* functor Parsing *)
 module Parsing = MakeParsing (Stream) (Lexer)
-
 module Stream = Parsing.Stream
 module Lexer = Parsing.Lexer
 
 type lexResult = Parsing.lexResult
 type 'a parser = 'a Parsing.parser
+
 type 'a recParseResult = 'a Parsing.recParseResult =
   | Done of 'a
   | Continuation of 'a Parsing.recParseResult parser

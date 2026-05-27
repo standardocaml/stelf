@@ -117,12 +117,11 @@ end) : ABSMACHINE = struct
           end
         end
       | ps', (C.Assign (q_, eqns), s), (C.DProg (g_, dPool) as dp), hcHa_, sc ->
-        begin
-          match Assign.assignable (g_, ps', (q_, s)) with
+          begin match Assign.assignable (g_, ps', (q_, s)) with
           | Some cnstr ->
               aSolve ((eqns, s), dp, hcHa_, cnstr, function () -> sc I.Nil)
           | None -> false
-        end
+          end
       | ps', (C.And (r, a_, g), s), (C.DProg (g_, dPool) as dp), hcHa_, sc ->
           let x_ = I.newEVar (g_, I.EClo (a_, s)) in
           rSolve
@@ -162,8 +161,8 @@ end) : ABSMACHINE = struct
               sc )
 
     and aSolve = function
-      | (trivial_, s), (C.DProg (g_, dPool) as dp), hcHa_, cnstr, sc -> begin
-          if Assign.solveCnstr cnstr then begin
+      | (trivial_, s), (C.DProg (g_, dPool) as dp), hcHa_, cnstr, sc ->
+          begin if Assign.solveCnstr cnstr then begin
             T.signal (g_, T.Resolved (fst hcHa_, snd hcHa_));
             begin
               sc ();
@@ -171,7 +170,7 @@ end) : ABSMACHINE = struct
             end
           end
           else false
-        end
+          end
       | ( (C.UnifyEq (g'_, e1, n_, eqns), s),
           (C.DProg (g_, dPool) as dp),
           hcHa_,
@@ -270,13 +269,14 @@ end) : ABSMACHINE = struct
               end)
       in
       let rec matchDProg = function
-        | I.Null, _ -> begin
-            if deterministic then matchSigDet (Index.lookup (cidFromHead ha_))
+        | I.Null, _ ->
+            begin if deterministic then
+              matchSigDet (Index.lookup (cidFromHead ha_))
             else matchSig (Index.lookup (cidFromHead ha_))
-          end
-        | I.Decl (dPool', C.Dec (r, s, ha'_)), k -> begin
-            if eqHead (ha_, ha'_) then begin
-              if deterministic then
+            end
+        | I.Decl (dPool', C.Dec (r, s, ha'_)), k ->
+            begin if eqHead (ha_, ha'_) then
+              begin if deterministic then
                 try
                   begin
                     begin if
@@ -344,9 +344,9 @@ end) : ABSMACHINE = struct
                 end;
                 matchDProg (dPool', k + 1)
               end
-            end
+              end
             else matchDProg (dPool', k + 1)
-          end
+            end
         | I.Decl (dPool', parameter_), k -> matchDProg (dPool', k + 1)
       in
       let rec matchConstraint (cnstrSolve, try_) =

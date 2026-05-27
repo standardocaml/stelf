@@ -29,8 +29,8 @@ end) : CONV = struct
 
   let rec convExpW = function
     | (Uni l1_, _), (Uni l2_, _) -> eqUni (l1_, l2_)
-    | ((Root (h1_, s1_), s1) as us1_), ((Root (h2_, s2_), s2) as us2_) -> begin
-        match (h1_, h2_) with
+    | ((Root (h1_, s1_), s1) as us1_), ((Root (h2_, s2_), s2) as us2_) ->
+        begin match (h1_, h2_) with
         | BVar k1, BVar k2 -> k1 = k2 && convSpine ((s1_, s1), (s2_, s2))
         | Const c1, Const c2 -> c1 = c2 && convSpine ((s1_, s1), (s2_, s2))
         | Skonst c1, Skonst c2 -> c1 = c2 && convSpine ((s1_, s1), (s2_, s2))
@@ -48,7 +48,7 @@ end) : CONV = struct
         | Def d1, _ -> convExpW (Whnf.expandDef us1_, us2_)
         | _, Def d2 -> convExpW (us1_, Whnf.expandDef us2_)
         | _ -> false
-      end
+        end
     | (Pi (dp1_, v1_), s1), (Pi (dp2_, v2_), s2) ->
         convDecP ((dp1_, s1), (dp2_, s2))
         && convExp ((v1_, dot1 s1), (v2_, dot1 s2))

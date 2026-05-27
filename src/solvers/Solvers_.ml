@@ -4,7 +4,6 @@
 
 (* # 1 "src/solvers/Solvers_.sml.ml" *)
 open! Basis
-
 module CsManager = CsManager
 module Cs = Cs
 module CsEqField = CsEqField
@@ -89,7 +88,9 @@ module CSIntWord32 = CsIntegersWord.Cs_int_word (struct
   (*! structure CsManager = CsManager !*)
   let wordSize = 32
 end)
+
 include Solvers_intf
+
 (* execute for effect *)
 (* wrapped in structure so it can be tracked by CM *)
 module CSInstaller : CS_INSTALLER = struct

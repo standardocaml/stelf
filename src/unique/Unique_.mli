@@ -14,8 +14,7 @@ module MakeUnique
     (Names : NAMES)
     (Print : PRINT)
     (TypeCheck : TYPECHECK)
-    (Timers : Timers.TIMERS) :
-  UNIQUE
+    (Timers : Timers.TIMERS) : UNIQUE
 (* must be trailing: Constraints *)
 
 module UniqueTable : Modetable.MODETABLE

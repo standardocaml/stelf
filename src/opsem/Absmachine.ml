@@ -82,15 +82,15 @@ end) : ABSMACHINE = struct
               function m_ -> sc (I.Lam (d'_, m_)) )
 
     and rSolve = function
-      | ps', (C.Eq q_, s), C.DProg (g_, dPool), sc -> begin
-          if Unify.unifiable (g_, (q_, s), ps') then sc I.Nil else ()
-        end
-      | ps', (C.Assign (q_, eqns), s), (C.DProg (g_, dPool) as dp), sc -> begin
-          match Assign.assignable (g_, ps', (q_, s)) with
+      | ps', (C.Eq q_, s), C.DProg (g_, dPool), sc ->
+          begin if Unify.unifiable (g_, (q_, s), ps') then sc I.Nil else ()
+          end
+      | ps', (C.Assign (q_, eqns), s), (C.DProg (g_, dPool) as dp), sc ->
+          begin match Assign.assignable (g_, ps', (q_, s)) with
           | Some cnstr ->
               aSolve ((eqns, s), dp, cnstr, function () -> sc I.Nil)
           | None -> ()
-        end
+          end
       | ps', (C.And (r, a_, g), s), (C.DProg (g_, dPool) as dp), sc ->
           let x_ = I.newEVar (g_, I.EClo (a_, s)) in
           rSolve
@@ -123,9 +123,9 @@ end) : ABSMACHINE = struct
               | s_ -> solve ((g, s), dp, function m_ -> sc (I.App (m_, s_))) )
 
     and aSolve = function
-      | (C.Trivial, s), dp, cnstr, sc -> begin
-          if Assign.solveCnstr cnstr then sc () else ()
-        end
+      | (C.Trivial, s), dp, cnstr, sc ->
+          begin if Assign.solveCnstr cnstr then sc () else ()
+          end
       | ( (C.UnifyEq (g'_, e1, n_, eqns), s),
           (C.DProg (g_, dPool) as dp),
           cnstr,
@@ -169,13 +169,14 @@ end) : ABSMACHINE = struct
             with SucceedOnce s_ -> sc (I.Root (hc_, s_)))
       in
       let rec matchDProg = function
-        | I.Null, _ -> begin
-            if deterministic then matchSigDet (Index.lookup (cidFromHead ha_))
+        | I.Null, _ ->
+            begin if deterministic then
+              matchSigDet (Index.lookup (cidFromHead ha_))
             else matchSig (Index.lookup (cidFromHead ha_))
-          end
-        | I.Decl (dPool', C.Dec (r, s, ha'_)), k -> begin
-            if eqHead (ha_, ha'_) then begin
-              if deterministic then
+            end
+        | I.Decl (dPool', C.Dec (r, s, ha'_)), k ->
+            begin if eqHead (ha_, ha'_) then
+              begin if deterministic then
                 try
                   begin
                     CsManager.trail (function () ->
@@ -196,9 +197,9 @@ end) : ABSMACHINE = struct
                         function s_ -> sc (I.Root (I.BVar k, s_)) ));
                 matchDProg (dPool', k + 1)
               end
-            end
+              end
             else matchDProg (dPool', k + 1)
-          end
+            end
         | I.Decl (dPool', parameter_), k -> matchDProg (dPool', k + 1)
       in
       let rec matchConstraint (cnstrSolve, try_) =

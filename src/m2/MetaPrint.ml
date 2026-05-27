@@ -75,10 +75,11 @@ end) : METAPRINT with module MetaSyn = MetaPrint__0.MetaSyn' = struct
       | sgnEmpty_ -> ""
       | M.ConDec (e, s_) ->
           begin if !Global.chatter >= 4 then Print.conDecToString e ^ "\n"
-          else begin
-            if !Global.chatter >= 3 then ClausePrint.conDecToString e ^ "\n"
+          else
+            begin if !Global.chatter >= 3 then
+              ClausePrint.conDecToString e ^ "\n"
             else ""
-          end
+            end
           end
           ^ sgnToString s_
   end

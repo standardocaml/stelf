@@ -5,6 +5,7 @@ module Tomega = Lambda_.Tomega
 (* Normalizer for Delphin meta level *)
 (* Author: Carsten Schuermann *)
 include Normalize_intf
+
 (* # 1 "src/tomega/Normalize.fun.ml" *)
 open! Basis
 

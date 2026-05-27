@@ -85,40 +85,40 @@ struct
     let rec findMSet eq (x, l_) =
       let rec findMSet' = function
         | tried, [] -> None
-        | tried, y :: l_ -> begin
-            if eq (x, y) then Some (y, tried @ l_)
+        | tried, y :: l_ ->
+            begin if eq (x, y) then Some (y, tried @ l_)
             else findMSet' (y :: tried, l_)
-          end
+            end
       in
       findMSet' ([], l_)
 
     let rec equalMSet eq =
       let rec equalMSet' = function
         | [], [] -> true
-        | x :: l1'_, l2_ -> begin
-            match findMSet eq (x, l2_) with
+        | x :: l1'_, l2_ ->
+            begin match findMSet eq (x, l2_) with
             | Some (y, l2'_) -> equalMSet' (l1'_, l2'_)
             | None -> false
-          end
+            end
         | _ -> false
       in
       equalMSet'
 
     let rec toExp = function
       | Sum (m, []) -> numberExp m
-      | Sum (m, mon :: []) -> begin
-          if m = zero then toExpMon mon
+      | Sum (m, mon :: []) ->
+          begin if m = zero then toExpMon mon
           else plusExp (toExp (Sum (m, [])), toExpMon mon)
-        end
+          end
       | Sum (m, (mon :: monL as monLL)) ->
           plusExp (toExp (Sum (m, monL)), toExpMon mon)
 
     and toExpMon = function
       | Mon (n, []) -> numberExp n
-      | Mon (n, us_ :: []) -> begin
-          if n = one then toExpEClo us_
+      | Mon (n, us_ :: []) ->
+          begin if n = one then toExpEClo us_
           else timesExp (toExpMon (Mon (n, [])), toExpEClo us_)
-        end
+          end
       | Mon (n, us_ :: usL_) ->
           timesExp (toExpMon (Mon (n, usL_)), toExpEClo us_)
 
@@ -129,13 +129,12 @@ struct
 
     and sameExpW = function
       | ((Root (h1_, s1_), s1) as us1_), ((Root (h2_, s2_), s2) as us2_) ->
-        begin
-          match (h1_, h2_) with
+          begin match (h1_, h2_) with
           | BVar k1, BVar k2 -> k1 = k2 && sameSpine ((s1_, s1), (s2_, s2))
           | FVar (n1, _, _), FVar (n2, _, _) ->
               n1 = n2 && sameSpine ((s1_, s1), (s2_, s2))
           | _ -> false
-        end
+          end
       | ( (((EVar (r1, g1_, v1_, cnstrs1) as u1_), s1) as us1_),
           (((EVar (r2, g2_, v2_, cnstrs2) as u2_), s2) as us2_) ) ->
           r1 == r2 && sameSub (s1, s2)
@@ -170,15 +169,15 @@ struct
 
     and plusSumMon = function
       | Sum (m, []), mon -> Sum (m, [ mon ])
-      | Sum (m, monL), (Mon (n, usL_) as mon) -> begin
-          match findMSet compatibleMon (mon, monL) with
+      | Sum (m, monL), (Mon (n, usL_) as mon) ->
+          begin match findMSet compatibleMon (mon, monL) with
           | Some (Mon (n', _), monL') ->
               let n'' = n + n' in
               begin if n'' = zero then Sum (m, monL')
               else Sum (m, Mon (n'', usL_) :: monL')
               end
           | None -> Sum (m, mon :: monL)
-        end
+          end
 
     let rec timesSum = function
       | Sum (m1, []), Sum (m2, []) -> Sum (m1 * m2, [])
@@ -203,16 +202,17 @@ struct
     let rec minusSum (sum1, sum2) = plusSum (sum1, unaryMinusSum sum2)
 
     let rec fromExpW = function
-      | (FgnExp (cs, fe), _) as us_ -> begin
-          if cs = !myID then normalizeSum (extractSum fe)
+      | (FgnExp (cs, fe), _) as us_ ->
+          begin if cs = !myID then normalizeSum (extractSum fe)
           else Sum (zero, [ Mon (one, [ us_ ]) ])
-        end
-      | (Root (FgnConst (cs, conDec), _), _) as us_ -> begin
-          if cs = !myID then begin
-            match fromString (conDecName conDec) with Some m -> Sum (m, [])
           end
+      | (Root (FgnConst (cs, conDec), _), _) as us_ ->
+          begin if cs = !myID then
+            begin match fromString (conDecName conDec) with
+            | Some m -> Sum (m, [])
+            end
           else Sum (zero, [ Mon (one, [ us_ ]) ])
-        end
+          end
       | us_ -> Sum (zero, [ Mon (one, [ us_ ]) ])
 
     and fromExp us_ = fromExpW (Whnf.whnf us_)
@@ -257,11 +257,11 @@ struct
     let rec findMon f (g_, Sum (m, monL)) =
       let rec findMon' = function
         | [], monL2 -> None
-        | mon :: monL1, monL2 -> begin
-            match f (g_, mon, Sum (m, monL1 @ monL2)) with
+        | mon :: monL1, monL2 ->
+            begin match f (g_, mon, Sum (m, monL1 @ monL2)) with
             | Some _ as result -> result
             | None -> findMon' (monL1, mon :: monL2)
-          end
+            end
       in
       findMon' (monL, [])
 
@@ -282,15 +282,15 @@ struct
     and solveSum = function
       | ( g_,
           (Sum (m, Mon (n, ((EVar (r, _, _, _) as x_), s) :: []) :: []) as sum)
-        ) -> begin
-          if Whnf.isPatSub s then
+        ) ->
+          begin if Whnf.isPatSub s then
             [ Assign (g_, x_, numberExp (-quot (m, n)), Whnf.invert s) ]
           else [ delaySum (g_, sum) ]
-        end
+          end
       | g_, sum ->
           let rec invertMon = function
-            | g_, (Mon (n, (EVar (r, _, _, _), s) :: []) as mon), sum -> begin
-                if Whnf.isPatSub s then
+            | g_, (Mon (n, (EVar (r, _, _, _), s) :: []) as mon), sum ->
+                begin if Whnf.isPatSub s then
                   let ss = Whnf.invert s in
                   let rhs_ = toFgn sum in
                   begin if Unify.invertible (g_, (rhs_, id), ss, r) then
@@ -298,12 +298,12 @@ struct
                   else None
                   end
                 else None
-              end
+                end
             | g_, mon, sum -> None
           in
           begin match findMon invertMon (g_, sum) with
-          | Some (Mon (n1, (x1_, s1) :: []), ss1, sum1) -> begin
-              match findMon invertMon (g_, sum1) with
+          | Some (Mon (n1, (x1_, s1) :: []), ss1, sum1) ->
+              begin match findMon invertMon (g_, sum1) with
               | Some (Mon (n2, (x2_, s2) :: []), ss2, sum2) ->
                   let s = Unify.intersection (s1, s2) in
                   let ss = Whnf.invert s in
@@ -336,13 +336,13 @@ struct
                        ( g_,
                          plusSum (Sum (zero, [ Mon (g, [ (z_, ss) ]) ]), sum2)
                        )
-              | None -> begin
-                  match divideSum (sum1, n1) with
+              | None ->
+                  begin match divideSum (sum1, n1) with
                   | Some sum1' ->
                       [ Assign (g_, x1_, toFgn (unaryMinusSum sum1'), ss1) ]
                   | None -> [ delaySum (g_, sum) ]
-                end
-            end
+                  end
+              end
           | None -> [ delaySum (g_, sum) ]
           end
 
@@ -360,10 +360,12 @@ struct
         end
       in
       begin match minusSum (sum2, sum1) with
-      | Sum (m, []) -> begin if m = zero then Succeed [] else Fail end
-      | sum -> begin
-          if solvableSum sum then Succeed (solveSum (g_, sum)) else Fail
-        end
+      | Sum (m, []) ->
+          begin if m = zero then Succeed [] else Fail
+          end
+      | sum ->
+          begin if solvableSum sum then Succeed (solveSum (g_, sum)) else Fail
+          end
       end
 
     and toFgn = function
@@ -390,11 +392,11 @@ struct
 
     let rec equalTo arg__7 arg__8 =
       begin match (arg__7, arg__8) with
-      | MyIntsynRep sum, u2_ -> begin
-          match minusSum (normalizeSum sum, fromExp (u2_, id)) with
+      | MyIntsynRep sum, u2_ ->
+          begin match minusSum (normalizeSum sum, fromExp (u2_, id)) with
           | Sum (m, []) -> m = zero
           | _ -> false
-        end
+          end
       | fe, _ -> raise (UnexpectedFgnExp fe)
       end
 

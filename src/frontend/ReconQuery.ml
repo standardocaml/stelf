@@ -4,6 +4,7 @@ open! Basis
 (* External Syntax for queries *)
 (* Author: Frank Pfenning *)
 include ReconQuery_intf
+
 (* id : tm | _ : tm *)
 (* signature EXTQUERY *)
 (* signature RECON_QUERY *)
@@ -133,10 +134,11 @@ end) : RECON_QUERY = struct
     in
     let cd = Names.nameConDec cd in
     let _ =
-      begin if !Global.chatter >= 3 then
-        print (Timers.time Timers.printing Print.conDecToString cd ^ "\n")
-      else ()
-      end
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter 3)
+           (Display.Info.Form.string
+              (Timers.time Timers.printing Print.conDecToString cd ^ "\n")))
     in
     let _ =
       begin if !Global.doubleCheck then begin
@@ -174,10 +176,11 @@ end) : RECON_QUERY = struct
     in
     let cd = Names.nameConDec cd in
     let _ =
-      begin if !Global.chatter >= 3 then
-        print (Timers.time Timers.printing Print.conDecToString cd ^ "\n")
-      else ()
-      end
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter 3)
+           (Display.Info.Form.string
+              (Timers.time Timers.printing Print.conDecToString cd ^ "\n")))
     in
     let _ =
       begin if !Global.doubleCheck then begin
@@ -228,21 +231,21 @@ end) : RECON_QUERY = struct
       end
     in
     let rec sc = function
-      | m_, [], _ -> begin
-          match finishSolve (sol, m_, v_) with
+      | m_, [], _ ->
+          begin match finishSolve (sol, m_, v_) with
           | None -> []
           | Some conDec_ -> [ (conDec_, None) ]
-        end
-      | m_, def :: defs, T.JAnd (T.JTerm ((u_, oc1), v_, l_), f) -> begin
-          match finishDefine (def, ((u_, oc1), (v_, None), l_)) with
+          end
+      | m_, def :: defs, T.JAnd (T.JTerm ((u_, oc1), v_, l_), f) ->
+          begin match finishDefine (def, ((u_, oc1), (v_, None), l_)) with
           | None, _ -> sc (m_, defs, f)
           | Some conDec_, ocdOpt -> (conDec_, ocdOpt) :: sc (m_, defs, f)
-        end
-      | m_, def :: defs, T.JAnd (T.JOf ((u_, oc1), (v_, oc2), l_), f) -> begin
-          match finishDefine (def, ((u_, oc1), (v_, Some oc2), l_)) with
+          end
+      | m_, def :: defs, T.JAnd (T.JOf ((u_, oc1), (v_, oc2), l_), f) ->
+          begin match finishDefine (def, ((u_, oc1), (v_, Some oc2), l_)) with
           | None, _ -> sc (m_, defs, f)
           | Some conDec_, ocdOpt -> (conDec_, ocdOpt) :: sc (m_, defs, f)
-        end
+          end
     in
     (v_, function m_ -> sc (m_, defines, defines'))
   (* val Xs = Names.namedEVars () *)

@@ -41,11 +41,13 @@ end) : FIELD = struct
 
   let fromString str =
     let check = List.all Char.isDigit in
-    begin if check (String.explode str) then begin
-      match Int.fromString str with
-      | Some n -> begin if n < p then Some n else None end
+    begin if check (String.explode str) then
+      begin match Int.fromString str with
+      | Some n ->
+          begin if n < p then Some n else None
+          end
       | None -> None
-    end
+      end
     else None
     end
 

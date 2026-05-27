@@ -44,10 +44,10 @@ module Integers (Integer : INTEGER) : INTEGERS = struct
 
   let fromString str =
     let check = function
-      | c :: chars' as chars -> begin
-          if c = '~' then List.all Char.isDigit chars'
+      | c :: chars' as chars ->
+          begin if c = '~' then List.all Char.isDigit chars'
           else List.all Char.isDigit chars
-        end
+          end
       | [] -> false
     in
     begin if check (String.explode str) then Integer.fromString str else None

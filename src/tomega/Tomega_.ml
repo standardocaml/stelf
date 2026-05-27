@@ -58,11 +58,7 @@ end)
    structure Weaken = Weaken);
 *)
 module Opsem_ =
-  Opsem.MakeOpsem
-    (Whnf)
-    (Abstract)
-    (Subordinate_.Subordinate)
-    (TomegaTypeCheck)
+  Opsem.MakeOpsem (Whnf) (Abstract) (Subordinate_.Subordinate) (TomegaTypeCheck)
     (TomegaPrint)
     (UnifyNoTrail)
 
@@ -88,12 +84,7 @@ module Redundant = Redundant.Redundant (struct
 end)
 
 module Converter_ =
-  Converter.MakeConverter
-    (Global)
-    (Abstract)
-    (ModeTable)
-    (Names)
-    (UnifyTrail)
+  Converter.MakeConverter (Global) (Abstract) (ModeTable) (Names) (UnifyTrail)
     (Whnf)
     (Print)
     (TomegaPrint)
@@ -106,12 +97,8 @@ module Converter_ =
     (TomegaAbstract)
 
 module TomegaCoverage_ =
-  Coverage.MakeTomegaCoverage
-    (TomegaPrint)
-    (TomegaTypeCheck)
-    (Cover_.Cover)
+  Coverage.MakeTomegaCoverage (TomegaPrint) (TomegaTypeCheck) (Cover_.Cover)
 
 module Opsem = Opsem_
 module Converter = Converter_
 module TomegaCoverage = TomegaCoverage_
-

@@ -12,12 +12,8 @@ open! Basis
 
 (* Printing Mode Declarations *)
 (* Author: Carsten Schuermann *)
-module MakeModePrint
-    (Names : NAMES)
-    (Formatter : FORMATTER)
-    (Print : PRINT) :
+module MakeModePrint (Names : NAMES) (Formatter : FORMATTER) (Print : PRINT) :
   MODEPRINT = struct
-
   open! struct
     module I = IntSyn
     module M = ModeSyn

@@ -4,8 +4,7 @@ module MakeTypeCheck
     (Conv : CONV)
     (Whnf : WHNF)
     (Names : NAMES)
-    (Print : PRINT) :
-  TYPECHECK
+    (Print : PRINT) : TYPECHECK
 (*
   (*! structure IntSyn' : INTSYN !*)
   (*! sharing Conv.IntSyn = IntSyn' !*)
@@ -14,5 +13,6 @@ module MakeTypeCheck
 *)
 
 module type STRICT = Strict.STRICT
+
 module TypeCheck : TYPECHECK
 module Strict : STRICT

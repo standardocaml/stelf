@@ -19,10 +19,7 @@ open Tomega
 (* Abstraction *)
 (* Author: Frank Pfenning, Carsten Schuermann *)
 (* Modified: Roberto Virga *)
-module MakeAbstract
-    (Whnf : WHNF)
-    (Unify : UNIFY)
-    (Constraints : CONSTRAINTS) :
+module MakeAbstract (Whnf : WHNF) (Unify : UNIFY) (Constraints : CONSTRAINTS) :
   ABSTRACT = struct
   exception Error of string
 
@@ -104,7 +101,9 @@ module MakeAbstract
             I.No
 
     and occursInHead = function
-      | k, I.BVar k', dp_ -> begin if k = k' then I.Maybe else dp_ end
+      | k, I.BVar k', dp_ ->
+          begin if k = k' then I.Maybe else dp_
+          end
       | k, I.Const _, dp_ -> dp_
       | k, I.Def _, dp_ -> dp_
       | k, I.Proj _, dp_ -> dp_
@@ -140,14 +139,14 @@ module MakeAbstract
             ( I.Decl (g_, I.decSub (d_, s)),
               (v_, I.dot1 s),
               collectDec (g_, (d_, s), k_) )
-      | g_, (I.Root ((I.FVar (name, v_, s') as f_), s_), s), k_ -> begin
-          if exists (eqFVar f_) k_ then collectSpine (g_, (s_, s), k_)
+      | g_, (I.Root ((I.FVar (name, v_, s') as f_), s_), s), k_ ->
+          begin if exists (eqFVar f_) k_ then collectSpine (g_, (s_, s), k_)
           else
             collectSpine
               ( g_,
                 (s_, s),
                 I.Decl (collectExp (I.Null, (v_, I.id), k_), Fv (name, v_)) )
-        end
+          end
       | ( g_,
           ( I.Root
               (I.Proj ((I.LVar ({ contents = None }, sk, (l, t)) as l_), i), s_),
@@ -160,13 +159,13 @@ module MakeAbstract
             ( I.Decl (g_, I.decSub (d_, s)),
               (u_, I.dot1 s),
               collectDec (g_, (d_, s), k_) )
-      | g_, ((I.EVar (r, gx_, v_, cnstrs) as x_), s), k_ -> begin
-          if exists (eqEVar x_) k_ then collectSub (g_, s, k_)
+      | g_, ((I.EVar (r, gx_, v_, cnstrs) as x_), s), k_ ->
+          begin if exists (eqEVar x_) k_ then collectSub (g_, s, k_)
           else
             let v'_ = raiseType (gx_, v_) in
             let k'_ = collectExp (I.Null, (v'_, I.id), k_) in
             collectSub (g_, s, I.Decl (k'_, Ev x_))
-        end
+          end
       | g_, (I.FgnExp (csfe_csid, csfe_ops), s), k_ ->
           I.FgnExpStd.fold (csfe_csid, csfe_ops)
             (function u_, k_ -> collectExp (g_, (u_, s), k_))
@@ -197,10 +196,10 @@ module MakeAbstract
     and collectBlock = function
       | g_, I.LVar ({ contents = Some b_ }, sk, _), k_ ->
           collectBlock (g_, I.blockSub (b_, sk), k_)
-      | g_, (I.LVar (_, sk, (l, t)) as l_), k_ -> begin
-          if exists (eqLVar l_) k_ then collectSub (g_, I.comp (t, sk), k_)
+      | g_, (I.LVar (_, sk, (l, t)) as l_), k_ ->
+          begin if exists (eqLVar l_) k_ then collectSub (g_, I.comp (t, sk), k_)
           else I.Decl (collectSub (g_, I.comp (t, sk), k_), Lv l_)
-        end
+          end
 
     let rec collectCtx = function
       | g0_, I.Null, k_ -> (g0_, k_)
@@ -218,25 +217,24 @@ module MakeAbstract
     let rec abstractEVar = function
       | ( I.Decl (k'_, Ev (I.EVar (r', _, _, _))),
           depth,
-          (I.EVar (r, _, _, _) as x_) ) -> begin
-          if r == r' then I.BVar (depth + 1)
+          (I.EVar (r, _, _, _) as x_) ) ->
+          begin if r == r' then I.BVar (depth + 1)
           else abstractEVar (k'_, depth + 1, x_)
-        end
+          end
       | I.Decl (k'_, _), depth, x_ -> abstractEVar (k'_, depth + 1, x_)
 
     let rec abstractFVar = function
-      | I.Decl (k'_, Fv (n', _)), depth, (I.FVar (n, _, _) as f_) -> begin
-          if n = n' then I.BVar (depth + 1)
+      | I.Decl (k'_, Fv (n', _)), depth, (I.FVar (n, _, _) as f_) ->
+          begin if n = n' then I.BVar (depth + 1)
           else abstractFVar (k'_, depth + 1, f_)
-        end
+          end
       | I.Decl (k'_, _), depth, f_ -> abstractFVar (k'_, depth + 1, f_)
 
     let rec abstractLVar = function
       | I.Decl (k'_, Lv (I.LVar (r', _, _))), depth, (I.LVar (r, _, _) as l_) ->
-        begin
-          if r == r' then I.Bidx (depth + 1)
+          begin if r == r' then I.Bidx (depth + 1)
           else abstractLVar (k'_, depth + 1, l_)
-        end
+          end
       | I.Decl (k'_, _), depth, l_ -> abstractLVar (k'_, depth + 1, l_)
 
     let rec abstractExpW = function
@@ -268,11 +266,11 @@ module MakeAbstract
     and abstractExp (k_, depth, us_) = abstractExpW (k_, depth, Whnf.whnf us_)
 
     and abstractSub = function
-      | k_, depth, I.Shift k, s_ -> begin
-          if k < depth then
+      | k_, depth, I.Shift k, s_ ->
+          begin if k < depth then
             abstractSub (k_, depth, I.Dot (I.Idx (k + 1), I.Shift (k + 1)), s_)
           else s_
-        end
+          end
       | k_, depth, I.Dot (I.Idx k, s), s_ ->
           abstractSub (k_, depth, s, I.App (I.Root (I.BVar k, I.Nil), s_))
       | k_, depth, I.Dot (I.Exp u_, s), s_ ->
@@ -387,11 +385,11 @@ module MakeAbstract
     let rec closedSub = function
       | g_, I.Shift _ -> true
       | g_, I.Dot (I.Idx _, s) -> closedSub (g_, s)
-      | g_, I.Dot (I.Exp u_, s) -> begin
-          match collectExp (g_, (u_, I.id), I.Null) with
+      | g_, I.Dot (I.Exp u_, s) ->
+          begin match collectExp (g_, (u_, I.id), I.Null) with
           | I.Null -> closedSub (g_, s)
           | _ -> false
-        end
+          end
 
     let rec closedExp (g_, (u_, s)) =
       begin match collectExp (g_, (u_, I.id), I.Null) with
@@ -443,10 +441,10 @@ module MakeAbstract
     let rec abstractPVar = function
       | ( I.Decl (k'_, Pv (T.EVar (_, r', _, _, _, _))),
           depth,
-          (T.EVar (_, r, _, _, _, _) as p_) ) -> begin
-          if r == r' then T.Var (depth + 1)
+          (T.EVar (_, r, _, _, _, _) as p_) ) ->
+          begin if r == r' then T.Var (depth + 1)
           else abstractPVar (k'_, depth + 1, p_)
-        end
+          end
       | I.Decl (k'_, _), depth, p_ -> abstractPVar (k'_, depth + 1, p_)
 
     let rec abstractPrg = function

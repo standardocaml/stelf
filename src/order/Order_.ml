@@ -3,8 +3,9 @@ open! Basis
 
 (* Termination Order *)
 
-(** Author: Carsten Schuermann *)
 include Order_intf
+(** Author: Carsten Schuermann *)
+
 (* signature ORDER *)
 
 (* # 1 "src/order/Order.fun.ml" *)
@@ -132,10 +133,11 @@ module MakeOrder (Table : TABLE with type key = int) : ORDER = struct
 
     let rec closure = function
       | [], a2s -> a2s
-      | a :: a1s, a2s -> begin
-          if List.exists (function a' -> a = a') a2s then closure (a1s, a2s)
+      | a :: a1s, a2s ->
+          begin if List.exists (function a' -> a = a') a2s then
+            closure (a1s, a2s)
           else closure (mutual a @ a1s, a :: a2s)
-        end
+          end
   end
 
   (* mutual a = a's
@@ -176,9 +178,7 @@ end
 (* # 1 "src/order/Order.sml.ml" *)
 open! Basis
 open TableInstances
-
 module Order = MakeOrder (IntRedBlackTree)
-
 include Order
 (* -bp *)
 (*

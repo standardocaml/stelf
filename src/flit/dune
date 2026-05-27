@@ -3,19 +3,8 @@
 (library
  (name flit)
  (public_name stelf.flit)
- (modules
-  FlitOldSmlnjPack
-  Flit_
-  Flit_intf)
- (libraries
-  global
-  table
-  intsyn
-  names
-  index
-  paths
-  print
-  basis)
+ (modules FlitOldSmlnjPack Flit_ Flit_intf)
+ (libraries display global table intsyn names index paths print basis)
  (flags
   (:standard
    -w

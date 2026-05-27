@@ -6,6 +6,7 @@ module Timing = Timing_.Timing
 (* Timers collecting statistics about Stelf *)
 (* Author: Frank Pfenning *)
 include Timers_intf
+
 (* check, then reset *)
 (* signature TIMERS *)
 
@@ -13,7 +14,8 @@ include Timers_intf
 
 (* Timers collecting statistics about Stelf *)
 (* Author: Frank Pfenning *)
-module MakeTimers (Timing' : TIMING) : TIMERS with module Timing = Timing' = struct
+module MakeTimers (Timing' : TIMING) : TIMERS with module Timing = Timing' =
+struct
   module Timing = Timing'
 
   let parsing = Timing.newCenter "Parsing       "

@@ -4,6 +4,7 @@ open! Basis
 (* Worldify *)
 (* Author: Carsten Schuermann *)
 include Worldify_intf
+
 (*  val check : Tomega.Worlds -> IntSyn.cid list -> unit
   val closure : Tomega.Worlds -> Tomega.Worlds *)
 (* signature WORLDIFY *)
@@ -255,11 +256,11 @@ end) : WORLDIFY = struct
     let rec strengthen arg__3 arg__4 =
       begin match (arg__3, arg__4) with
       | a, (t, []) -> []
-      | a, (t, (I.Dec (_, v_) as d_) :: l_) -> begin
-          if Subordinate.below (I.targetFam v_, a) then
+      | a, (t, (I.Dec (_, v_) as d_) :: l_) ->
+          begin if Subordinate.below (I.targetFam v_, a) then
             I.decSub (d_, t) :: strengthen a (I.dot1 t, l_)
           else strengthen a (I.Dot (I.Undef, t), l_)
-        end
+          end
       end
 
     let rec subsumedBlock a w1_ (g_, l_) =
@@ -365,13 +366,13 @@ end) : WORLDIFY = struct
               ((g_, subGoalToDList (Whnf.normalize (v_, s))), Seq (1, piDecs, t))
           in
           let k' = function
-            | g'_, vs'_ -> begin
-                if noConstraints (g_, t) then k (g'_, vs'_)
+            | g'_, vs'_ ->
+                begin if noConstraints (g_, t) then k (g'_, vs'_)
                 else begin
                   Trace.constraintsRemain ();
                   ()
                 end
-              end
+                end
           in
           try
             accR
@@ -385,8 +386,8 @@ end) : WORLDIFY = struct
                     (I.Pi ((I.BDec (None, (c, t)), I.Maybe), v_), I.id))))
       | ( (g_, ((I.Pi (((I.Dec (_, v1_) as d_), _), v2_) as v_), s)),
           (Seq (j, I.Dec (_, v1'_) :: l2'_, t) as l'_),
-          k ) -> begin
-          if Unify.unifiable (g_, (v1_, s), (v1'_, t)) then
+          k ) ->
+          begin if Unify.unifiable (g_, (v1_, s), (v1'_, t)) then
             accR
               ( ( g_,
                   (v2_, I.Dot (I.Exp (I.Root (I.Proj (I.Bidx 1, j), I.Nil)), s))
@@ -400,7 +401,7 @@ end) : WORLDIFY = struct
             Trace.mismatch (g_, (v1_, I.id), (v1'_, t));
             ()
           end
-        end
+          end
       | gVs_, Seq (_, [], t), k -> k gVs_
       | ((g_, (I.Root _, s)) as gVs_), (Seq (_, l'_, t) as r_), k -> begin
           Trace.missing (g_, r_);

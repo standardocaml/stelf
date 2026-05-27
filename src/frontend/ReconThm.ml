@@ -4,6 +4,7 @@ open! Basis
 (* External Syntax for meta theorems *)
 (* Author: Carsten Schuermann *)
 include ReconThm_intf
+
 (*  val wdecl : (decs * decs) list * callpats -> wdecl *)
 (* signature THMEXTSYN *)
 (* signature RECON_THM *)

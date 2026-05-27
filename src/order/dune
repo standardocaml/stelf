@@ -3,13 +3,8 @@
 (library
  (name order)
  (public_name stelf.order)
- (modules
-  Order_
-  Order_intf)
- (libraries
-  table
-  intsyn
-  basis)
+ (modules Order_ Order_intf)
+ (libraries display table intsyn basis)
  (flags
   (:standard
    -w

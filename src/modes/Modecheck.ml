@@ -6,6 +6,7 @@ open Modesyn
 (* Author: Carsten Schuermann *)
 (* Modified: Frank Pfenning *)
 include Modecheck_intf
+
 (* raises Error(msg) *)
 (* signature MODECHECK *)
 
@@ -22,8 +23,7 @@ module MakeModeCheck
     (ModeTable : MODETABLE)
     (Whnf : WHNF)
     (Index : INDEX)
-    (Origins : ORIGINS) :
-  MODECHECK = struct
+    (Origins : ORIGINS) : MODECHECK = struct
   (*! structure IntSyn = IntSyn !*)
   (*! structure ModeSyn = ModeSyn !*)
   (*! structure Paths = Paths !*)
@@ -97,21 +97,22 @@ module MakeModeCheck
     exception Eta
 
     let rec etaContract = function
-      | I.Root (I.BVar k, s_), n -> begin
-          if k > n then begin
+      | I.Root (I.BVar k, s_), n ->
+          begin if k > n then begin
             etaSpine (s_, n);
             k - n
           end
           else raise Eta
-        end
+          end
       | I.Lam (d_, u_), n -> etaContract (u_, n + 1)
       | _ -> raise Eta
 
     and etaSpine = function
       | I.Nil, 0 -> ()
-      | I.App (u_, s_), n -> begin
-          if etaContract (u_, 0) = n then etaSpine (s_, n - 1) else raise Eta
-        end
+      | I.App (u_, s_), n ->
+          begin if etaContract (u_, 0) = n then etaSpine (s_, n - 1)
+          else raise Eta
+          end
 
     let rec checkPattern = function
       | d_, k, args, I.Nil -> ()
@@ -137,20 +138,20 @@ module MakeModeCheck
       | d_, p, I.Pi ((d'_, _), u_) ->
           strictDecN (d_, p, d'_)
           || strictExpN (I.Decl (d_, Universal), p + 1, u_)
-      | d_, p, I.Root (h_, s_) -> begin
-          match h_ with
-          | I.BVar k' -> begin
-              if k' = p then isPattern (d_, k', s_)
-              else begin
-                if isUniversal (I.ctxLookup (d_, k')) then
+      | d_, p, I.Root (h_, s_) ->
+          begin match h_ with
+          | I.BVar k' ->
+              begin if k' = p then isPattern (d_, k', s_)
+              else
+                begin if isUniversal (I.ctxLookup (d_, k')) then
                   strictSpineN (d_, p, s_)
                 else false
+                end
               end
-            end
           | I.Const c -> strictSpineN (d_, p, s_)
           | I.Def d -> strictSpineN (d_, p, s_)
           | I.FgnConst (cs, conDec) -> strictSpineN (d_, p, s_)
-        end
+          end
       | d_, p, I.FgnExp (cs, ops) -> false
 
     and strictSpineN = function
@@ -219,16 +220,18 @@ module MakeModeCheck
       | I.Decl (d_, status), k -> I.Decl (nonStrictVarD (d_, k - 1), status)
 
     let rec updateExpN = function
-      | d_, I.Root (I.BVar k, s_), u -> begin
-          if isUniversal (I.ctxLookup (d_, k)) then updateSpineN (d_, s_, u)
-          else begin
-            if isPattern (d_, k, s_) then updateVarD (d_, k, u)
-            else begin
-              if !checkFree then nonStrictSpineN (nonStrictVarD (d_, k), s_)
+      | d_, I.Root (I.BVar k, s_), u ->
+          begin if isUniversal (I.ctxLookup (d_, k)) then
+            updateSpineN (d_, s_, u)
+          else
+            begin if isPattern (d_, k, s_) then updateVarD (d_, k, u)
+            else
+              begin if !checkFree then
+                nonStrictSpineN (nonStrictVarD (d_, k), s_)
               else d_
+              end
             end
           end
-        end
       | d_, I.Root (I.Const c, s_), u -> updateSpineN (d_, s_, u)
       | d_, I.Root (I.Def d, s_), u -> updateSpineN (d_, s_, u)
       | d_, I.Root (I.FgnConst (cs, conDec), s_), u -> updateSpineN (d_, s_, u)
@@ -337,8 +340,8 @@ module MakeModeCheck
               groundSpineN (d_, mode, s_, (p + 1, occ)) )
 
     and groundVar = function
-      | d_, M.Minus1, k, occ -> begin
-          match I.ctxLookup (d_, k) with
+      | d_, M.Minus1, k, occ ->
+          begin match I.ctxLookup (d_, k) with
           | Existential (Ground Unique, _) -> Unique
           | Universal -> Unique
           | Existential (Ground Ambig, x) as s ->
@@ -355,7 +358,7 @@ module MakeModeCheck
                      ((("Occurrence of variable " ^ nameOf s) ^ " in ")
                      ^ M.modeToString M.Minus1)
                      ^ " argument not necessarily ground" ))
-        end
+          end
       | d_, mode, k, occ ->
           let status = I.ctxLookup (d_, k) in
           begin if isGround status || isUniversal status then uniqueness status
@@ -460,11 +463,11 @@ module MakeModeCheck
           let rec checkList arg__1 arg__2 =
             begin match (arg__1, arg__2) with
             | found, [] -> []
-            | false, mS :: [] -> begin
-                match groundAtom (d_, M.Plus, s_, mS, (1, occ)) with
+            | false, mS :: [] ->
+                begin match groundAtom (d_, M.Plus, s_, mS, (1, occ)) with
                 | Unique -> k (updateAtom (d_, M.Minus1, s_, a, mS, (1, occ)))
                 | Ambig -> k (updateAtom (d_, M.Minus, s_, a, mS, (1, occ)))
-              end
+                end
             | found, mS :: mSs ->
                 let found' =
                   try
@@ -486,11 +489,11 @@ module MakeModeCheck
           let rec checkList arg__3 arg__4 =
             begin match (arg__3, arg__4) with
             | found, [] -> []
-            | false, mS :: [] -> begin
-                match groundAtom (d_, M.Plus, s_, mS, (1, occ)) with
+            | false, mS :: [] ->
+                begin match groundAtom (d_, M.Plus, s_, mS, (1, occ)) with
                 | Unique -> k (updateAtom (d_, M.Minus1, s_, d, mS, (1, occ)))
                 | Ambig -> k (updateAtom (d_, M.Minus, s_, d, mS, (1, occ)))
-              end
+                end
             | found, mS :: mSs ->
                 let found' =
                   try
@@ -518,11 +521,11 @@ module MakeModeCheck
     let rec checkD (conDec, fileName, occOpt) =
       let _ = checkFree := false in
       let rec checkable = function
-        | I.Root (ha_, _) -> begin
-            match ModeTable.mmodeLookup (cidFromHead ha_) with
+        | I.Root (ha_, _) ->
+            begin match ModeTable.mmodeLookup (cidFromHead ha_) with
             | [] -> false
             | _ -> true
-          end
+            end
         | I.Uni _ -> false
         | I.Pi (_, v_) -> checkable v_
       in

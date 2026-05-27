@@ -12,11 +12,7 @@
   Server
   Server_intf
   Sigint_intf)
- (libraries
-  timing
-  frontend
-  basis
-  smlofnj)
+ (libraries display timing frontend basis smlofnj)
  (flags
   (:standard
    -w

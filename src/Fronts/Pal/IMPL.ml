@@ -1,23 +1,22 @@
 open! Basis
 
 module type IMPL = sig
-  (** New parser layer: command-level parsing using the Modern parser. *)
-  module Cmd : Modern.CMD.CMD
+  module Cst : Cst.CST
+  (** Concrete syntax tree: the CST used by the modern parser. *)
 
-  (** Convenience alias — the same Cst as used by Cmd. *)
-  module Cst = Cmd.Cst
+  module Cmd : Modern.CMD.CMD with module Cst = Cst
+  (** New parser layer: command-level parsing using the Modern parser. *)
 
   (** Names module — same as Cmd.Names. *)
-  module Names = Cmd.Names
 
-  (** New elaboration layer: reconstruction / type-inference sub-modules. *)
   module Recon : Recon.RECON
+  (** New elaboration layer: reconstruction / type-inference sub-modules. *)
 
   (** Input source for loading: a file path or an inline string. *)
   type source = File of Fpath.t | Input of string
 
+  val mode : [ `Repl | `Lsp | `Other ] ref
   (** Operating mode: affects error formatting and REPL behaviour. *)
-  val mode : [`Repl | `Lsp | `Other] ref
 
   (* -------------------------------------------------------------------- *)
   (** {1 Global flags} *)
@@ -26,7 +25,8 @@ module type IMPL = sig
   (** Verbosity level: 0 = silent, 1 = minimal, 2+ = progressively louder. *)
 
   val double_check : bool ref
-  (** Re-typecheck declarations after reconstruction; catches reconstructor bugs. *)
+  (** Re-typecheck declarations after reconstruction; catches reconstructor
+      bugs. *)
 
   val unsafe : bool ref
   (** Permit [%assert] and [%trustme] directives. *)
@@ -40,21 +40,22 @@ module type IMPL = sig
   (* -------------------------------------------------------------------- *)
   (** {1 Result status} *)
 
-  type status = Ok | Abort
-  (** Return status of loading and evaluation operations. *)
+  type status =
+    | Ok
+    | Abort  (** Return status of loading and evaluation operations. *)
 
   (* -------------------------------------------------------------------- *)
   (** {1 Signature installation} *)
 
   module Install : sig
+    val install1 : ?path:Fpath.t option -> Cst.cmd -> unit
     (** Install a single parsed command into the global signature. *)
-    val install1 : Cst.cmd -> unit
 
+    val install : ?path:Fpath.t option -> Cst.cmd list -> unit
     (** Install a list of commands in order. *)
-    val install : Cst.cmd list -> unit
 
-    (** Erase the entire global state: signature, name tables, indices, etc. *)
     val reset : unit -> unit
+    (** Erase the entire global state: signature, name tables, indices, etc. *)
   end
 
   (* -------------------------------------------------------------------- *)
@@ -78,7 +79,8 @@ module type IMPL = sig
   module Config : sig
     type t
     (** An opaque configuration: a working directory plus an ordered list of
-        source files, each with a modification-time slot for incremental reload. *)
+        source files, each with a modification-time slot for incremental reload.
+    *)
 
     val suffix : string ref
     (** File-extension treated as a config file (default: ["cfg"]). *)
@@ -156,9 +158,11 @@ module type IMPL = sig
   (** {1 Reconstruction (elaboration) settings} *)
 
   module ReconOpts : sig
-    type trace_mode = Progressive | Omniscient
-    (** [Progressive]: emit constraint events as they are added.
-        [Omniscient]: emit them after constraint solving completes. *)
+    type trace_mode =
+      | Progressive
+      | Omniscient
+          (** [Progressive]: emit constraint events as they are added.
+              [Omniscient]: emit them after constraint solving completes. *)
 
     val trace : bool ref
     (** Enable reconstruction tracing. *)
@@ -170,9 +174,12 @@ module type IMPL = sig
   (** {1 Execution-trace settings} *)
 
   module Trace : sig
-    type 'a spec = None | Some of 'a list | All
-    (** [None] = no tracing; [Some ids] = trace named clauses/families;
-        [All] = trace every clause/family. *)
+    type 'a spec =
+      | None
+      | Some of 'a list
+      | All
+          (** [None] = no tracing; [Some ids] = trace named clauses/families;
+              [All] = trace every clause/family. *)
 
     val trace : string spec -> unit
     (** Set the trace specification. *)
@@ -217,8 +224,11 @@ module type IMPL = sig
   (** {1 Meta-theorem prover} *)
 
   module Prover : sig
-    type strategy = Rfs | Frs
-    (** [Rfs] = Recursion-Filling-Splitting; [Frs] = Filling-Recursion-Splitting. *)
+    type strategy =
+      | Rfs
+      | Frs
+          (** [Rfs] = Recursion-Filling-Splitting; [Frs] =
+              Filling-Recursion-Splitting. *)
 
     val strategy : strategy ref
     (** Proof-search strategy (default: [Frs]). *)
@@ -264,8 +274,6 @@ module type IMPL = sig
 
     val set : string -> string -> unit
     (** Assign a named runtime option. *)
-
-    
   end
 
   (* -------------------------------------------------------------------- *)
@@ -280,5 +288,6 @@ module type IMPL = sig
   (** Human-readable version string. *)
 
   val run : unit -> unit
-  (** Complete top-level entry point: parse argv and dispatch to REPL / file loading. *)
+  (** Complete top-level entry point: parse argv and dispatch to REPL / file
+      loading. *)
 end

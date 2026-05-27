@@ -3,13 +3,9 @@
 (library
  (name worldcheck)
  (public_name stelf.worldcheck)
- (modules
-  WorldSyn
-  Worldify
-  Worldcheck_
-  WorldSyn_intf
-  Worldify_intf)
+ (modules WorldSyn Worldify Worldcheck_ WorldSyn_intf Worldify_intf)
  (libraries
+  display
   global
   timing
   table

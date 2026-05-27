@@ -66,9 +66,10 @@ end) : MEMOTABLE = struct
   let rec delete (x, (l_ : ctx)) =
     let rec del = function
       | x, [], l_ -> None
-      | x, ((y, e_) as h_) :: l_, l'_ -> begin
-          if x = y then Some ((y, e_), rev l'_ @ l_) else del (x, l_, h_ :: l'_)
-        end
+      | x, ((y, e_) as h_) :: l_, l'_ ->
+          begin if x = y then Some ((y, e_), rev l'_ @ l_)
+          else del (x, l_, h_ :: l'_)
+          end
     in
     begin match del (x, !l_, []) with
     | None -> None
@@ -81,12 +82,12 @@ end) : MEMOTABLE = struct
   let rec member (x, (l_ : ctx)) =
     let rec memb = function
       | x, [] -> None
-      | x, ((y, (IntSyn.Dec (n, u_) as e_)) :: l_ as h_) -> begin
-          if x = y then Some (y, e_) else memb (x, l_)
-        end
-      | x, ((y, (IntSyn.ADec (n, d) as e_)) :: l_ as h_) -> begin
-          if x = y then Some (y, e_) else memb (x, l_)
-        end
+      | x, ((y, (IntSyn.Dec (n, u_) as e_)) :: l_ as h_) ->
+          begin if x = y then Some (y, e_) else memb (x, l_)
+          end
+      | x, ((y, (IntSyn.ADec (n, d) as e_)) :: l_ as h_) ->
+          begin if x = y then Some (y, e_) else memb (x, l_)
+          end
     in
     memb (x, !l_)
 
@@ -300,41 +301,43 @@ end) : MEMOTABLE = struct
       | ( fasub,
           (((r, passed) as ctxTotal), d),
           (d1_, (I.Root (h1_, s1_) as u1_)),
-          (d2_, (I.Root (h2_, s2_) as u2_)) ) -> begin
-          match (h1_, h2_) with
-          | I.Const c1, I.Const c2 -> begin
-              if c1 = c2 then
+          (d2_, (I.Root (h2_, s2_) as u2_)) ) ->
+          begin match (h1_, h2_) with
+          | I.Const c1, I.Const c2 ->
+              begin if c1 = c2 then
                 assignSpine (fasub, (ctxTotal, d), (d1_, s1_), (d2_, s2_))
               else raise (Assignment "Constant clash")
-            end
-          | I.Def c1, I.Def c2 -> begin
-              if c1 = c2 then
+              end
+          | I.Def c1, I.Def c2 ->
+              begin if c1 = c2 then
                 assignSpine (fasub, (ctxTotal, d), (d1_, s1_), (d2_, s2_))
               else
                 let u1'_ = Whnf.normalize (Whnf.expandDef (u1_, I.id)) in
                 let u2'_ = Whnf.normalize (Whnf.expandDef (u2_, I.id)) in
                 assignExp (fasub, (ctxTotal, d), (d1_, u1'_), (d2_, u2'_))
-            end
+              end
           | I.Def c1, _ ->
               let u1'_ = Whnf.normalize (Whnf.expandDef (u1_, I.id)) in
               assignExp (fasub, (ctxTotal, d), (d1_, u1'_), (d2_, u2_))
           | _, I.Def c2 ->
               let u2'_ = Whnf.normalize (Whnf.expandDef (u2_, I.id)) in
               assignExp (fasub, (ctxTotal, d), (d1_, u1_), (d2_, u2'_))
-          | I.BVar k1, I.BVar k2 -> begin
-              if k1 <= r + d then begin
-                if k2 <= r + d then begin
-                  if k2 = k1 then fasub else raise (Assignment "BVar clash")
-                end
+          | I.BVar k1, I.BVar k2 ->
+              begin if k1 <= r + d then
+                begin if k2 <= r + d then
+                  begin if k2 = k1 then fasub
+                  else raise (Assignment "BVar clash")
+                  end
                 else raise (Assignment "BVar - EVar clash")
-              end
-              else begin
-                match member (k1 - d + passed, d1_) with
+                end
+              else
+                begin match member (k1 - d + passed, d1_) with
                 | None -> raise (Assignment "EVar nonexistent")
-                | Some (x, dec_v) -> begin
-                    if k2 <= r + d then raise (Assignment "EVar - BVar clash")
-                    else begin
-                      if k2 = k1 then function
+                | Some (x, dec_v) ->
+                    begin if k2 <= r + d then
+                      raise (Assignment "EVar - BVar clash")
+                    else
+                      begin if k2 = k1 then function
                         | asub -> begin
                             fasub asub;
                             assign (d, dec_v, u1_, u2_, asub)
@@ -344,17 +347,17 @@ end) : MEMOTABLE = struct
                           (Assignment
                              "EVars are different -- outside of the allowed \
                               fragment")
+                      end
                     end
-                  end
+                end
               end
-            end
-          | I.Skonst c1, I.Skonst c2 -> begin
-              if c1 = c2 then
+          | I.Skonst c1, I.Skonst c2 ->
+              begin if c1 = c2 then
                 assignSpine (fasub, (ctxTotal, d), (d1_, s1_), (d2_, s2_))
               else raise (Assignment "Skolem constant clash")
-            end
+              end
           | _ -> raise (Assignment "Head mismatch ")
-        end
+          end
       | ( fasub,
           (ctxTotal, d),
           (d1_, I.Lam (dec1_, u1_)),
@@ -432,26 +435,26 @@ end) : MEMOTABLE = struct
       | ( d,
           (d_, T.Unify (g_, (I.Root (I.BVar k, s_) as x_), n_, eqn)),
           (d'_, T.Unify (g'_, x'_, n'_, eqn')),
-          asub ) -> begin
-          if
+          asub ) ->
+          begin if
             equalCtx (g_, I.id, g'_, I.id)
             && Conv.conv ((x_, I.id), (x'_, I.id))
             && Conv.conv ((n_, I.id), (n'_, I.id))
           then
             let d' = d + I.ctxLength g'_ in
             begin
-              begin if k - d' > 0 then begin
-                match member (k - d', d'_) with
+              begin if k - d' > 0 then
+                begin match member (k - d', d'_) with
                 | None -> ()
-                | Some (x, dec_v) -> begin
-                    match RBSet.lookup asub (k - d') with
+                | Some (x, dec_v) ->
+                    begin match RBSet.lookup asub (k - d') with
                     | None -> begin
                         ignore (delete (x, d'_));
                         ignore (S.insert asub (k - d', I.Idx (k - d')))
                       end
                     | Some _ -> ()
-                  end
-              end
+                    end
+                end
               else begin
                 print "Impossible -- Found BVar instead of EVar\n";
                 raise (Error "Impossibe -- Found BVar instead of EVar ")
@@ -460,7 +463,7 @@ end) : MEMOTABLE = struct
               equalEqn' (d, (d_, eqn), (d'_, eqn'), asub)
             end
           else false
-        end
+          end
       | d, _, _, asub -> false
 
     let rec equalSub = function
@@ -504,14 +507,14 @@ end) : MEMOTABLE = struct
       let rec collectExp = function
         | d, d'_, d_, I.Lam (_, u_) -> collectExp (d + 1, d'_, d_, u_)
         | d, d'_, d_, I.Root (I.Const c, s_) -> collectSpine (d, d'_, d_, s_)
-        | d, d'_, d_, I.Root (I.BVar k, s_) -> begin
-            match member (k - d, d_) with
+        | d, d'_, d_, I.Root (I.BVar k, s_) ->
+            begin match member (k - d, d_) with
             | None -> collectSpine (d, d'_, d_, s_)
             | Some (x, dec_v) -> begin
                 ignore (delete (x - d, d_));
                 ignore (insertList ((x - d, dec_v), d'_))
               end
-          end
+            end
         | d, d'_, d_, (I.Root (I.Def k, s_) as u_) ->
             let u'_ = Whnf.normalize (Whnf.expandDef (u_, I.id)) in
             collectExp (d, d'_, d_, u'_)
@@ -529,8 +532,8 @@ end) : MEMOTABLE = struct
 
     let rec convAssSub' (g_, idx_k, d_, asub, d, ((evars, avars) as evarsl)) =
       begin match RBSet.lookup asub d with
-      | None -> begin
-          match member (d, d_) with
+      | None ->
+          begin match member (d, d_) with
           | None -> IntSyn.Shift (evars + avars)
           | Some (x, IntSyn.Dec (n, v_)) ->
               let s = convAssSub' (g_, idx_k + 1, d_, asub, d + 1, evarsl) in
@@ -540,7 +543,7 @@ end) : MEMOTABLE = struct
               print "convAssSub' -- Found an uninstantiated AVAR\n";
               raise (Error "Unassigned AVar -- should never happen\n")
             end
-        end
+          end
       | Some (I.Exp e_ as f_) ->
           let e'_ = Whnf.normalize (e_, I.id) in
           I.Dot (I.Exp e'_, convAssSub' (g_, idx_k + 1, d_, asub, d + 1, evarsl))
@@ -556,20 +559,20 @@ end) : MEMOTABLE = struct
         | ( depth,
             (I.Root ((I.Const k as h1_), s1_) as t_),
             (I.Root (I.Const k', s2_) as u_),
-            ac ) -> begin
-            if k = k' then instSpine (depth, s1_, s2_, ac)
+            ac ) ->
+            begin if k = k' then instSpine (depth, s1_, s2_, ac)
             else raise (Instance "Constant mismatch\n")
-          end
+            end
         | ( depth,
             (I.Root ((I.Def k as h1_), s1_) as t_),
             (I.Root (I.Def k', s2_) as u_),
-            ac ) -> begin
-            if k = k' then instSpine (depth, s1_, s2_, ac)
+            ac ) ->
+            begin if k = k' then instSpine (depth, s1_, s2_, ac)
             else
               let t'_ = Whnf.normalize (Whnf.expandDef (t_v, I.id)) in
               let u'_ = Whnf.normalize (Whnf.expandDef (u_, I.id)) in
               instExp (depth, t'_, u'_, ac)
-          end
+            end
         | ( depth,
             (I.Root ((I.Def k as h1_), s1_) as t_),
             (I.Root (h2_, s2_) as u_),
@@ -579,17 +582,17 @@ end) : MEMOTABLE = struct
         | ( d,
             (I.Root ((I.BVar k as h1_), s1_) as t_),
             (I.Root (I.BVar k', s2_) as u_),
-            ac ) -> begin
-            if k > d && k' > d then
+            ac ) ->
+            begin if k > d && k' > d then
               let k1 = k - d in
               let k2 = k' - d in
               begin match (member (k1, d_t_), member (k2, d_u_)) with
-              | None, None -> begin
-                  if k1 = k2 then instSpine (d, s1_, s2_, ac)
+              | None, None ->
+                  begin if k1 = k2 then instSpine (d, s1_, s2_, ac)
                   else raise (Instance "Bound variable mismatch\n")
-                end
-              | Some (x, dec1_), Some (x', dec2_) -> begin
-                  if k1 = k2 && equalDec (dec1_, dec2_) then
+                  end
+              | Some (x, dec1_), Some (x', dec2_) ->
+                  begin if k1 = k2 && equalDec (dec1_, dec2_) then
                     let ac' = instSpine (d, s1_, s2_, ac) in
                     let ac'' = function
                       | asub -> begin
@@ -603,7 +606,7 @@ end) : MEMOTABLE = struct
                         ac asub;
                         assign (d, dec1_, t_v, u_, asub)
                       end
-                end
+                  end
               | Some (x, (I.ADec (n, d') as dec1_)), None ->
                   fun asub ->
                     begin
@@ -619,12 +622,12 @@ end) : MEMOTABLE = struct
               | _, _ -> raise (Instance "Impossible\n")
               end
             else raise (Instance "Bound variable mismatch\n")
-          end
+            end
         | ( d,
             (I.Root ((I.BVar k as h1_), s1_) as t_),
             (I.Root (I.Const k', s2_) as u_),
-            ac ) -> begin
-            match isExists (d, I.BVar k, d_t_) with
+            ac ) ->
+            begin match isExists (d, I.BVar k, d_t_) with
             | None -> raise (Instance "Impossible\n")
             | Some (x, (I.ADec (_, _) as dec1_)) ->
                 fun asub ->
@@ -638,12 +641,12 @@ end) : MEMOTABLE = struct
                     ac asub;
                     assign (d, dec1_, t_v, u_, asub)
                   end
-          end
+            end
         | ( d,
             (I.Root ((I.BVar k as h1_), s1_) as t_),
             (I.Root (I.Def k', s2_) as u_),
-            ac ) -> begin
-            match isExists (d, I.BVar k, d_t_) with
+            ac ) ->
+            begin match isExists (d, I.BVar k, d_t_) with
             | None -> raise (Instance "Impossible\n")
             | Some (x, (I.ADec (_, _) as dec1_)) ->
                 fun asub ->
@@ -657,7 +660,7 @@ end) : MEMOTABLE = struct
                     ac asub;
                     assign (d, dec1_, t_v, u_, asub)
                   end
-          end
+            end
         | depth, (I.Root (h1_, s1_) as t_), (I.Root (I.Def k', s2_) as u_), ac
           ->
             let u'_ = Whnf.normalize (Whnf.expandDef (u_, I.id)) in
@@ -710,16 +713,16 @@ end) : MEMOTABLE = struct
     let rec compHeads = function
       | (d_1_, I.Const k), (d_2_, I.Const k') -> k = k'
       | (d_1_, I.Def k), (d_2_, I.Def k') -> k = k'
-      | (d_1_, I.BVar k), (d_2_, I.BVar k') -> begin
-          match isExists (0, I.BVar k, d_1_) with
+      | (d_1_, I.BVar k), (d_2_, I.BVar k') ->
+          begin match isExists (0, I.BVar k, d_1_) with
           | None -> k = k'
           | Some (x, dec_v) -> true
-        end
-      | (d_1_, I.BVar k), (d_2_, h2_) -> begin
-          match isExists (0, I.BVar k, d_1_) with
+          end
+      | (d_1_, I.BVar k), (d_2_, h2_) ->
+          begin match isExists (0, I.BVar k, d_1_) with
           | None -> false
           | Some (x, dec_v) -> true
-        end
+          end
       | (d_1_, h1_), (d_2_, h2_) -> false
 
     let rec compatible' ((d_t_, (dt, t_v)), (d_u_, (du, u_)), ds_, rho_t, rho_u)
@@ -736,38 +739,38 @@ end) : MEMOTABLE = struct
       let rec genRoot = function
         | ( d,
             (I.Root ((I.Const k as h1_), s1_) as t_),
-            (I.Root (I.Const k', s2_) as u_) ) -> begin
-            if k = k' then
+            (I.Root (I.Const k', s2_) as u_) ) ->
+            begin if k = k' then
               let s'_ = genSpine (d, s1_, s2_) in
               I.Root (h1_, s'_)
             else genNVar ((rho_t, (d, t_v)), (rho_u, (d, u_)))
-          end
+            end
         | ( d,
             (I.Root ((I.Def k as h1_), s1_) as t_),
-            (I.Root (I.Def k', s2_) as u_) ) -> begin
-            if k = k' then
+            (I.Root (I.Def k', s2_) as u_) ) ->
+            begin if k = k' then
               let s'_ = genSpine (d, s1_, s2_) in
               I.Root (h1_, s'_)
             else genNVar ((rho_t, (d, t_v)), (rho_u, (d, u_)))
-          end
+            end
         | ( d,
             (I.Root ((I.BVar k as h1_), s1_) as t_),
-            (I.Root (I.BVar k', s2_) as u_) ) -> begin
-            if k > d && k' > d then
+            (I.Root (I.BVar k', s2_) as u_) ) ->
+            begin if k > d && k' > d then
               let k1 = k - d in
               let k2 = k' - d in
               begin match (member (k1, d_t_), member (k2, d_u_)) with
-              | None, None -> begin
-                  if k1 = k2 then
+              | None, None ->
+                  begin if k1 = k2 then
                     try
                       let s'_ = genSpine (d, s1_, s2_) in
                       I.Root (h1_, s'_)
                     with differentSpine_ ->
                       genNVar ((rho_t, (d, t_v)), (rho_u, (d, u_)))
                   else genNVar ((rho_t, (d, t_v)), (rho_u, (d, u_)))
-                end
-              | Some (x, dec1_), Some (x', dec2_) -> begin
-                  if k1 = k2 && equalDec (dec1_, dec2_) then
+                  end
+              | Some (x, dec1_), Some (x', dec2_) ->
+                  begin if k1 = k2 && equalDec (dec1_, dec2_) then
                     let s'_ = genSpine (d, s1_, s2_) in
                     begin
                       ignore (delete (x, d_t_));
@@ -780,19 +783,19 @@ end) : MEMOTABLE = struct
                       end
                     end
                   else genNVar ((rho_t, (d, t_v)), (rho_u, (d, u_)))
-                end
+                  end
               | _, _ -> genNVar ((rho_t, (d, t_v)), (rho_u, (d, u_)))
               end
-            else begin
-              if k = k' then
+            else
+              begin if k = k' then
                 try
                   let s'_ = genSpine (d, s1_, s2_) in
                   I.Root (h1_, s'_)
                 with DifferentSpines ->
                   genNVar ((rho_t, (d, t_v)), (rho_u, (d, u_)))
               else genNVar ((rho_t, (d, t_v)), (rho_u, (d, u_)))
+              end
             end
-          end
         | ( d,
             (I.Root ((I.BVar k as h1_), s1_) as t_),
             (I.Root (I.Const k', s2_) as u_) ) ->
@@ -837,11 +840,11 @@ end) : MEMOTABLE = struct
           (d_u_, ((d2, I.Root (h2_, s2_)) as u_)),
           ds_,
           rho_t,
-          rho_u ) -> begin
-          if compHeads ((d_t_, h1_), (d_u_, h2_)) then
+          rho_u ) ->
+          begin if compHeads ((d_t_, h1_), (d_u_, h2_)) then
             compatible' ((d_t_, t_), (d_u_, u_), ds_, rho_t, rho_u)
           else NotCompatible
-        end
+          end
       | (d_t_, t_v), (d_u_, u_), ds_, rho_t, rho_u ->
           compatible' ((d_t_, t_v), (d_u_, u_), ds_, rho_t, rho_u)
 
@@ -849,11 +852,11 @@ end) : MEMOTABLE = struct
       | asub, (dsq_, gsq_, eqn_sq), [] -> None
       | ( asub,
           (dsq_, gsq_, eqn_sq),
-          (_, delta'_, g'_, eqn', answRef', _, status') :: gRlist_ ) -> begin
-          if instanceCtx (asub, (dsq_, gsq_), (delta'_, g'_)) then
+          (_, delta'_, g'_, eqn', answRef', _, status') :: gRlist_ ) ->
+          begin if instanceCtx (asub, (dsq_, gsq_), (delta'_, g'_)) then
             Some ((delta'_, g'_, eqn'), answRef', status')
           else compatibleCtx (asub, (dsq_, gsq_, eqn_sq), gRlist_)
-        end
+          end
 
     let rec instanceSub ((d_t_, nsub_t), (dsq_, squery), asub) =
       let rho_u = nid () in
@@ -978,8 +981,8 @@ end) : MEMOTABLE = struct
       let _ =
         S.forall squery (function nv, u_ ->
             begin match S.lookup nsub_t nv with
-            | Some t_v -> begin
-                match
+            | Some t_v ->
+                begin match
                   compatible ((d_r1_, t_v), (d_r2_, u_), dsigma_, rho_t, rho_u)
                 with
                 | NotCompatible -> begin
@@ -998,7 +1001,7 @@ end) : MEMOTABLE = struct
                             end
                           end
                     end
-              end
+                end
             | None -> S.insert rho_u (nv, u_)
             end)
       in
@@ -1054,8 +1057,8 @@ end) : MEMOTABLE = struct
     let rec findAllCandidates (g_r_, children, ds_) =
       let rec findAllCands = function
         | g_r_, [], (dsq_, sub_u), vList_, sList_ -> (vList_, sList_)
-        | g_r_, x :: l_, (dsq_, sub_u), vList_, sList_ -> begin
-            match compChild (!x, (dsq_, sub_u)) with
+        | g_r_, x :: l_, (dsq_, sub_u), vList_, sList_ ->
+            begin match compChild (!x, (dsq_, sub_u)) with
             | NoCompatibleSub ->
                 findAllCands (g_r_, l_, (dsq_, sub_u), vList_, sList_)
             | SplitSub (dsigma_, drho1_, drho2_) ->
@@ -1069,7 +1072,7 @@ end) : MEMOTABLE = struct
                 let drho2_ = (d_r2_, rho2) in
                 findAllCands
                   (g_r_, l_, (dsq_, sub_u), (x, drho2_, I.id) :: vList_, sList_)
-          end
+            end
       in
       findAllCands (g_r_, children, ds_, [], [])
 
@@ -1091,11 +1094,11 @@ end) : MEMOTABLE = struct
       | I.Root (h2_, s2_), ((I.Root (h_, s_) as t), rho1) -> begin
           eqHeads (h2_, h_) && eqSpine (s2_, (s_, rho1))
         end
-      | t2_, (I.NVar n, rho1) -> begin
-          match S.lookup rho1 n with
+      | t2_, (I.NVar n, rho1) ->
+          begin match S.lookup rho1 n with
           | None -> false
           | Some (dt1, t1_) -> eqTerm (t2_, (t1_, nid ()))
-        end
+          end
       | I.Lam (d2_, t2_), (I.Lam (d_, t_v), rho1) -> eqTerm (t2_, (t_v, rho1))
       | _, (_, _) -> false
 
@@ -1111,18 +1114,17 @@ end) : MEMOTABLE = struct
     let rec variantCtx = function
       | (g_, eqn), [] -> None
       | (g_, eqn), (l', d_g_, g'_, eqn', answRef', _, status') :: gRlist_ ->
-        begin
-          if equalCtx' (g_, g'_) && equalEqn (eqn, eqn') then
+          begin if equalCtx' (g_, g'_) && equalEqn (eqn, eqn') then
             Some (l', answRef', status')
           else variantCtx ((g_, eqn), gRlist_)
-        end
+          end
 
     let rec insert (nref_, (dsq_, sq), gr_) =
       let rec insert' = function
         | ( (Leaf (_, gRlistRef_) as n_),
             (dsq_, sq),
-            ((l, g_r_, eqn, answRef, stage, status) as gr_) ) -> begin
-            match variantCtx ((g_r_, eqn), !gRlistRef_) with
+            ((l, g_r_, eqn, answRef, stage, status) as gr_) ) ->
+            begin match variantCtx ((g_r_, eqn), !gRlistRef_) with
             | None -> (
                 let d_nsub_, d_g_ = collectEVar (dsq_, sq) in
                 let gr'_ = (l, d_g_, g_r_, eqn, answRef, stage, status) in
@@ -1136,7 +1138,7 @@ end) : MEMOTABLE = struct
             | Some (_, answRef', status') -> (
                 function
                 | () -> ((), T.RepeatedEntry ((I.id, I.id), answRef', status')))
-          end
+            end
         | ( (Node ((d_, sub), children) as n_),
             (dsq_, sq),
             ((l, g_r_, eqn, answRef, stage, status) as gr_) ) ->
@@ -1158,8 +1160,8 @@ end) : MEMOTABLE = struct
                           answList := answRef :: !answList
                         end,
                         T.NewEntry answRef ))
-              | [], (childRef_, (dsigma_, drho1_, drho2_)) :: _ -> begin
-                  if
+              | [], (childRef_, (dsigma_, drho1_, drho2_)) :: _ ->
+                  begin if
                     !TableParam.divHeuristic
                     && divergingSub (dsigma_, drho1_, drho2_)
                   then function
@@ -1178,17 +1180,17 @@ end) : MEMOTABLE = struct
                             answList := answRef :: !answList
                           end,
                           T.NewEntry answRef )
-                end
+                  end
               | (childRef_, drho2_, asub) :: [], _ ->
                   insert (childRef_, drho2_, gr_)
-              | (childRef_, drho2_, asub) :: l_, sCands_ -> begin
-                  match (insert (childRef_, drho2_, gr_)) () with
+              | (childRef_, drho2_, asub) :: l_, sCands_ ->
+                  begin match (insert (childRef_, drho2_, gr_)) () with
                   | _, T.NewEntry answRef -> checkCandidates (l_, sCands_)
                   | _, T.RepeatedEntry (asub, answRef, status) ->
                       fun () -> ((), T.RepeatedEntry (asub, answRef, status))
                   | _, T.DivergingEntry (asub, answRef) ->
                       fun () -> ((), T.DivergingEntry (asub, answRef))
-                end
+                  end
             in
             checkCandidates (variantCand_, splitCand_)
       in
@@ -1197,10 +1199,10 @@ end) : MEMOTABLE = struct
     let rec answCheckVariant (s', answRef, o_) =
       let rec member = function
         | (d_, sk), [] -> false
-        | (d_, sk), ((d1_, s1), _) :: s_ -> begin
-            if equalSub (sk, s1) && equalCtx' (d_, d1_) then true
+        | (d_, sk), ((d1_, s1), _) :: s_ ->
+            begin if equalSub (sk, s1) && equalCtx' (d_, d1_) then true
             else member ((d_, sk), s_)
-          end
+            end
       in
       let dEVars_, sk = A.abstractAnswSub s' in
       begin if member ((dEVars_, sk), T.solutions answRef) then T.Repeated_
@@ -1910,10 +1912,11 @@ end) : MEMOTABLE = struct
   let rec memberCtx ((g_, v_), g'_) =
     let rec instanceCtx' = function
       | (g_, v_), I.Null, n -> None
-      | (g_, v_), I.Decl (g'_, (I.Dec (_, v'_) as d'_)), n -> begin
-          if Match.instance (g_, (v_, I.id), (v'_, I.Shift n)) then Some d'_
+      | (g_, v_), I.Decl (g'_, (I.Dec (_, v'_) as d'_)), n ->
+          begin if Match.instance (g_, (v_, I.id), (v'_, I.Shift n)) then
+            Some d'_
           else instanceCtx' ((g_, v_), g'_, n + 1)
-        end
+          end
     in
     instanceCtx' ((g_, v_), g'_, 1)
 end

@@ -3,20 +3,17 @@ open! Basis
 
 (* Style Checking *)
 
-(** Author: Carsten Schuermann *)
 include Style_intf
+(** Author: Carsten Schuermann *)
+
 (* signature STYLECHECK *)
 
 (* # 1 "src/style/Style_.fun.ml" *)
 open! Basis
 open Origins
 
-module MakeStyleCheck
-    (Whnf : WHNF)
-    (Index : INDEX)
-    (Origins : ORIGINS) :
+module MakeStyleCheck (Whnf : WHNF) (Index : INDEX) (Origins : ORIGINS) :
   STYLECHECK = struct
-
   exception Error of string
 
   open! struct
@@ -72,15 +69,15 @@ module MakeStyleCheck
       end
 
     let rec checkVar = function
-      | I.Dec (Some n, v_), pol -> begin
-          match Names.getNamePref (I.targetFam v_) with
+      | I.Dec (Some n, v_), pol ->
+          begin match Names.getNamePref (I.targetFam v_) with
           | None -> Correct
-          | Some (prefENames, prefUNames) -> begin
-              match pol with
+          | Some (prefENames, prefUNames) ->
+              begin match pol with
               | Plus -> checkVariablename (n, prefENames)
               | Minus -> checkVariablename (n, prefUNames)
-            end
-        end
+              end
+          end
       | I.Dec (None, v_), pol -> Correct
 
     let rec implicitHead = function
@@ -147,11 +144,11 @@ module MakeStyleCheck
 
     and checkHead arg__7 arg__8 arg__9 =
       begin match (arg__7, arg__8, arg__9) with
-      | c, ((g_, p_), I.BVar k, occ), err -> begin
-          match I.ctxLookup (p_, k) with
+      | c, ((g_, p_), I.BVar k, occ), err ->
+          begin match I.ctxLookup (p_, k) with
           | Correct -> []
           | Incorrect (prefNames, n) -> error c (prefNames, n, occ) err
-        end
+          end
       | c, ((g_, p_), I.Const _, occ), err -> []
       | c, ((g_, p_), I.Skonst k, occ), err -> []
       | c, ((g_, p_), I.Def d, occ), err -> []
@@ -419,5 +416,4 @@ end
 
 (* # 1 "src/style/Style_.sml.ml" *)
 open! Basis
-
 module StyleCheck = MakeStyleCheck (Whnf) (Index) (Origins)

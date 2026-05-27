@@ -5,6 +5,7 @@ open Funsyn
 (* Names of Constants and Variables *)
 (* Author: Carsten Schuermann *)
 include Funnames_intf
+
 (* will mark if shadowed *)
 (* signature NAMES *)
 

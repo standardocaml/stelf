@@ -5,6 +5,7 @@ open! Parsing
 (* Parsing modules *)
 (* Author: Kevin Watkins *)
 include ParseModule_intf
+
 (* # 1 "src/frontend/ParseModule.fun.ml" *)
 open! Parsing
 open! Basis
@@ -37,12 +38,12 @@ end) : PARSE_MODULE with module ModExtSyn = ParseModule__0.ModExtSyn' = struct
           (r, "Expected structure identifier, found token " ^ L.toString t)
 
   let rec parseColonEqual' = function
-    | LS.Cons ((L.Colon, r1), s') -> begin
-        match LS.expose s' with
+    | LS.Cons ((L.Colon, r1), s') ->
+        begin match LS.expose s' with
         | LS.Cons ((L.Equal, _), s'') -> ((), LS.expose s'')
         | LS.Cons ((t, r2), s'') ->
             Parsing.error (r2, "Expected `=', found token " ^ L.toString t)
-      end
+        end
     | LS.Cons ((t, r), s') ->
         Parsing.error (r, "Expected `:=', found token " ^ L.toString t)
 

@@ -15,6 +15,7 @@ open TimeLimit
 (* MTPStrategy : Version 1.3 *)
 (* Author: Carsten Schuermann *)
 include MtpStrategy_intf
+
 (* open cases -> remaining cases * solved cases *)
 (* signature MTPSTRATEGY *)
 
@@ -47,30 +48,30 @@ end) : MTPSTRATEGY = struct
 
     let rec printFilling () =
       begin if !Global.chatter > 5 then print "[Filling ... "
-      else begin
-        if !Global.chatter > 4 then print "F" else ()
-      end
+      else
+        begin if !Global.chatter > 4 then print "F" else ()
+        end
       end
 
     let rec printRecursion () =
       begin if !Global.chatter > 5 then print "[Recursion ..."
-      else begin
-        if !Global.chatter > 4 then print "R" else ()
-      end
+      else
+        begin if !Global.chatter > 4 then print "R" else ()
+        end
       end
 
     let rec printInference () =
       begin if !Global.chatter > 5 then print "[Inference ..."
-      else begin
-        if !Global.chatter > 4 then print "I" else ()
-      end
+      else
+        begin if !Global.chatter > 4 then print "I" else ()
+        end
       end
 
     let rec printSplitting splitOp =
       begin if !Global.chatter > 5 then print "[Splitting ..."
-      else begin
-        if !Global.chatter > 4 then print "S" else ()
-      end
+      else
+        begin if !Global.chatter > 4 then print "S" else ()
+        end
       end
 
     let rec printCloseBracket () =
@@ -95,18 +96,19 @@ end) : MTPSTRATEGY = struct
       | l_ ->
           let rec findMin' = function
             | [], result -> result
-            | o'_ :: l'_, None -> begin
-                if MTPSplitting.applicable o'_ then findMin' (l'_, Some o'_)
+            | o'_ :: l'_, None ->
+                begin if MTPSplitting.applicable o'_ then
+                  findMin' (l'_, Some o'_)
                 else findMin' (l'_, None)
-              end
-            | o'_ :: l'_, Some o_ -> begin
-                if MTPSplitting.applicable o'_ then begin
-                  match MTPSplitting.compare (o'_, o_) with
+                end
+            | o'_ :: l'_, Some o_ ->
+                begin if MTPSplitting.applicable o'_ then
+                  begin match MTPSplitting.compare (o'_, o_) with
                   | Less -> findMin' (l'_, Some o'_)
                   | _ -> findMin' (l'_, Some o_)
-                end
+                  end
                 else findMin' (l'_, Some o_)
-              end
+                end
           in
           findMin' (l_, None)
 
@@ -142,8 +144,8 @@ end) : MTPSTRATEGY = struct
 
     and fill = function
       | [], os -> os
-      | s_ :: givenStates, ((openStates, solvedStates) as os) -> begin
-          match
+      | s_ :: givenStates, ((openStates, solvedStates) as os) ->
+          begin match
             Timers.time Timers.recursion MTPFilling.expand (Obj.magic s_)
           with
           | fillingOp -> (
@@ -157,7 +159,7 @@ end) : MTPSTRATEGY = struct
                 let _ = printCloseBracket () in
                 fill (givenStates, os)
               with MTPFilling.Error _ -> split (s_ :: givenStates, os))
-        end
+          end
 
     let rec run (givenStates : S.state list) =
       let _ = printInit () in

@@ -29,15 +29,7 @@
   Tomega_intf
   Unify_intf
   Whnf_intf)
- (libraries
-  containers
-  
-  global
-  trail
-  table
-  basis
-  syntax
-  debug)
+ (libraries containers global trail table basis syntax debug)
  (flags
   (:standard
    -w

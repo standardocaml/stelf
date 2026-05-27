@@ -4,6 +4,7 @@ open! Basis
 (* Meta Prover Interface *)
 (* Author: Carsten Schuermann *)
 include Interactive_intf
+
 (*  val undo   : unit -> unit *)
 (* signature Interactive *)
 
@@ -355,7 +356,9 @@ end) : INTERACTIVE = struct
       in
       let f_ = convertFor cL in
       let ws_ = map W.lookup cL in
-      let rec select c = try Intsyn.Order.selLookup c with _ -> Intsyn.Order.Lex [] in
+      let rec select c =
+        try Intsyn.Order.selLookup c with _ -> Intsyn.Order.Lex []
+      in
       let tc_ = Tomega.transformTC (I.Null, f_, map select cL) in
       let (w_ :: _) = ws_ in
       let _ = focus_ := [ S.init (f_, w_) ] in
@@ -389,8 +392,8 @@ end) : INTERACTIVE = struct
       | S.State (w_, psi_, p_, f_) :: _ ->
           let rec findIEVar = function
             | [] -> raise (Error ("cannot focus on " ^ n))
-            | y_ :: ys_ -> begin
-                if Names.evarName (T.coerceCtx psi_, y_) = n then begin
+            | y_ :: ys_ ->
+                begin if Names.evarName (T.coerceCtx psi_, y_) = n then begin
                   focus_ := S.StateLF y_ :: !focus_;
                   begin
                     normalize ();
@@ -401,12 +404,12 @@ end) : INTERACTIVE = struct
                   end
                 end
                 else findIEVar ys_
-              end
+                end
           in
           let rec findTEVar = function
             | [] -> findIEVar (S.collectLF p_)
-            | (T.EVar (psi_, r, f_, tc_, tCs_, y_) as x_) :: xs_ -> begin
-                if Names.evarName (T.coerceCtx psi_, y_) = n then begin
+            | (T.EVar (psi_, r, f_, tc_, tCs_, y_) as x_) :: xs_ ->
+                begin if Names.evarName (T.coerceCtx psi_, y_) = n then begin
                   focus_ :=
                     S.State (w_, TomegaPrint.nameCtx psi_, x_, f_) :: !focus_;
                   begin
@@ -418,11 +421,11 @@ end) : INTERACTIVE = struct
                   end
                 end
                 else findTEVar xs_
-              end
+                end
           in
           findTEVar (S.collectT p_)
-      | S.StateLF u_ :: _ -> begin
-          match Names.getEVarOpt n with
+      | S.StateLF u_ :: _ ->
+          begin match Names.getEVarOpt n with
           | None -> raise (Error ("cannot focus on " ^ n))
           | Some y_ -> begin
               focus_ := S.StateLF y_ :: !focus_;
@@ -434,12 +437,14 @@ end) : INTERACTIVE = struct
                 end
               end
             end
-        end
+          end
       end
 
     let rec return () =
       begin match !focus_ with
-      | s_ :: [] -> begin if S.close s_ then print "[Q.E.D.]\n" else () end
+      | s_ :: [] ->
+          begin if S.close s_ then print "[Q.E.D.]\n" else ()
+          end
       | s_ :: rest_ -> begin
           focus_ := rest_;
           begin

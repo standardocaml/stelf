@@ -5,7 +5,6 @@ include module type of Traverse
 include module type of PrintTwega
 include module type of PrintXml
 include module type of PrintOmdoc
-
 module Symbol : module type of Symbol
 module Print_ : module type of Print_
 module ClausePrint : module type of ClausePrint

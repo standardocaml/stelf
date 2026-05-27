@@ -39,16 +39,16 @@ end) : STRICT = struct
           strictDec (k, p, d_) || strictExp (k + 1, p + 1, u_)
       | k, p, I.Pi ((d_, _), u_) ->
           strictDec (k, p, d_) || strictExp (k + 1, p + 1, u_)
-      | k, p, I.Root (h_, s_) -> begin
-          match h_ with
-          | I.BVar k' -> begin
-              if k' = p then patSpine (k, s_)
+      | k, p, I.Root (h_, s_) ->
+          begin match h_ with
+          | I.BVar k' ->
+              begin if k' = p then patSpine (k, s_)
               else k' <= k && strictSpine (k, p, s_)
-            end
+              end
           | I.Const c -> strictSpine (k, p, s_)
           | I.Def d -> strictSpine (k, p, s_)
           | I.FgnConst (cs, conDec) -> strictSpine (k, p, s_)
-        end
+          end
       | k, p, I.FgnExp (cs, ops) -> false
 
     and strictSpine = function
@@ -79,8 +79,8 @@ end) : STRICT = struct
         | I.Root _, _, _ -> ()
         | I.Pi _, _, _ -> ()
         | I.FgnExp _, _, _ -> ()
-        | I.Lam (d_, u'_), I.Pi (_, v'_), occ -> begin
-            if strictArgParm (1, u'_) then
+        | I.Lam (d_, u'_), I.Pi (_, v'_), occ ->
+            begin if strictArgParm (1, u'_) then
               strictArgParms (u'_, v'_, Paths.body occ)
             else
               raise
@@ -88,7 +88,7 @@ end) : STRICT = struct
                    (((occToString (ocdOpt, occ) ^ "No strict occurrence of ")
                     ^ decToVarName d_)
                    ^ ", use %abbrev"))
-          end
+            end
         | (I.Lam _ as u_), (I.Root (I.Def _, _) as v_), occ ->
             strictArgParms (u_, Whnf.normalize (Whnf.expandDef (v_, I.id)), occ)
       in
@@ -97,8 +97,8 @@ end) : STRICT = struct
     let rec occursInType ((i, v_), ocdOpt) =
       let rec oit = function
         | (0, v_), occ -> ()
-        | (i, I.Pi ((d_, p_), v_)), occ -> begin
-            match Abstract.piDepend ((d_, p_), v_) with
+        | (i, I.Pi ((d_, p_), v_)), occ ->
+            begin match Abstract.piDepend ((d_, p_), v_) with
             | I.Pi ((d'_, Maybe), v_) -> oit ((i - 1, v_), Paths.body occ)
             | _ ->
                 raise
@@ -106,7 +106,7 @@ end) : STRICT = struct
                      (((occToString (ocdOpt, occ) ^ "No occurrence of ")
                       ^ decToVarName d_)
                      ^ " in type, use %abbrev"))
-          end
+            end
         | _ -> ()
       in
       oit ((i, v_), Paths.top)

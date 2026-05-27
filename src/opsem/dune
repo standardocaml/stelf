@@ -27,6 +27,7 @@
   TabledMachine_intf
   Trace_intf)
  (libraries
+  display
   global
   table
   intsyn

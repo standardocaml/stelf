@@ -5,6 +5,7 @@ open Thmsyn
 (* Printer for Meta Theorems *)
 (* Author: Carsten Schuermann *)
 include Thmprint_intf
+
 (* -bp *)
 (* signature THMPRINT *)
 
@@ -52,11 +53,11 @@ end) : THMPRINT with module ThmSyn = ThmPrint__0.ThmSyn' = struct
       | l_ -> [ F.string "("; F.hVbox (fmtIds l_); F.string ") " ]
 
     let rec fmtOrder = function
-      | L.Varg l_ -> begin
-          match l_ with
+      | L.Varg l_ ->
+          begin match l_ with
           | h_ :: [] -> fmtIds l_
           | _ -> [ F.string "("; F.hVbox (fmtIds l_); F.string ")" ]
-        end
+          end
       | L.Lex l_ -> [ F.string "{"; F.hVbox (fmtOrders l_); F.string "}" ]
       | L.Simul l_ -> [ F.string "["; F.hVbox (fmtOrders l_); F.string "]" ]
 

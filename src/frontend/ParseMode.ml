@@ -21,7 +21,8 @@ module ParseMode (ParseMode__0 : sig
 
   (*! sharing ExtModes'.Paths = Paths !*)
   (*! sharing ExtModes'.ExtSyn.Paths = Paths !*)
-  module ParseTerm : ParseTerm_intf.PARSE_TERM with module ExtSyn = ExtModes'.ExtSyn
+  module ParseTerm :
+    ParseTerm_intf.PARSE_TERM with module ExtSyn = ExtModes'.ExtSyn
 end) : PARSE_MODE with module ExtModes = ParseMode__0.ExtModes' = struct
   (*! structure Parsing = Parsing' !*)
   module ExtModes = ParseMode__0.ExtModes'
@@ -41,21 +42,21 @@ end) : PARSE_MODE with module ExtModes = ParseMode__0.ExtModes' = struct
     let rec splitModeId (r, id) =
       begin match String.sub (id, 0) with
       | '*' -> (E.star r, extract (id, 1))
-      | '-' -> begin
-          if String.size id > 1 && String.sub (id, 1) = '1' then
+      | '-' ->
+          begin if String.size id > 1 && String.sub (id, 1) = '1' then
             (E.minus1 r, extract (id, 2))
           else (E.minus r, extract (id, 1))
-        end
+          end
       | '+' -> (E.plus r, extract (id, 1))
       | _ ->
           Parsing.error (r, "Expected mode `+', `-', `*', or `-1'  found " ^ id)
       end
 
     let rec validateMArg = function
-      | r, ((mode, Some id) as mId) -> begin
-          if L.isUpper id then mId
+      | r, ((mode, Some id) as mId) ->
+          begin if L.isUpper id then mId
           else Parsing.error (r, "Expected free uppercase variable, found " ^ id)
-        end
+          end
       | r, (_, None) -> Parsing.error (r, "Missing variable following mode")
 
     let rec validateMode = function
@@ -85,8 +86,8 @@ end) : PARSE_MODE with module ExtModes = ParseMode__0.ExtModes' = struct
           Parsing.error (r, "Expected mode or `.', found " ^ L.toString t)
 
     let rec parseFull = function
-      | LS.Cons (((L.Id (c, id), r0) as t0), s'), r1 -> begin
-          match LS.expose s' with
+      | LS.Cons (((L.Id (c, id), r0) as t0), s'), r1 ->
+          begin match LS.expose s' with
           | LS.Cons ((L.Lbrace, r), s'') ->
               let mId = splitModeId (r0, id) in
               let m = validateMode (r0, mId) in
@@ -106,7 +107,7 @@ end) : PARSE_MODE with module ExtModes = ParseMode__0.ExtModes' = struct
                   (LS.Cons (t0, LS.delay (function () -> ts_)))
               in
               (E.Full.mroot (t', P.join (r, r1)), f')
-        end
+          end
       | LS.Cons ((L.Lparen, r0), s'), r1 ->
           let t', f' = ParseTerm.parseTerm' (LS.expose s') in
           let f'', r' = stripRParen f' in

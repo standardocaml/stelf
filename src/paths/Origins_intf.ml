@@ -8,6 +8,9 @@ module type ORIGINS = sig
   val reset : unit -> unit
   val installLinesInfo : string * Paths_.Paths.linesInfo -> unit
   val linesInfoLookup : string -> Paths_.Paths.linesInfo option
-  val installOrigin : IntSyn.cid * (string * Paths_.Paths.occConDec option) -> unit
+
+  val installOrigin :
+    IntSyn.cid * (string * Paths_.Paths.occConDec option) -> unit
+
   val originLookup : IntSyn.cid -> string * Paths_.Paths.occConDec option
 end

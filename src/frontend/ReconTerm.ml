@@ -8,6 +8,7 @@ open! Basis
    by the parser
 *)
 include ReconTerm_intf
+
 (* id | _  (type omitted) *)
 (* signature EXTSYN *)
 (* signature RECON_TERM
@@ -220,8 +221,8 @@ end) : RECON_TERM = struct
   let rec getEVarTypeApx name =
     begin match StringTree.lookup evarApxTable name with
     | Some v_ -> v_
-    | None -> begin
-        match Names.getEVarOpt name with
+    | None ->
+        begin match Names.getEVarOpt name with
         | Some (IntSyn.EVar (_, _, v_, _)) ->
             let v'_, _ (* Type *) = Apx.classToApx v_ in
             begin
@@ -234,7 +235,7 @@ end) : RECON_TERM = struct
               StringTree.insert evarApxTable (name, v_);
               v_
             end
-      end
+        end
     end
 
   let rec getFVarTypeApx name =
@@ -299,8 +300,7 @@ end) : RECON_TERM = struct
     | Scon_ of string * Paths.region
     | Omitapx_ of Apx.exp * Apx.exp * Apx.uni * Paths.region
     | Omitexact_ of IntSyn.exp * IntSyn.exp * Paths.region
-    [@@deriving show {with_path = false}]
-
+  [@@deriving show { with_path = false }]
 
   and dec = Dec_ of string option * term * Paths.region
 
@@ -421,8 +421,8 @@ end) : RECON_TERM = struct
     let notGround = Apx.makeGroundUni l_ in
     let (Apx.Level i) = Apx.whnfUni l_ in
     begin if i > max then fatalError (termRegion tm, "Level too high\n" ^ msg)
-    else begin
-      if notGround then
+    else
+      begin if notGround then
         error
           ( termRegion tm,
             ((("Ambiguous level\n"
@@ -435,7 +435,7 @@ end) : RECON_TERM = struct
             end)
             ^ " level" )
       else ()
-    end
+      end
     end
 
   let rec findOmitted (g_, qid, r) =
@@ -451,25 +451,25 @@ end) : RECON_TERM = struct
     | IntSyn.Null, name, k -> None
     | IntSyn.Decl (g_, Dec (None, _)), name, k -> findBVar' (g_, name, k + 1)
     | IntSyn.Decl (g_, NDec _), name, k -> findBVar' (g_, name, k + 1)
-    | IntSyn.Decl (g_, Dec (Some name', _)), name, k -> begin
-        if name = name' then Some k else findBVar' (g_, name, k + 1)
-      end
+    | IntSyn.Decl (g_, Dec (Some name', _)), name, k ->
+        begin if name = name' then Some k else findBVar' (g_, name, k + 1)
+        end
 
   let rec findBVar fc (g_, qid, r) =
     begin match Names.unqualified qid with
     | None -> fc (g_, qid, r)
-    | Some name -> begin
-        match findBVar' (g_, name, 1) with
+    | Some name ->
+        begin match findBVar' (g_, name, 1) with
         | None -> fc (g_, qid, r)
         | Some k -> Bvar_ (k, r)
-      end
+        end
     end
 
   let rec findConst fc (g_, qid, r) =
     begin match Names.constLookup qid with
     | None -> fc (g_, qid, r)
-    | Some cid -> begin
-        match IntSyn.sgnLookup cid with
+    | Some cid ->
+        begin match IntSyn.sgnLookup cid with
         | IntSyn.ConDec _ -> Constant_ (IntSyn.Const cid, r)
         | IntSyn.ConDef _ -> Constant_ (IntSyn.Def cid, r)
         | IntSyn.AbbrevDef _ -> Constant_ (IntSyn.NSDef cid, r)
@@ -481,25 +481,25 @@ end) : RECON_TERM = struct
                 ^ "' is not a constant, definition or abbreviation" );
             Omitted_ r
           end
-      end
+        end
     end
 
   let rec findCSConst fc (g_, qid, r) =
     begin match Names.unqualified qid with
     | None -> fc (g_, qid, r)
-    | Some name -> begin
-        match CsManager.parse name with
+    | Some name ->
+        begin match CsManager.parse name with
         | None -> fc (g_, qid, r)
         | Some (cs, conDec) -> Constant_ (IntSyn.FgnConst (cs, conDec), r)
-      end
+        end
     end
 
   let rec findEFVar fc (g_, qid, r) =
     begin match Names.unqualified qid with
     | None -> fc (g_, qid, r)
-    | Some name -> begin
-        if !queryMode then Evar_ (name, r) else Fvar_ (name, r)
-      end
+    | Some name ->
+        begin if !queryMode then Evar_ (name, r) else Fvar_ (name, r)
+        end
     end
 
   let rec findLCID x = findBVar (findConst (findCSConst findOmitted)) x
@@ -522,15 +522,15 @@ end) : RECON_TERM = struct
     | g_, (Quid_ (ids, name, r) as tm) ->
         let qid = Names.Qid (ids, name) in
         inferApx (g_, findQUID (g_, qid, r))
-    | g_, (Scon_ (name, r) as tm) -> begin
-        match CsManager.parse name with
+    | g_, (Scon_ (name, r) as tm) ->
+        begin match CsManager.parse name with
         | None -> begin
             error (r, "Strings unsupported in current signature");
             inferApx (g_, Omitted_ r)
           end
         | Some (cs, conDec) ->
             inferApx (g_, Constant_ (IntSyn.FgnConst (cs, conDec), r))
-      end
+        end
     | g_, (Constant_ (h_, r) as tm) ->
         let cd = headConDec h_ in
         let u'_, v'_, l'_ =
@@ -795,11 +795,11 @@ end) : RECON_TERM = struct
     | s, s_ -> e_ (s, IntSyn.App (eClo_ (u_, s), s_))
 
   let rec bvarElim n = function
-    | s, s_ -> begin
-        match IntSyn.bvarSub (n, s) with
+    | s, s_ ->
+        begin match IntSyn.bvarSub (n, s) with
         | Idx n' -> root_ (bVar_ n', s_)
         | Exp u_ -> redex_ (u_, s_)
-      end
+        end
 
   let rec fvarElim (name, v_, s) = function
     | s', s_ -> root_ (fVar_ (name, v_, IntSyn.comp (s, s')), s_)
@@ -812,11 +812,11 @@ end) : RECON_TERM = struct
     | IntSyn.BVar n -> bvarElim n
     | IntSyn.FVar (name, v_, s) -> fvarElim (name, v_, s)
     | IntSyn.NSDef d -> redexElim (IntSyn.constDef d)
-    | h_ -> begin
-        match IntSyn.conDecStatus (headConDec h_) with
+    | h_ ->
+        begin match IntSyn.conDecStatus (headConDec h_) with
         | Foreign (_, f) -> fun (_, s_) -> f s_
         | _ -> fun (_, s_) -> Root (h_, s_)
-      end
+        end
 
   (* although internally EVars are lowered intro forms, externally they're
      raised elim forms.

@@ -98,12 +98,12 @@ end) : PARSE_FIXITY with module Names = ParseFixity__0.Names' = struct
           (((Names.Qid ([], name), r0), (prefEName, [])), f)
 
     let rec parseName4 = function
-      | name, r0, prefENames, LS.Cons ((L.Id (_, prefEName), r), s') -> begin
-          if L.isUpper prefEName then
+      | name, r0, prefENames, LS.Cons ((L.Id (_, prefEName), r), s') ->
+          begin if L.isUpper prefEName then
             parseName4 (name, r0, prefENames @ [ prefEName ], LS.expose s')
           else
             Parsing.error (r, "Expected uppercase identifer, found " ^ prefEName)
-        end
+          end
       | name, r0, prefENames, LS.Cons ((L.Rparen, r), s') ->
           parseName3 (name, r0, prefENames, LS.expose s')
       | name, r0, prefENames, LS.Cons ((t, r), s') ->
@@ -111,12 +111,12 @@ end) : PARSE_FIXITY with module Names = ParseFixity__0.Names' = struct
             (r, "Expected name preference or ')', found " ^ L.toString t)
 
     let rec parseName2 = function
-      | name, r0, LS.Cons ((L.Id (_, prefEName), r), s') -> begin
-          if L.isUpper prefEName then
+      | name, r0, LS.Cons ((L.Id (_, prefEName), r), s') ->
+          begin if L.isUpper prefEName then
             parseName3 (name, r0, [ prefEName ], LS.expose s')
           else
             Parsing.error (r, "Expected uppercase identifer, found " ^ prefEName)
-        end
+          end
       | name, r0, LS.Cons ((L.Lparen, r), s') ->
           parseName4 (name, r0, [], LS.expose s')
       | name, r0, LS.Cons ((t, r), s') ->

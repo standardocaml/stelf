@@ -4,7 +4,6 @@
 
 (* # 1 "src/opsem/Opsem_.sml.ml" *)
 open! Basis
-
 module AbsMachine : Absmachine.ABSMACHINE
 module PtRecon : Ptrecon.PTRECON
 module AbsMachineSbt : AbsmachineSbt.ABSMACHINESBT

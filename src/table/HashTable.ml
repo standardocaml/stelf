@@ -63,9 +63,10 @@ end) : TABLE with type key = HashTable__0.key' = struct
   let lookup (a, n) key =
     let hashVal = hash key in
     let rec lookup' = function
-      | Cons ({ contents = hash1, (key1, datum1) }, br) -> begin
-          if hashVal = hash1 && eq (key, key1) then Some datum1 else lookup' !br
-        end
+      | Cons ({ contents = hash1, (key1, datum1) }, br) ->
+          begin if hashVal = hash1 && eq (key, key1) then Some datum1
+          else lookup' !br
+          end
       | Nil -> None
     in
     let bucket = Array.sub (a, hashVal mod n) in
@@ -77,17 +78,18 @@ end) : TABLE with type key = HashTable__0.key' = struct
     let bucket = Array.sub (a, index) in
     let rec deleteBR = function
       | { contents = Cons ({ contents = hash1, (key1, _) }, br1) } as br ->
-        begin
-          if hashVal = hash1 && eq (key, key1) then br := !br1 else deleteBR br1
-        end
+          begin if hashVal = hash1 && eq (key, key1) then br := !br1
+          else deleteBR br1
+          end
       | _br -> ()
     in
     let deleteA = function
       | Nil -> ()
-      | Cons ({ contents = hash1, (key1, _) }, br1) -> begin
-          if hashVal = hash1 && eq (key, key1) then Array.update (a, index, !br1)
+      | Cons ({ contents = hash1, (key1, _) }, br1) ->
+          begin if hashVal = hash1 && eq (key, key1) then
+            Array.update (a, index, !br1)
           else deleteBR br1
-        end
+          end
     in
     deleteA bucket
 

@@ -9,6 +9,7 @@ open! Basis
 (* Author: Carsten Schuermann *)
 (* Modified: Frank Pfenning, Roberto Virga *)
 include Modesyn_intf
+
 (* signature MODESYN *)
 module ModeSyn : MODESYN = struct
   exception Error of string

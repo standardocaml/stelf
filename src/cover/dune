@@ -3,12 +3,9 @@
 (library
  (name cover)
  (public_name stelf.cover)
- (modules
-  Total
-  Cover_
-  Cover_intf
-  Total_intf)
+ (modules Total Cover_ Cover_intf Total_intf)
  (libraries
+  display
   global
   intsyn
   names

@@ -33,12 +33,12 @@ module MakeModeDec () : MODEDEC = struct
       | M.Mapp (M.Marg (_, Some name), mS) ->
           let rec checkName' = function
             | M.Mnil -> ()
-            | M.Mapp (M.Marg (_, Some name'), mS) -> begin
-                if name = name' then
+            | M.Mapp (M.Marg (_, Some name'), mS) ->
+                begin if name = name' then
                   raise
                     (Error (("Variable name clash: " ^ name) ^ " is not unique"))
                 else checkName' mS
-              end
+                end
           in
           checkName' mS
 
@@ -66,14 +66,13 @@ module MakeModeDec () : MODEDEC = struct
       | (I.Decl (_, (_, Implicit)) as ms), _, 1 -> ms
       | (I.Decl (_, (_, Local)) as ms), _, 1 -> ms
       | (I.Decl (_, (M.Marg (mode', Some name), Explicit)) as ms), mode, 1 ->
-        begin
-          if modeConsistent (mode', mode) then ms
+          begin if modeConsistent (mode', mode) then ms
           else
             raise
               (Error
                  ((("Mode declaration for " ^ name) ^ " expected to be ")
                  ^ M.modeToString mode))
-        end
+          end
       | I.Decl (ms, md), mode, k -> I.Decl (inferVar (ms, mode, k - 1), md)
 
     let rec inferExp = function

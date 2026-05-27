@@ -1,3 +1,3 @@
 module type CS_INSTALLER = sig
-	val version : string
+  val version : string
 end

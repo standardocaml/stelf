@@ -62,6 +62,7 @@ module Make_Weaken (Whnf : WHNF) : Weaken_intf.WEAKEN = struct
   let strengthenCtx = strengthenCtx
   let strengthenSub = strengthenSub
 end
+
 (*! structure IntSyn' : INTSYN !*)
 (*! sharing Whnf.IntSyn = IntSyn' !*)
 (* functor Weaken *)

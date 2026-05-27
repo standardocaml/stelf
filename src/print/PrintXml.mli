@@ -5,8 +5,7 @@ module MakePrintXML
     (Abstract : ABSTRACT)
     (Constraints : CONSTRAINTS)
     (Names : NAMES)
-    (Formatter_param : FORMATTER) :
-  PRINT_XML
+    (Formatter_param : FORMATTER) : PRINT_XML
 (*
   (* Printing *)
   (* Author: Frank Pfenning *)

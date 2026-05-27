@@ -5,6 +5,7 @@ open Metasyn
 (* Filling *)
 (* Author: Carsten Schuermann *)
 include Filling_intf
+
 (* # 1 "src/m2/Filling.fun.ml" *)
 open! Search
 open! Basis
@@ -15,7 +16,10 @@ open Metasyn
 (* Author: Carsten Schuermann *)
 module Filling (Filling__0 : sig
   module MetaSyn' : Metasyn.METASYN
-  module MetaAbstract : MetaAbstract_intf.METAABSTRACT with module MetaSyn = MetaSyn'
+
+  module MetaAbstract :
+    MetaAbstract_intf.METAABSTRACT with module MetaSyn = MetaSyn'
+
   module Search : Search.OLDSEARCH with module MetaSyn = MetaSyn'
   module Whnf : WHNF
 
@@ -51,7 +55,8 @@ end) : FILLING with module MetaSyn = Filling__0.MetaSyn' = struct
           abstractEx,
           makeAddress ) ->
           ( [],
-            ( makeAddress 0, delay (Search.searchEx, (g_, ge_, vs_, abstractEx)) ) )
+            (makeAddress 0, delay (Search.searchEx, (g_, ge_, vs_, abstractEx)))
+          )
       | ( g_,
           ge_,
           (I.Pi (((I.Dec (_, v1_) as d_), p_), v2_), s),
@@ -106,7 +111,8 @@ end) : FILLING with module MetaSyn = Filling__0.MetaSyn' = struct
         with MetaAbstract.Error s -> acc
       in
       let rec abstractEx () =
-        MetaAbstract.abstract (M.State (name, M.Prefix (g'_, m'_, b'_), I.EClo (v_, s')))
+        MetaAbstract.abstract
+          (M.State (name, M.Prefix (g'_, m'_, b'_), I.EClo (v_, s')))
       in
       operators
         (g'_, ge'_, (v_, s'), abstractAll, abstractEx, makeAddressInit s_)

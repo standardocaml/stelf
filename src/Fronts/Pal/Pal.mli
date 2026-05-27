@@ -1,1 +1,1 @@
-val run : unit -> unit
+module Pal : PAL.PAL

@@ -5,8 +5,9 @@
 (* # 1 "src/server/Server_.sml.ml" *)
 open! Basis
 
-(** Interactive command server for Stelf/STELF. *)
 include Server_intf
+(** Interactive command server for Stelf/STELF. *)
+
 (* signature SERVER *)
 module Server : SERVER = struct
   let globalConfig : Stelf.Config.config option ref = ref None
@@ -27,12 +28,12 @@ module Server : SERVER = struct
     let rec trimr ss = Substring.dropr Char.isSpace ss in
     let line' = triml (trimr (Substring.full line)) in
     begin if line = "" then ("OS.exit", "")
-    else begin
-      if Substring.size line' = 0 then readLine ()
+    else
+      begin if Substring.size line' = 0 then readLine ()
       else
         let command', args' = Substring.position " " line' in
         (Substring.string command', Substring.string (triml args'))
-    end
+      end
     end
 
   (* val line = TextIO.inputLine (TextIO.stdIn) *)

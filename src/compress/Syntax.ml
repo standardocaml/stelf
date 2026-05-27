@@ -92,30 +92,30 @@ module Syntax = struct
 
   and substNth = function
     | Id, n -> SrVar_ n
-    | ZeroDotShift s, n -> begin
-        if n = 0 then SrVar_ 0
-        else begin
-          match substNth (s, n - 1) with
+    | ZeroDotShift s, n ->
+        begin if n = 0 then SrVar_ 0
+        else
+          begin match substNth (s, n - 1) with
           | SrTerm_ (t, a) -> SrTerm_ (shift t, shift_tp 0 a)
           | SrVar_ n -> SrVar_ (n + 1)
           | SrEVar_ (ev, sl) -> SrEVar_ (ev, Shift (0, 1) :: sl)
+          end
         end
-      end
-    | TermDot (m, a, s), n -> begin
-        if n = 0 then SrTerm_ (m, a) else substNth (s, n - 1)
-      end
-    | EVarDot (ev, sl, s), n -> begin
-        if n = 0 then SrEVar_ (ev, sl) else substNth (s, n - 1)
-      end
-    | Shift (n, m), n' -> begin
-        if n' >= n then SrVar_ (n' + m) else SrVar_ n'
-      end
-    | VarOptDot (no, s), n' -> begin
-        if n' = 0 then begin
-          match no with Some n -> SrVar_ n | None -> raise MissingVar
+    | TermDot (m, a, s), n ->
+        begin if n = 0 then SrTerm_ (m, a) else substNth (s, n - 1)
         end
+    | EVarDot (ev, sl, s), n ->
+        begin if n = 0 then SrEVar_ (ev, sl) else substNth (s, n - 1)
+        end
+    | Shift (n, m), n' ->
+        begin if n' >= n then SrVar_ (n' + m) else SrVar_ n'
+        end
+    | VarOptDot (no, s), n' ->
+        begin if n' = 0 then
+          begin match no with Some n -> SrVar_ n | None -> raise MissingVar
+          end
         else substNth (s, n' - 1)
-      end
+        end
     | Compose [], n -> SrVar_ n
     | Compose (h :: tl), n -> subst_sr h (substNth (Compose tl, n))
 
@@ -288,11 +288,11 @@ module Syntax = struct
     | s, TermDot (t, a, s') ->
         TermDot (subst_term s t, subst_tp s a, subst_compose (s, s'))
     | s, EVarDot (ev, sl, s') -> EVarDot (ev, s :: sl, subst_compose (s, s'))
-    | s, VarOptDot (no, s') -> begin
-        match no with
+    | s, VarOptDot (no, s') ->
+        begin match no with
         | None -> VarOptDot (None, subst_compose (s, s'))
         | Some n -> composeNth (s, n, s')
-      end
+        end
   (* ZeroDotShift (Shift (n-1,m)) = Shift(n,m) but the former is 'smaller' *)
 
   and shift t = shift_term 0 t

@@ -28,16 +28,16 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
     let delayExp = Unify.delay
 
     let rec weakenSub = function
-      | g_, Shift n, ss -> begin
-          if n < ctxLength g_ then
+      | g_, Shift n, ss ->
+          begin if n < ctxLength g_ then
             weakenSub (g_, Dot (Idx (n + 1), Shift (n + 1)), ss)
           else id
-        end
-      | g_, Dot (Idx n, s'), ss -> begin
-          match bvarSub (n, ss) with
+          end
+      | g_, Dot (Idx n, s'), ss ->
+          begin match bvarSub (n, ss) with
           | Undef -> comp (weakenSub (g_, s', ss), shift)
           | Idx _ -> dot1 (weakenSub (g_, s', ss))
-        end
+          end
       | g_, Dot (Undef, s'), ss -> comp (weakenSub (g_, s', ss), shift)
 
     let rec pruneExp (g_, us_, ss, rOccur) =
@@ -59,10 +59,10 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
           Root
             ( pruneHead (g_, h_, ss, rOccur),
               pruneSpine (g_, (s_, s), ss, rOccur) )
-      | g_, ((EVar (r, gx_, v_, cnstrs) as x_), s), ss, rOccur -> begin
-          if rOccur == r then raise (Match "Variable occurrence")
-          else begin
-            if Whnf.isPatSub s then
+      | g_, ((EVar (r, gx_, v_, cnstrs) as x_), s), ss, rOccur ->
+          begin if rOccur == r then raise (Match "Variable occurrence")
+          else
+            begin if Whnf.isPatSub s then
               let w = weakenSub (g_, s, ss) in
               begin if Whnf.isId w then EClo (x_, comp (s, ss))
               else
@@ -81,8 +81,8 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
                       ref (Eqn (g_, EClo (x_, s), EClo (y_, Whnf.invert ss))) )
                 in
                 y_
+            end
           end
-        end
       | g_, (FgnExp (csfe_csid, csfe_ops), s), ss, rOccur ->
           FgnExpStd.Map.apply (csfe_csid, csfe_ops) (function u_ ->
               pruneExp (g_, (u_, s), ss, rOccur))
@@ -103,15 +103,15 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
           pruneSpine (g_, (s_, comp (s', s)), ss, rOccur)
 
     and pruneHead = function
-      | g_, BVar k, ss, rOccur -> begin
-          match bvarSub (k, ss) with
+      | g_, BVar k, ss, rOccur ->
+          begin match bvarSub (k, ss) with
           | Undef -> raise (Match "Parameter dependency")
           | Idx k' -> BVar k'
-        end
+          end
       | g_, (Const _ as h_), ss, rOccur -> h_
-      | g_, Proj ((Bidx k as b_), i), ss, rOccur -> begin
-          match blockSub (b_, ss) with Bidx k' -> Proj (Bidx k', i)
-        end
+      | g_, Proj ((Bidx k as b_), i), ss, rOccur ->
+          begin match blockSub (b_, ss) with Bidx k' -> Proj (Bidx k', i)
+          end
       | g_, (Proj (LVar (r, sk, (l, t)), i) as h_), ss, rOccur -> begin
           ignore (pruneSub (g_, t, id, rOccur));
           h_
@@ -125,16 +125,16 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
       | g_, (FgnConst _ as h_), ss, rOccur -> h_
 
     and pruneSub = function
-      | g_, (Shift n as s), ss, rOccur -> begin
-          if n < ctxLength g_ then
+      | g_, (Shift n as s), ss, rOccur ->
+          begin if n < ctxLength g_ then
             pruneSub (g_, Dot (Idx (n + 1), Shift (n + 1)), ss, rOccur)
           else comp (s, ss)
-        end
-      | g_, Dot (Idx n, s'), ss, rOccur -> begin
-          match bvarSub (n, ss) with
+          end
+      | g_, Dot (Idx n, s'), ss, rOccur ->
+          begin match bvarSub (n, ss) with
           | Undef -> raise (Match "Not prunable")
           | ft_ -> Dot (ft_, pruneSub (g_, s', ss, rOccur))
-        end
+          end
       | g_, Dot (Exp u_, s'), ss, rOccur ->
           Dot
             ( Exp (pruneExp (g_, (u_, id), ss, rOccur)),
@@ -151,8 +151,8 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
           pruneCtx (Dot (Idx (n + 1), Shift (n + 1)), g_, rOccur)
 
     let rec matchExpW = function
-      | g_, ((FgnExp (csfe1_csid, csfe1_ops), _) as us1_), us2_ -> begin
-          match
+      | g_, ((FgnExp (csfe1_csid, csfe1_ops), _) as us1_), us2_ ->
+          begin match
             FgnExpStd.UnifyWith.apply (csfe1_csid, csfe1_ops)
               ( g_,
                 let us2_e_, us2_s_ = us2_ in
@@ -167,9 +167,9 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
               in
               List.app execResidual residualL
           | Fail -> raise (Match "Foreign Expression Mismatch")
-        end
-      | g_, us1_, ((FgnExp (csfe2_csid, csfe2_ops), _) as us2_) -> begin
-          match
+          end
+      | g_, us1_, ((FgnExp (csfe2_csid, csfe2_ops), _) as us2_) ->
+          begin match
             FgnExpStd.UnifyWith.apply (csfe2_csid, csfe2_ops)
               ( g_,
                 let us1_e_, us1_s_ = us1_ in
@@ -184,74 +184,73 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
               in
               List.app execOp opL
           | Fail -> raise (Match "Foreign Expression Mismatch")
-        end
+          end
       | g_, (Uni l1_, _), (Uni l2_, _) -> ()
       | g_, ((Root (h1_, s1_), s1) as us1_), ((Root (h2_, s2_), s2) as us2_) ->
-        begin
-          match (h1_, h2_) with
-          | BVar k1, BVar k2 -> begin
-              if k1 = k2 then matchSpine (g_, (s1_, s1), (s2_, s2))
+          begin match (h1_, h2_) with
+          | BVar k1, BVar k2 ->
+              begin if k1 = k2 then matchSpine (g_, (s1_, s1), (s2_, s2))
               else raise (Match "Bound variable clash")
-            end
-          | Const c1, Const c2 -> begin
-              if c1 = c2 then matchSpine (g_, (s1_, s1), (s2_, s2))
+              end
+          | Const c1, Const c2 ->
+              begin if c1 = c2 then matchSpine (g_, (s1_, s1), (s2_, s2))
               else raise (Match "Constant clash")
-            end
-          | Proj (b1, i1), Proj (b2, i2) -> begin
-              if i1 = i2 then begin
+              end
+          | Proj (b1, i1), Proj (b2, i2) ->
+              begin if i1 = i2 then begin
                 matchBlock (g_, b1, b2);
                 matchSpine (g_, (s1_, s1), (s2_, s2))
               end
               else raise (Match "Global parameter clash")
-            end
-          | Skonst c1, Skonst c2 -> begin
-              if c1 = c2 then matchSpine (g_, (s1_, s1), (s2_, s2))
+              end
+          | Skonst c1, Skonst c2 ->
+              begin if c1 = c2 then matchSpine (g_, (s1_, s1), (s2_, s2))
               else raise (Match "Skolem constant clash")
-            end
-          | FVar (n1, _, _), FVar (n2, _, _) -> begin
-              if n1 = n2 then matchSpine (g_, (s1_, s1), (s2_, s2))
+              end
+          | FVar (n1, _, _), FVar (n2, _, _) ->
+              begin if n1 = n2 then matchSpine (g_, (s1_, s1), (s2_, s2))
               else raise (Match "Free variable clash")
-            end
-          | Def d1, Def d2 -> begin
-              if d1 = d2 then matchSpine (g_, (s1_, s1), (s2_, s2))
+              end
+          | Def d1, Def d2 ->
+              begin if d1 = d2 then matchSpine (g_, (s1_, s1), (s2_, s2))
               else matchDefDefW (g_, us1_, us2_)
-            end
-          | Def d1, Const c2 -> begin
-              match defAncestor d1 with
+              end
+          | Def d1, Const c2 ->
+              begin match defAncestor d1 with
               | Anc (_, _, None) -> matchExpW (g_, Whnf.expandDef us1_, us2_)
-              | Anc (_, _, Some c1) -> begin
-                  if c1 = c2 then matchExpW (g_, Whnf.expandDef us1_, us2_)
+              | Anc (_, _, Some c1) ->
+                  begin if c1 = c2 then matchExpW (g_, Whnf.expandDef us1_, us2_)
                   else raise (Match "Constant clash")
-                end
-            end
-          | Const c1, Def d2 -> begin
-              match defAncestor d2 with
+                  end
+              end
+          | Const c1, Def d2 ->
+              begin match defAncestor d2 with
               | Anc (_, _, None) -> matchExpW (g_, us1_, Whnf.expandDef us2_)
-              | Anc (_, _, Some c2) -> begin
-                  if c1 = c2 then matchExpW (g_, us1_, Whnf.expandDef us2_)
+              | Anc (_, _, Some c2) ->
+                  begin if c1 = c2 then matchExpW (g_, us1_, Whnf.expandDef us2_)
                   else raise (Match "Constant clash")
-                end
-            end
+                  end
+              end
           | Def d1, BVar k2 -> raise (Match "Head mismatch")
           | BVar k1, Def d2 -> raise (Match "Head mismatch")
           | Def d1, _ -> matchExpW (g_, Whnf.expandDef us1_, us2_)
           | _, Def d2 -> matchExpW (g_, us1_, Whnf.expandDef us2_)
           | ( FgnConst (cs1, ConDec (n1, _, _, _, _, _)),
-              FgnConst (cs2, ConDec (n2, _, _, _, _, _)) ) -> begin
-              if cs1 = cs2 && n1 = n2 then ()
+              FgnConst (cs2, ConDec (n2, _, _, _, _, _)) ) ->
+              begin if cs1 = cs2 && n1 = n2 then ()
               else raise (Match "Foreign Constant clash")
-            end
+              end
           | ( FgnConst (cs1, ConDef (n1, _, _, w1_, _, _, _)),
-              FgnConst (cs2, ConDef (n2, _, _, v_, w2_, _, _)) ) -> begin
-              if cs1 = cs2 && n1 = n2 then ()
+              FgnConst (cs2, ConDef (n2, _, _, v_, w2_, _, _)) ) ->
+              begin if cs1 = cs2 && n1 = n2 then ()
               else matchExp (g_, (w1_, s1), (w2_, s2))
-            end
+              end
           | FgnConst (_, ConDef (_, _, _, w1_, _, _, _)), _ ->
               matchExp (g_, (w1_, s1), us2_)
           | _, FgnConst (_, ConDef (_, _, _, w2_, _, _, _)) ->
               matchExp (g_, us1_, (w2_, s2))
           | _ -> raise (Match "Head mismatch")
-        end
+          end
       | g_, (Pi ((d1_, _), u1_), s1), (Pi ((d2_, _), u2_), s2) -> begin
           matchDec (g_, (d1_, s1), (d2_, s2));
           matchExp (Decl (g_, decSub (d1_, s1)), (u1_, dot1 s1), (u2_, dot1 s2))
@@ -274,8 +273,7 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
               (Redex (EClo (u1_, shift), App (Root (BVar 1, Nil), Nil)), dot1 s1),
               (u2_, dot1 s2) )
       | g_, ((EVar (r, gx_, v_, cnstrs), s) as us1_), ((u2_, s2) as us2_) ->
-        begin
-          if Whnf.isPatSub s then
+          begin if Whnf.isPatSub s then
             let ss = Whnf.invert s in
             let u2'_ = pruneExp (g_, us2_, ss, r) in
             Unify.instantiateEVar (r, u2'_, !cnstrs)
@@ -289,7 +287,7 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
                         EClo (us1_e_, us1_s_)),
                        let us2_e_, us2_s_ = us2_ in
                        EClo (us2_e_, us2_s_) )) )
-        end
+          end
       | g_, us1_, us2_ -> raise (Match "Expression clash")
 
     and matchExp (g_, ((e1_, s1) as us1_), ((e2_, s2) as us2_)) =
@@ -303,11 +301,11 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
       let (Anc (_, h2, c2Opt)) = defAncestor d2 in
       let _ =
         begin match (c1Opt, c2Opt) with
-        | Some c1, Some c2 -> begin
-            if c1 <> c2 then
+        | Some c1, Some c2 ->
+            begin if c1 <> c2 then
               raise (Match "Irreconcilable defined constant clash")
             else ()
-          end
+            end
         | _ -> ()
         end
       in
@@ -339,9 +337,10 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
           matchSub (g_, s1, Dot (Idx (m + 1), Shift (m + 1)))
       | g_, Dot (ft1_, s1), Dot (ft2_, s2) -> begin
           begin match (ft1_, ft2_) with
-          | Idx n1, Idx n2 -> begin
-              if n1 <> n2 then raise (Error "SOME variables mismatch") else ()
-            end
+          | Idx n1, Idx n2 ->
+              begin if n1 <> n2 then raise (Error "SOME variables mismatch")
+              else ()
+              end
           | Exp u1_, Exp u2_ -> matchExp (g_, (u1_, id), (u2_, id))
           | Exp u1_, Idx n2 ->
               matchExp (g_, (u1_, id), (Root (BVar n2, Nil), id))
@@ -360,10 +359,9 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
 
     and matchBlockW = function
       | g_, LVar (r1, Shift k1, (l1, t1)), LVar (r2, Shift k2, (l2, t2)) ->
-        begin
-          if l1 <> l2 then raise (Match "Label clash")
-          else begin
-            if r1 == r2 then ()
+          begin if l1 <> l2 then raise (Match "Label clash")
+          else
+            begin if r1 == r2 then ()
             else begin
               matchSub (g_, t1, t2);
               begin
@@ -374,8 +372,8 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
                 Unify.instantiateLVar (r1, LVar (r2, Shift 0, (l2, t2')))
               end
             end
+            end
           end
-        end
       | g_, LVar (r1, s1, (l1, t1)), b2_ -> begin
           r1 := Some (blockSub (b2_, Whnf.invert s1));
           ()
@@ -384,9 +382,9 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
           r2 := Some (blockSub (b1_, Whnf.invert s2));
           ()
         end
-      | g_, Bidx n1, Bidx n2 -> begin
-          if n1 <> n2 then raise (Match "Block index clash") else ()
-        end
+      | g_, Bidx n1, Bidx n2 ->
+          begin if n1 <> n2 then raise (Match "Block index clash") else ()
+          end
 
     let rec match1W (g_, us1_, us2_) =
       begin
@@ -407,10 +405,10 @@ module MakeMatch (Whnf : WHNF) (Unify : UNIFY) (Trail : TRAIL) : MATCH = struct
           Unify.solveConstraint cnstr;
           match1 (g_, (u1_, id), (u2_, id))
         end
-      | Some { contents = FgnCnstr (csfc_csid, csfc_ops) } -> begin
-          if FgnCnstrStd.Awake.apply (csfc_csid, csfc_ops) () then ()
+      | Some { contents = FgnCnstr (csfc_csid, csfc_ops) } ->
+          begin if FgnCnstrStd.Awake.apply (csfc_csid, csfc_ops) () then ()
           else raise (Match "Foreign constraint violated")
-        end
+          end
 
     let rec matchW (g_, us1_, us2_) =
       begin

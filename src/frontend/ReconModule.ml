@@ -4,6 +4,7 @@ open! Basis
 (* External syntax for module expressions *)
 (* Author: Kevin Watkins *)
 include ReconModule_intf
+
 (* # 1 "src/frontend/ReconModule.fun.ml" *)
 open! Basis
 
@@ -185,8 +186,8 @@ end) : RECON_MODULE with module ModSyn = ReconModule__0.ModSyn' = struct
     in
     let _ = List.app add eqns in
     let rec doInst = function
-      | (Internal cid, r), conDec_ -> begin
-          try
+      | (Internal cid, r), conDec_ ->
+          begin try
             ModSyn.strictify
               (ExtSyn.internalInst
                  (conDec_, ModSyn.abbrevify (cid, IntSyn.sgnLookup cid), r))
@@ -195,7 +196,7 @@ end) : RECON_MODULE with module ModSyn = ReconModule__0.ModSyn' = struct
               (ExtSyn.Error
                  ((msg ^ "\nin instantiation generated for ")
                  ^ Names.qidToString (Names.constQid cid)))
-        end
+          end
       | (External tm, r), conDec_ ->
           ModSyn.strictify (ExtSyn.externalInst (conDec_, tm, r))
     in

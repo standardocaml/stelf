@@ -6,6 +6,7 @@
 open! Syntax
 open! Basis
 include Sgn_intf
+
 module Sgn = struct
   open Syntax
 

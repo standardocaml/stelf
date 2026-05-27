@@ -191,11 +191,11 @@ end) : Relfun_intf.RELFUN = struct
       in
       let rec inBlock = function
         | I.Null, (bw, w1) -> (bw, w1)
-        | I.Decl (g_, d_), (bw, w1) -> begin
-            if eqIdx (I.bvarSub (1, w1), I.Idx 1) then
+        | I.Decl (g_, d_), (bw, w1) ->
+            begin if eqIdx (I.bvarSub (1, w1), I.Idx 1) then
               inBlock (g_, (true, dot1inv w1))
             else inBlock (g_, (bw, Weaken.strengthenSub (w1, I.shift)))
-          end
+            end
       in
       let rec blockSub = function
         | I.Null, w -> (I.Null, w)
@@ -323,7 +323,9 @@ end) : Relfun_intf.RELFUN = struct
           | I.Null -> (I.id, function x -> x)
           | I.Decl (g_, (I.Dec (_, v_) as d_)) ->
               let w, k = raiseExp' g_ in
-              begin if Subordinate.Subordinate_.Subordinate.belowEq (I.targetFam v_, a) then
+              begin if
+                Subordinate.Subordinate_.Subordinate.belowEq (I.targetFam v_, a)
+              then
                 ( I.dot1 w,
                   function x -> k (I.Lam (Weaken.strengthenDec (d_, w), x)) )
               else (I.comp (w, I.shift), k)
@@ -337,7 +339,9 @@ end) : Relfun_intf.RELFUN = struct
           | I.Null, n -> (I.id, (function x -> x), function s_ -> s_)
           | I.Decl (g_, (I.Dec (_, v_) as d_)), n ->
               let w, k, k' = raiseType' (g_, n + 1) in
-              begin if Subordinate.Subordinate_.Subordinate.belowEq (I.targetFam v_, a) then
+              begin if
+                Subordinate.Subordinate_.Subordinate.belowEq (I.targetFam v_, a)
+              then
                 ( I.dot1 w,
                   (function
                   | x -> k (I.Pi ((Weaken.strengthenDec (d_, w), I.Maybe), x))),
@@ -419,12 +423,12 @@ end) : Relfun_intf.RELFUN = struct
       let rec varHead ts_ (w'', t'', (d', dplus_, dminus_)) =
         let rec head' = function
           | a' :: [], d1, k1 -> (d1, k1)
-          | a' :: ts'_, d1, k1 -> begin
-              if a = a' then (d1 + 1, function xx -> F.Left (xx, k1 1))
+          | a' :: ts'_, d1, k1 ->
+              begin if a = a' then (d1 + 1, function xx -> F.Left (xx, k1 1))
               else
                 let d2, k2 = head' (ts'_, d1 + 1, k1) in
                 (d2, function xx -> F.Right (xx, k2 1))
-            end
+              end
         in
         let d2, k2 = head' (ts_, d', function xx -> dplus_ (xx, dminus_)) in
         (d2, w'', t'', k2 d)
@@ -463,8 +467,7 @@ end) : Relfun_intf.RELFUN = struct
     let rec traverse (ts_, c) =
       let rec traverseNeg = function
         | c'', psi_, (I.Pi (((I.Dec (_, v1_) as d_), maybe_), v2_), v), l_ ->
-          begin
-            match
+            begin match
               traverseNeg
                 ( c'',
                   I.Decl (psi_, F.Prim (Weaken.strengthenDec (d_, v))),
@@ -473,9 +476,11 @@ end) : Relfun_intf.RELFUN = struct
             with
             | Some (w', d', pq'_), l'_ -> (Some (peel w', d', pq'_), l'_)
             | None, l'_ -> (None, l'_)
-          end
-        | c'', psi_, (I.Pi (((I.Dec (_, v1_) as d_), no_), v2_), v), l_ -> begin
-            match traverseNeg (c'', psi_, (v2_, I.comp (v, I.shift)), l_) with
+            end
+        | c'', psi_, (I.Pi (((I.Dec (_, v1_) as d_), no_), v2_), v), l_ ->
+            begin match
+              traverseNeg (c'', psi_, (v2_, I.comp (v, I.shift)), l_)
+            with
             | Some (w', d', pq'_), l'_ ->
                 traversePos
                   ( c'',
@@ -492,9 +497,9 @@ end) : Relfun_intf.RELFUN = struct
                     (Weaken.strengthenExp (v1_, v), I.id),
                     None,
                     l'_ )
-          end
-        | c'', psi_, ((I.Root (I.Const c', s_) as v_), v), l_ -> begin
-            if c = c' then
+            end
+        | c'', psi_, ((I.Root (I.Const c', s_) as v_), v), l_ ->
+            begin if c = c' then
               let s'_ = Weaken.strengthenSpine (s_, v) in
               let psi'_, w' =
                 strengthen
@@ -508,15 +513,15 @@ end) : Relfun_intf.RELFUN = struct
                       fun wf -> transformConc ((c', s'_), wf) ) ),
                 l_ )
             else (None, l_)
-          end
+            end
       and traversePos = function
         | ( c'',
             psi_,
             g_,
             (I.Pi (((I.Dec (_, v1_) as d_), maybe_), v2_), v),
             Some (w, d, pq_),
-            l_ ) -> begin
-            match
+            l_ ) ->
+            begin match
               traversePos
                 ( c'',
                   psi_,
@@ -526,19 +531,19 @@ end) : Relfun_intf.RELFUN = struct
                   l_ )
             with
             | Some (w', d', pq'_), l'_ -> (Some (w', d', pq'_), l'_)
-          end
+            end
         | ( c'',
             psi_,
             g_,
             (I.Pi (((I.Dec (_, v1_) as d_), no_), v2_), v),
             Some (w, d, pq_),
-            l_ ) -> begin
-            match
+            l_ ) ->
+            begin match
               traversePos
                 (c'', psi_, g_, (v2_, I.comp (v, I.shift)), Some (w, d, pq_), l_)
             with
-            | Some (w', d', pq'_), l'_ -> begin
-                match
+            | Some (w', d', pq'_), l'_ ->
+                begin match
                   traverseNeg
                     ( c'',
                       I.Decl (psi_, F.Block (F.CtxBlock (None, g_))),
@@ -548,8 +553,8 @@ end) : Relfun_intf.RELFUN = struct
                 | Some (w'', d'', (p''_, q''_)), l''_ ->
                     (Some (w', d', pq'_), p''_ (q''_ w'') :: l''_)
                 | None, l''_ -> (Some (w', d', pq'_), l''_)
-              end
-          end
+                end
+            end
         | c'', psi_, I.Null, (v_, v), Some (w1, d, (p_, q_)), l_ ->
             let (I.Root (I.Const a', s_)) =
               Whnf.normalize (Weaken.strengthenExp (v_, v), I.id)
@@ -626,12 +631,12 @@ end) : Relfun_intf.RELFUN = struct
             g_,
             (I.Pi (((I.Dec (_, v1_) as d_), no_), v2_), v),
             None,
-            l_ ) -> begin
-            match
+            l_ ) ->
+            begin match
               traversePos (c'', psi_, g_, (v2_, I.comp (v, I.shift)), None, l_)
             with
-            | None, l'_ -> begin
-                match
+            | None, l'_ ->
+                begin match
                   traverseNeg
                     ( c'',
                       I.Decl (psi_, F.Block (F.CtxBlock (None, g_))),
@@ -641,22 +646,22 @@ end) : Relfun_intf.RELFUN = struct
                 | Some (w'', d'', (p''_, q''_)), l''_ ->
                     (None, p''_ (q''_ w'') :: l''_)
                 | None, l''_ -> (None, l''_)
-              end
-          end
+                end
+            end
         | c'', psi_, g_, (v_, v), None, l_ -> (None, l_)
       in
       let rec traverseSig' (c'', l_) =
         begin if c'' = (fun (r, _) -> r) (I.sgnSize ()) then l_
-        else begin
-          match I.sgnLookup c'' with
-          | I.ConDec (name, _, _, _, v_, I.Type) -> begin
-              match traverseNeg (c'', I.Null, (v_, I.id), l_) with
+        else
+          begin match I.sgnLookup c'' with
+          | I.ConDec (name, _, _, _, v_, I.Type) ->
+              begin match traverseNeg (c'', I.Null, (v_, I.id), l_) with
               | Some (wf, d', (p'_, q'_)), l'_ ->
                   traverseSig' (c'' + 1, p'_ (q'_ wf) :: l'_)
               | None, l'_ -> traverseSig' (c'' + 1, l'_)
-            end
+              end
           | _ -> traverseSig' (c'' + 1, l_)
-        end
+          end
         end
       in
       traverseSig' (0, [])

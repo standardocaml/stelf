@@ -3,31 +3,37 @@ open! Basis
 
 (* Paths, Occurrences, and Error Locations *)
 
-(** Author: Frank Pfenning *)
 include Paths_intf
+(** Author: Frank Pfenning *)
+
 (* into v for c : V ... *)
 (* signature PATHS *)
 
 (* # 1 "src/paths/Paths_.fun.ml" *)
 open! Basis
+
 (* TODO Modernize this *)
 (* Paths, Occurrences, and Error Locations *)
 (* Author: Frank Pfenning *)
 module MakePaths () : PATHS = struct
-  type pos = int [@@deriving show {with_path = false}]
+  type pos = int [@@deriving show { with_path = false }]
 
   (* characters, starting at 0 *)
-  type region = Reg of pos * pos [@@deriving show {with_path = false}]
+  type region = Reg of pos * pos [@@deriving show { with_path = false }]
 
   (* r ::= (i,j) is interval [i,j) *)
-  type location = Loc of string * region [@@deriving show {with_path = false}] (* TODO Make this use fpath *)
+  type location = Loc of string * region
+  [@@deriving show { with_path = false }]
+  (* TODO Make this use fpath *)
 
   (* loc ::= (filename, region) *)
   type nonrec linesInfo = pos list
 
   let rec posToLineCol' (linesInfo, i) =
     let rec ptlc = function
-      | j :: js -> begin if i >= j then (List.length js, i - j) else ptlc js end
+      | j :: js ->
+          begin if i >= j then (List.length js, i - j) else ptlc js
+          end
       | [] -> (0, i)
       (* nil means first ""line"" was not terminated by <newline> *)
       (* first line should start at 0 *)
@@ -94,8 +100,7 @@ module MakePaths () : PATHS = struct
   (* Paths, occurrences and occurrence trees only work well for normal forms *)
   (* In the general case, regions only approximate true source location *)
   (* Follow path through a term to obtain subterm *)
-  type path = Label of path | Body of path | Head | Arg of int * path | Here 
-    
+  type path = Label of path | Body of path | Head | Arg of int * path | Here
 
   (* [x:#] U or {x:#} V *)
   (* [x:V] # or {x:V} # *)
@@ -163,29 +168,29 @@ module MakePaths () : PATHS = struct
     in
     let rec toPath = function
       | Leaf_ (Reg (i, j)) -> Here
-      | Bind_ (Reg (i, j), None, u) -> begin
-          if inside u then Body (toPath u) else Here
-        end
-      | Bind_ (Reg (i, j), Some u1, u2) -> begin
-          if inside u1 then Label (toPath u1)
-          else begin
-            if inside u2 then Body (toPath u2) else Here
+      | Bind_ (Reg (i, j), None, u) ->
+          begin if inside u then Body (toPath u) else Here
           end
-        end
-      | Root_ (Reg (i, j), h, imp, actual, s) -> begin
-          if inside h then Head
-          else begin
-            match toPathSpine (s, 1) with
+      | Bind_ (Reg (i, j), Some u1, u2) ->
+          begin if inside u1 then Label (toPath u1)
+          else
+            begin if inside u2 then Body (toPath u2) else Here
+            end
+          end
+      | Root_ (Reg (i, j), h, imp, actual, s) ->
+          begin if inside h then Head
+          else
+            begin match toPathSpine (s, 1) with
             | None -> Here
             | Some (n, path) -> Arg (n + imp, path)
+            end
           end
-        end
     (* check? mark? *)
     and toPathSpine = function
       | Nils_, n -> None
-      | App_ (u, s), n -> begin
-          if inside u then Some (n, toPath u) else toPathSpine (s, n + 1)
-        end
+      | App_ (u, s), n ->
+          begin if inside u then Some (n, toPath u) else toPathSpine (s, n + 1)
+          end
     in
     toPath u
 
@@ -216,12 +221,13 @@ module MakePaths () : PATHS = struct
     | Root_ (r, _, _, _, _), Label path -> r
     | (Root_ _ as u), Body path -> pathToRegion (u, path)
     | Root_ (r, h, imp, actual, s), Head -> toRegion h
-    | Root_ (r, h, imp, actual, s), Arg (n, path) -> begin
-        if n <= imp then toRegion h
-        else begin
-          if n - imp > actual then r else pathToRegionSpine (s, n - imp, path)
+    | Root_ (r, h, imp, actual, s), Arg (n, path) ->
+        begin if n <= imp then toRegion h
+        else
+          begin if n - imp > actual then r
+          else pathToRegionSpine (s, n - imp, path)
+          end
         end
-      end
     | Leaf_ r, _ -> r
 
   and pathToRegionSpine = function
@@ -294,7 +300,6 @@ end
 
 (* functor Paths *)
 module Paths = MakePaths (struct end)
-
 include Paths
 
 (* # 1 "src/paths/Paths_.sml.ml" *)

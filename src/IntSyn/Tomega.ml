@@ -17,7 +17,6 @@ open Intsyn_
 (* Author: Carsten Schuermann *)
 (* Modified: Yu Liao, Adam Poswolsky *)
 module MakeTomega (Whnf : WHNF) (Conv : CONV) : TOMEGA = struct
-
   exception Error of string
 
   type nonrec label = int
@@ -187,15 +186,15 @@ module MakeTomega (Whnf : WHNF) (Conv : CONV) : TOMEGA = struct
     and lemmaName' arg__1 arg__2 =
       begin match (arg__1, arg__2) with
       | -1, s -> raise (Error "Function name not found")
-      | n, s -> begin
-          match lemmaLookup n with
-          | ForDec (s', f_) -> begin
-              if s = s' then n else lemmaName' (n - 1) s
-            end
-          | ValDec (s', p_, f_) -> begin
-              if s = s' then n else lemmaName' (n - 1) s
-            end
-        end
+      | n, s ->
+          begin match lemmaLookup n with
+          | ForDec (s', f_) ->
+              begin if s = s' then n else lemmaName' (n - 1) s
+              end
+          | ValDec (s', p_, f_) ->
+              begin if s = s' then n else lemmaName' (n - 1) s
+              end
+          end
       end
 
     let rec coerceFront = function
@@ -371,37 +370,37 @@ module MakeTomega (Whnf : WHNF) (Conv : CONV) : TOMEGA = struct
       and getPrgIndex = function
         | Redex (Var k, Nil) -> Some k
         | Redex (p_, Nil) -> getPrgIndex p_
-        | PClo (p_, t) -> begin
-            match getPrgIndex p_ with
+        | PClo (p_, t) ->
+            begin match getPrgIndex p_ with
             | None -> None
             | Some i -> getFrontIndex (varSub (i, t))
-          end
+            end
         | _ -> None
       and getExpIndex = function
         | I.Root (I.BVar k, I.Nil) -> Some k
         | I.Redex (u_, I.Nil) -> getExpIndex u_
-        | I.EClo (u_, t) -> begin
-            match getExpIndex u_ with
+        | I.EClo (u_, t) ->
+            begin match getExpIndex u_ with
             | None -> None
             | Some i -> getFrontIndex (revCoerceFront (I.bvarSub (i, t)))
-          end
+            end
         | I.Lam (I.Dec (_, u1_), u2_) as u_ -> (
             try Some (Whnf.etaContract u_) with eta_ -> None | _ -> None)
       and getBlockIndex = function I.Bidx k -> Some k | _ -> None in
       let rec lookup = function
         | n, Shift _, p -> None
         | n, Dot (Undef, s'), p -> lookup (n + 1, s', p)
-        | n, Dot (Idx k, s'), p -> begin
-            if k = p then Some n else lookup (n + 1, s', p)
-          end
+        | n, Dot (Idx k, s'), p ->
+            begin if k = p then Some n else lookup (n + 1, s', p)
+            end
       in
       let rec invertSub'' = function
         | 0, si -> si
-        | p, si -> begin
-            match lookup (1, s, p) with
+        | p, si ->
+            begin match lookup (1, s, p) with
             | Some k -> invertSub'' (p - 1, Dot (Idx k, si))
             | None -> invertSub'' (p - 1, Dot (Undef, si))
-          end
+            end
       in
       let rec invertSub' = function
         | n, Shift p -> invertSub'' (p, Shift n)
@@ -513,14 +512,14 @@ module MakeTomega (Whnf : WHNF) (Conv : CONV) : TOMEGA = struct
       | (True, _) as ft_ -> ft_
 
     let rec normalizePrg = function
-      | Var n, t -> begin
-          match varSub (n, t) with
+      | Var n, t ->
+          begin match varSub (n, t) with
           | Prg p_ -> p_
           | Idx _ -> raise Domain
           | Exp _ -> raise Domain
           | Block _ -> raise Domain
           | Undef -> raise Domain
-        end
+          end
       | PairExp (u_, p'_), t ->
           PairExp (Whnf.normalize (u_, coerceSub t), normalizePrg (p'_, t))
       | PairBlock (b_, p'_), t ->
@@ -891,5 +890,4 @@ module Conv__ = Conv (struct
 end)
 
 module Tomega : TOMEGA = MakeTomega (Whnf__) (Conv__)
-
 include Tomega

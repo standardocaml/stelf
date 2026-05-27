@@ -105,8 +105,8 @@ end) : PARSE_TERM with module ExtSyn = ParseTerm__0.ExtSyn' = struct
       let rec resolve = function
         | ( r,
             (Infix ((prec, assoc), _) as opr),
-            (Atom _ :: Infix ((prec', assoc'), _) :: p' as p) ) -> begin
-            match (FX.compare (prec, prec'), assoc, assoc') with
+            (Atom _ :: Infix ((prec', assoc'), _) :: p' as p) ) ->
+            begin match (FX.compare (prec, prec'), assoc, assoc') with
             | Greater, _, _ -> shift (r, opr, p)
             | Less, _, _ -> resolve (r, opr, reduce p)
             | Equal, FX.Left, FX.Left -> resolve (r, opr, reduce p)
@@ -114,11 +114,11 @@ end) : PARSE_TERM with module ExtSyn = ParseTerm__0.ExtSyn' = struct
             | _ ->
                 Parsing.error
                   (r, "Ambiguous: infix following infix of identical precedence")
-          end
+            end
         | ( r,
             (Infix ((prec, assoc), _) as opr),
-            (Atom _ :: Prefix (prec', _) :: p' as p) ) -> begin
-            match FX.compare (prec, prec') with
+            (Atom _ :: Prefix (prec', _) :: p' as p) ) ->
+            begin match FX.compare (prec, prec') with
             | Greater -> shift (r, opr, p)
             | Less -> resolve (r, opr, reduce p)
             | Equal ->
@@ -126,12 +126,12 @@ end) : PARSE_TERM with module ExtSyn = ParseTerm__0.ExtSyn' = struct
                   ( r,
                     "Ambiguous: infix following prefix of identical precedence"
                   )
-          end
+            end
         | r, (Prefix _ as opr), p -> shift (r, opr, p)
         | ( r,
             (Postfix (prec, _) as opr),
-            (Atom _ :: Prefix (prec', _) :: p' as p) ) -> begin
-            match FX.compare (prec, prec') with
+            (Atom _ :: Prefix (prec', _) :: p' as p) ) ->
+            begin match FX.compare (prec, prec') with
             | Greater -> reduce (shift (r, opr, p))
             | Less -> resolve (r, opr, reduce p)
             | Equal ->
@@ -139,11 +139,11 @@ end) : PARSE_TERM with module ExtSyn = ParseTerm__0.ExtSyn' = struct
                   ( r,
                     "Ambiguous: postfix following prefix of identical \
                      precedence" )
-          end
+            end
         | ( r,
             (Postfix (prec, _) as opr),
-            (Atom _ :: Infix ((prec', _), _) :: p' as p) ) -> begin
-            match FX.compare (prec, prec') with
+            (Atom _ :: Infix ((prec', _), _) :: p' as p) ) ->
+            begin match FX.compare (prec, prec') with
             | Greater -> reduce (shift (r, opr, p))
             | Less -> resolve (r, opr, reduce p)
             | Equal ->
@@ -151,20 +151,20 @@ end) : PARSE_TERM with module ExtSyn = ParseTerm__0.ExtSyn' = struct
                   ( r,
                     "Ambiguous: postfix following infix of identical precedence"
                   )
-          end
+            end
         | r, (Postfix _ as opr), (Atom _ :: [] as p) ->
             reduce (shift (r, opr, p))
         | r, opr, p -> shift (r, opr, p)
     end
 
     let rec parseQualId' = function
-      | LS.Cons (((L.Id (_, id) as t), r), s') as f -> begin
-          match LS.expose s' with
+      | LS.Cons (((L.Id (_, id) as t), r), s') as f ->
+          begin match LS.expose s' with
           | LS.Cons ((L.Pathsep, _), s'') ->
               let (ids, (t, r)), f' = parseQualId' (LS.expose s'') in
               ((id :: ids, (t, r)), f')
           | f' -> (([], (t, r)), f')
-        end
+          end
       | LS.Empty -> assert false (* TODO *)
 
     let rec stripBar = function
@@ -251,8 +251,8 @@ end) : PARSE_TERM with module ExtSyn = ParseTerm__0.ExtSyn' = struct
           let r = Paths.join (r0, r1) in
           let tm = idToTerm (idCase, ids, name, r) in
           begin if isQuoted idCase then parseExp' (f', P.shiftAtom (tm, p))
-          else begin
-            match Names.fixityLookup (Names.Qid (ids, name)) with
+          else
+            begin match Names.fixityLookup (Names.Qid (ids, name)) with
             | FX.Nonfix -> parseExp' (f', P.shiftAtom (tm, p))
             | FX.Infix (prec, assoc) ->
                 parseExp' (f', P.resolve (r, infixOp ((prec, assoc), tm), p))
@@ -260,7 +260,7 @@ end) : PARSE_TERM with module ExtSyn = ParseTerm__0.ExtSyn' = struct
                 parseExp' (f', P.resolve (r, prefixOp (prec, tm), p))
             | FX.Postfix prec ->
                 parseExp' (f', P.resolve (r, postfixOp (prec, tm), p))
-          end
+            end
           end
       | LS.Cons ((L.Underscore, r), s), p ->
           parseExp (s, P.shiftAtom (ExtSyn.omitted r, p))
@@ -292,8 +292,8 @@ end) : PARSE_TERM with module ExtSyn = ParseTerm__0.ExtSyn' = struct
     and parseDec' = function
       | LS.Cons ((L.Id (L.Quoted, name), r), s') ->
           Parsing.error (r, "Illegal bound quoted identifier " ^ name)
-      | LS.Cons ((L.Id (idCase, name), r), s') -> begin
-          match Names.fixityLookup (Names.Qid ([], name)) with
+      | LS.Cons ((L.Id (idCase, name), r), s') ->
+          begin match Names.fixityLookup (Names.Qid ([], name)) with
           | FX.Nonfix -> parseDec1 (Some name, LS.expose s')
           | FX.Infix _ ->
               Parsing.error (r, "Cannot bind infix identifier " ^ name)
@@ -301,7 +301,7 @@ end) : PARSE_TERM with module ExtSyn = ParseTerm__0.ExtSyn' = struct
               Parsing.error (r, "Cannot bind prefix identifier " ^ name)
           | FX.Postfix _ ->
               Parsing.error (r, "Cannot bind postfix identifier " ^ name)
-        end
+          end
       | LS.Cons ((L.Underscore, r), s') -> parseDec1 (None, LS.expose s')
       | LS.Cons ((L.Eof, r), s') ->
           Parsing.error (r, "Unexpected end of stream in declaration")
@@ -373,10 +373,11 @@ end) : PARSE_TERM with module ExtSyn = ParseTerm__0.ExtSyn' = struct
       | b, ds, (LS.Cons ((L.Lbrace, r), s') as _bs) ->
           let d, f' = parseBracedDec (r, LS.expose s') in
           parseCtx (false, d :: ds, f')
-      | b, ds, (LS.Cons ((t, r), s') as f) -> begin
-          if b then Parsing.error (r, "Expected `{', found " ^ L.toString t)
+      | b, ds, (LS.Cons ((t, r), s') as f) ->
+          begin if b then
+            Parsing.error (r, "Expected `{', found " ^ L.toString t)
           else (ds, f)
-        end
+          end
   end
 
   (* some shorthands *)

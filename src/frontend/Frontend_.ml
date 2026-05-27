@@ -100,18 +100,10 @@ module ThmPrint = Thmprint.ThmPrint (struct
 end)
 
 module FrontendTabledSyn =
-  Tabledsyn.MakeTabledSyn
-    (Names)
-    (TableInstances.IntRedBlackTree)
-    (Index)
+  Tabledsyn.MakeTabledSyn (Names) (TableInstances.IntRedBlackTree) (Index)
 
 module Thm =
-  Thm_.Make_Thm
-    (Global)
-    (ThmSyn)
-    (FrontendTabledSyn)
-    (ModeTable)
-    (Order)
+  Thm_.Make_Thm (Global) (ThmSyn) (FrontendTabledSyn) (ModeTable) (Order)
     (ThmPrint)
 
 module ReconThm = ReconThm.ReconThm (struct

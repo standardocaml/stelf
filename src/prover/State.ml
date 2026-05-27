@@ -4,6 +4,7 @@ open! Basis
 (* State definition for Proof Search *)
 (* Author: Carsten Schuermann *)
 include State_intf
+
 (* # 1 "src/prover/State.fun.ml" *)
 open! Basis
 

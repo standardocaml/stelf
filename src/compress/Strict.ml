@@ -77,10 +77,10 @@ module Strict = struct
 
   and root_occ arg__12 arg__13 =
     begin match (arg__12, arg__13) with
-    | n, (d_, Var n', s) -> begin
-        if n = n' then pattern_spine (d_, s)
+    | n, (d_, Var n', s) ->
+        begin if n = n' then pattern_spine (d_, s)
         else List.exists (function x -> x = n') d_ && spine_occ n (d_, s)
-      end
+        end
     | n, (d_, Const n', s) -> spine_occ n (d_, s)
     end
 
@@ -99,7 +99,9 @@ module Strict = struct
   (* toplevel strictness judgments *)
   let rec check_strict_type' arg__16 arg__17 arg__18 =
     begin match (arg__16, arg__17, arg__18) with
-    | n, p, TRoot (n', s) -> begin if p then false else spine_occ n ([], s) end
+    | n, p, TRoot (n', s) ->
+        begin if p then false else spine_occ n ([], s)
+        end
     | n, p, TPi (Plus, a, b) ->
         type_occ n ([], a) || check_strict_type' (n + 1) p b
     | n, p, TPi (_, a, b) -> check_strict_type' (n + 1) p b

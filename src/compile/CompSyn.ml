@@ -18,8 +18,7 @@ open! Basis
 module Make_CompSyn
     (Global_ : GLOBAL)
     (Names_ : NAMES)
-    (Table_ : TABLE with type key = int) :
-  COMPSYN = struct
+    (Table_ : TABLE with type key = int) : COMPSYN = struct
   module Global = Global_
   module Names = Names_
   module Table = Table_
@@ -217,7 +216,6 @@ open TableInstances
 
 (* functor CompSyn *)
 module CompSyn = Make_CompSyn (Global) (Names) (IntRedBlackTree)
-
 include CompSyn
 
 (* # 1 "src/compile/CompSyn.sml.ml" *)

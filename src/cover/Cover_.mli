@@ -15,8 +15,7 @@ module MakeCover
     (Names : NAMES)
     (Print : PRINT)
     (TypeCheck : TYPECHECK)
-    (Timers : Timers.TIMERS) :
-  COVER
+    (Timers : Timers.TIMERS) : COVER
 (*
   (* must be trailing! Constraints *)
   (*! sharing Whnf.IntSyn = IntSyn' !*)

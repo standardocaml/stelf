@@ -3,10 +3,9 @@
 (library
  (name style)
  (public_name stelf.style)
- (modules
-  Style_
-  Style_intf)
+ (modules Style_ Style_intf)
  (libraries
+  display
   global
   table
   intsyn

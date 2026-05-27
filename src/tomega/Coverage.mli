@@ -3,8 +3,7 @@ include module type of Coverage_intf
 module MakeTomegaCoverage
     (TomegaPrint : Tomegaprint.TOMEGAPRINT)
     (TomegaTypeCheck : TomegaTypecheck_intf.TOMEGATYPECHECK)
-    (Cover : COVER) :
-  TOMEGACOVERAGE
+    (Cover : COVER) : TOMEGACOVERAGE
 (*
   (* Coverage checker for programs *)
   (* Author: Carsten Schuermann *)

@@ -21,6 +21,7 @@ module MakeOrder (M : sig
   module Table : TABLE with type key = int
 end) : ORDER = struct
   open M
+
   (*! structure IntSyn = IntSyn' !*)
   exception Error of string
 
@@ -136,10 +137,10 @@ end) : ORDER = struct
 
   let rec closure = function
     | [], a2s -> a2s
-    | a :: a1s, a2s -> begin
-        if List.exists (function a' -> a = a') a2s then closure (a1s, a2s)
+    | a :: a1s, a2s ->
+        begin if List.exists (function a' -> a = a') a2s then closure (a1s, a2s)
         else closure (mutual a @ a1s, a :: a2s)
-      end
+        end
 
   (* mutual a = a's
 
@@ -180,13 +181,16 @@ end
 open! Basis
 open Table.TableInstances
 
-
 module Key' = struct
   type key' = int
-    let compare (a, b : key' * key'): Basis.order = if a < b then Less else if a > b then Greater else Equal
-end
-module Order = MakeOrder(struct module Table = RedBlackTree.RedBlackTree(Key') end)
 
+  let compare ((a, b) : key' * key') : Basis.order =
+    if a < b then Less else if a > b then Greater else Equal
+end
+
+module Order = MakeOrder (struct
+  module Table = RedBlackTree.RedBlackTree (Key')
+end)
 
 include Order
 (* -bp *)

@@ -7,8 +7,9 @@ open Basis
 (* Modified: Roberto Virga *)
 (* This provides a common interface to hash tables *)
 
-(** red/black trees and similar data structures *)
 include Table_intf
+(** red/black trees and similar data structures *)
+
 (* signature TABLE *)
 
 (* # 1 "src/table/Table.fun.ml" *)

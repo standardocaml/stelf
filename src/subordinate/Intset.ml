@@ -10,6 +10,7 @@ open! Basis
 (* Author: Frank Pfenning *)
 (* Copied from src/table/red-black-tree.fun *)
 include Intset_intf
+
 module IntSet : INTSET = struct
   type rbt = Empty | Red of (int * rbt * rbt) | Black of (int * rbt * rbt)
 
@@ -65,18 +66,18 @@ module IntSet : INTSET = struct
     let rec insert (dict, x) =
       let rec ins = function
         | Empty -> Red (x, Empty, Empty)
-        | Red (x1, left, right) -> begin
-            match Int.compare (x, x1) with
+        | Red (x1, left, right) ->
+            begin match Int.compare (x, x1) with
             | Equal -> Red (x, left, right)
             | Less -> Red (x1, ins left, right)
             | Greater -> Red (x1, left, ins right)
-          end
-        | Black (x1, left, right) -> begin
-            match Int.compare (x, x1) with
+            end
+        | Black (x1, left, right) ->
+            begin match Int.compare (x, x1) with
             | Equal -> Black (x, left, right)
             | Less -> restore_left (Black (x1, ins left, right))
             | Greater -> restore_right (Black (x1, left, ins right))
-          end
+            end
       in
       begin match ins dict with
       | Red ((_, Red _, _) as t) -> Black t

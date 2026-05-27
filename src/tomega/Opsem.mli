@@ -6,8 +6,7 @@ module MakeOpsem
     (Subordinate : Subordinate.Subordinate_.SUBORDINATE)
     (TomegaTypeCheck : TomegaTypecheck_intf.TOMEGATYPECHECK)
     (TomegaPrint : Tomegaprint.TOMEGAPRINT)
-    (Unify : UNIFY) :
-  OPSEM
+    (Unify : UNIFY) : OPSEM
 (*
   (* Internal syntax for functional proof term calculus *)
   (* Author: Carsten Schuermann, Adam Poswolsky *)

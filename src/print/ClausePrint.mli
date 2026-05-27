@@ -13,8 +13,7 @@ module MakeClausePrint
       val formatConDec : IntSyn.conDec -> Formatter.format
       val implicit : bool ref
     end)
-    (Symbol : Symbol.SYMBOL) :
-  CLAUSEPRINT
+    (Symbol : Symbol.SYMBOL) : CLAUSEPRINT
 (*
   (* Clause Printing *)
   (* Author: Frank Pfenning, Carsten Schuermann *)

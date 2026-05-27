@@ -13,10 +13,8 @@ open! Basis
 module MakeTomegaCoverage
     (TomegaPrint : Tomegaprint.TOMEGAPRINT)
     (TomegaTypeCheck : TomegaTypecheck_intf.TOMEGATYPECHECK)
-    (Cover : COVER) :
-  TOMEGACOVERAGE =
-struct
-(*
+    (Cover : COVER) : TOMEGACOVERAGE = struct
+  (*
   (* Coverage checker for programs *)
   (* Author: Carsten Schuermann *)
   (*! structure IntSyn' : INTSYN !*)
@@ -43,9 +41,10 @@ struct
     module TomegaTypeCheck = TomegaTypeCheck
 
     let rec chatter chlev f =
-      begin if !Global.chatter >= chlev then print ("[coverage] " ^ f ())
-      else ()
-      end
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter chlev)
+           (Display.Info.Form.string ("[coverage] " ^ f ())))
 
     let rec purifyFor = function
       | (T.Unit, t), (psi_, T.True), s -> (t, psi_, s)

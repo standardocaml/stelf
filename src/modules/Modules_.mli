@@ -5,5 +5,4 @@
 (* # 1 "src/modules/Modules_.sml.ml" *)
 open! Basis
 open TableInstances
-
 module ModSyn : Modsyn_intf.MODSYN

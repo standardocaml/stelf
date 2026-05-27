@@ -78,24 +78,24 @@ end) : SPARSE_ARRAY2 = struct
       let rmax = row + nrows in
       let cmax = col + ncols in
       let rec appR (row', col') =
-        begin if row' < rmax then begin
-          if col' < cmax then begin
+        begin if row' < rmax then
+          begin if col' < cmax then begin
             f (row', col', unsafeSub (base, row', col'));
             appR (row', col' + 1)
           end
           else appR (row' + 1, col)
-        end
+          end
         else ()
         end
       in
       let rec appC (row', col') =
-        begin if col' < cmax then begin
-          if row' < rmax then begin
+        begin if col' < cmax then
+          begin if row' < rmax then begin
             f (row', col', unsafeSub (base, row', col'));
             appC (row' + 1, col')
           end
           else appC (row, col' + 1)
-        end
+          end
         else ()
         end
       in
@@ -111,20 +111,20 @@ end) : SPARSE_ARRAY2 = struct
       let rmax = row + nrows in
       let cmax = col + ncols in
       let rec foldR (row', col') =
-        begin if row' < rmax then begin
-          if col' < cmax then
+        begin if row' < rmax then
+          begin if col' < cmax then
             f (row', col', unsafeSub (base, row', col'), foldR (row', col' + 1))
           else foldR (row' + 1, col)
-        end
+          end
         else init
         end
       in
       let rec foldC (row', col') =
-        begin if col' < cmax then begin
-          if row' < rmax then
+        begin if col' < cmax then
+          begin if row' < rmax then
             f (row', col', unsafeSub (base, row', col'), foldC (row' + 1, col'))
           else foldC (row, col' + 1)
-        end
+          end
         else init
         end
       in
@@ -140,26 +140,26 @@ end) : SPARSE_ARRAY2 = struct
       let rmax = row + nrows in
       let cmax = col + ncols in
       let rec modifyR (row', col') =
-        begin if row' < rmax then begin
-          if col' < cmax then begin
+        begin if row' < rmax then
+          begin if col' < cmax then begin
             unsafeUpdate
               (base, row', col', f (row', col', unsafeSub (base, row', col')));
             modifyR (row', col' + 1)
           end
           else modifyR (row' + 1, col)
-        end
+          end
         else ()
         end
       in
       let rec modifyC (row', col') =
-        begin if col' < cmax then begin
-          if row' < rmax then begin
+        begin if col' < cmax then
+          begin if row' < rmax then begin
             unsafeUpdate
               (base, row', col', f (row', col', unsafeSub (base, row', col')));
             modifyC (row' + 1, col')
           end
           else modifyC (row, col' + 1)
-        end
+          end
         else ()
         end
       in

@@ -7,5 +7,4 @@ open! Syntax
 open! Sgn
 open! Reductio
 open! Basis
-
 module Rep : sig end

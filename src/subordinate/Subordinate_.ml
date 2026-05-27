@@ -4,8 +4,9 @@ open! Basis
 (* Subordination *)
 (* Author: Carsten Schuermann *)
 
-(** Modified: Frank Pfenning *)
 include Subordinate_intf
+(** Modified: Frank Pfenning *)
+
 (* signature SUBORDINATE *)
 
 (* # 1 "src/subordinate/Subordinate_.fun.ml" *)
@@ -20,10 +21,8 @@ module MakeSubordinate
     (Names : NAMES)
     (Table : TABLE with type key = int)
     (MemoTable : TABLE with type key = int * int)
-    (IntSet : Intset.INTSET) :
-  SUBORDINATE =
-struct
-(*
+    (IntSet : Intset.INTSET) : SUBORDINATE = struct
+  (*
   (*! structure IntSyn' : INTSYN !*)
   (*! sharing Whnf.IntSyn = IntSyn' !*)
   (*! sharing Names.IntSyn = IntSyn' !*)
@@ -127,13 +126,13 @@ struct
             (Error
                (("Constant " ^ Names.qidToString (Names.constQid a))
                ^ " must be a type family to be frozen or thawed"))
-      | I.Kind -> begin
-          match IntSyn.sgnLookup a with
+      | I.Kind ->
+          begin match IntSyn.sgnLookup a with
           | IntSyn.ConDec _ -> a
           | IntSyn.ConDef _ -> IntSyn.targetFam (IntSyn.constDef a)
           | IntSyn.SkoDec _ -> a
           | IntSyn.AbbrevDef _ -> IntSyn.targetFam (IntSyn.constDef a)
-        end
+          end
       end
 
     let freezeList : IntSet.intset ref = ref IntSet.empty
@@ -180,9 +179,9 @@ struct
       begin match memoLookup (b, a) with
       | None -> computeBelow (a, b)
       | Some (true, c) -> true
-      | Some (false, c) -> begin
-          if c = !memoCounter then false else computeBelow (a, b)
-        end
+      | Some (false, c) ->
+          begin if c = !memoCounter then false else computeBelow (a, b)
+          end
       end
 
     let rec belowEq (a, b) = a = b || below (a, b)
@@ -190,25 +189,25 @@ struct
 
     let rec addSubord (a, b) =
       begin if below (a, b) then ()
-      else begin
-        if fGet b then
+      else
+        begin if fGet b then
           raise
             (Error
                ((("Freezing violation: " ^ Names.qidToString (Names.constQid b))
                 ^ " would depend on ")
                ^ Names.qidToString (Names.constQid a)))
         else addNewEdge (b, a)
-      end
+        end
       end
 
     let aboveList : IntSyn.cid list ref = ref []
 
     let rec addIfBelowEq a's = function
-      | b -> begin
-          if List.exists (function a -> belowEq (a, b)) a's then
+      | b ->
+          begin if List.exists (function a -> belowEq (a, b)) a's then
             aboveList := b :: !aboveList
           else ()
-        end
+          end
 
     let rec thaw a's =
       let a's' = map expandFamilyAbbrevs a's in
@@ -246,8 +245,8 @@ struct
       else
         appReachable
           (function
-            | a' -> begin
-                if occursInDef a' then
+            | a' ->
+                begin if occursInDef a' then
                   raise
                     (Error
                        (((("Definition violation: family "
@@ -258,7 +257,7 @@ struct
                           which occurs as right-hand side of a type-level \
                           definition"))
                 else ()
-              end)
+                end)
           a
       end
 
@@ -690,10 +689,6 @@ module MemoTable = HashTable.HashTable (struct
 end)
 
 module Subordinate =
-  MakeSubordinate
-    (Global)
-    (Whnf)
-    (Names)
-    (TableInstances.IntRedBlackTree)
+  MakeSubordinate (Global) (Whnf) (Names) (TableInstances.IntRedBlackTree)
     (MemoTable)
     (Intset.IntSet)

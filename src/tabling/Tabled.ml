@@ -6,7 +6,4 @@
 open! Basis
 
 module TabledSyn =
-  Tabledsyn.MakeTabledSyn
-    (Names)
-    (TableInstances.IntRedBlackTree)
-    (Index)
+  Tabledsyn.MakeTabledSyn (Names) (TableInstances.IntRedBlackTree) (Index)

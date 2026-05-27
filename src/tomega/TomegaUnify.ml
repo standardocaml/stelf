@@ -70,10 +70,10 @@ end) : TOMEGAUNIFY = struct
       | psi_, _, _ -> raise (Unify "Formula mismatch")
 
     and unifyDec = function
-      | psi_, T.UDec d1_, T.UDec d2_ -> begin
-          if Conv.convDec ((d1_, I.id), (d2_, I.id)) then ()
+      | psi_, T.UDec d1_, T.UDec d2_ ->
+          begin if Conv.convDec ((d1_, I.id), (d2_, I.id)) then ()
           else raise (Unify "Declaration mismatch")
-        end
+          end
       | psi_, T.PDec (_, f1_, _, _), T.PDec (_, f2_, _, _) ->
           unifyFor (psi_, f1_, f2_)
   end

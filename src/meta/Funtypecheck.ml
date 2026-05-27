@@ -84,10 +84,10 @@ end) : Funtypecheck_intf.FUNTYPECHECK = struct
         | I.Decl (g'_, _), k -> skipBlock (g'_, k - 1)
       in
       let rec validBlock' = function
-        | I.Decl (psi_, F.Block (F.CtxBlock (l', g'_))), 0 -> begin
-            if l' = l && conv ((g_, I.id), (g'_, I.id)) then ()
+        | I.Decl (psi_, F.Block (F.CtxBlock (l', g'_))), 0 ->
+            begin if l' = l && conv ((g_, I.id), (g'_, I.id)) then ()
             else raise (Error "Typecheck Error: Not a valid block")
-          end
+            end
         | I.Decl (psi_, F.Prim _), 0 ->
             raise (Error "Typecheck Error: Not a valid block")
         | I.Null, k -> raise (Error "Typecheck Error: Not a valid block")
@@ -126,11 +126,11 @@ end) : Funtypecheck_intf.FUNTYPECHECK = struct
     let rec raiseType (F.CtxBlock (l, g_), psi'_) =
       let rec raiseType'' = function
         | I.Null, vn_, a -> vn_
-        | I.Decl (g'_, (I.Dec (_, v'_) as d_)), vn_, a -> begin
-            if Subordinate.belowEq (I.targetFam v'_, a) then
+        | I.Decl (g'_, (I.Dec (_, v'_) as d_)), vn_, a ->
+            begin if Subordinate.belowEq (I.targetFam v'_, a) then
               raiseType'' (g'_, Abstract.piDepend ((d_, I.Maybe), vn_), a)
             else raiseType'' (g'_, Weaken.strengthenExp (vn_, I.shift), a)
-          end
+            end
       in
       let rec raiseType' = function
         | psi1_, [] -> []
@@ -178,23 +178,23 @@ end) : Funtypecheck_intf.FUNTYPECHECK = struct
       | ( psi_,
           delta_,
           F.Lam ((F.Prim (I.Dec (_, v_)) as ld_), p_),
-          (F.All (F.Prim (I.Dec (_, v'_)), f'_), s') ) -> begin
-          if Conv.conv ((v_, I.id), (v'_, s')) then
+          (F.All (F.Prim (I.Dec (_, v'_)), f'_), s') ) ->
+          begin if Conv.conv ((v_, I.id), (v'_, s')) then
             check (I.Decl (psi_, ld_), shift delta_, p_, (f'_, I.dot1 s'))
           else raise (Error "Typecheck Error: Primitive Abstraction")
-        end
+          end
       | ( psi_,
           delta_,
           F.Lam ((F.Block (F.CtxBlock (l, g_) as b_) as ld_), p_),
-          (F.All (F.Block (F.CtxBlock (l', g'_)), f'_), s') ) -> begin
-          if l = l' && conv ((g_, I.id), (g'_, s')) then
+          (F.All (F.Block (F.CtxBlock (l', g'_)), f'_), s') ) ->
+          begin if l = l' && conv ((g_, I.id), (g'_, s')) then
             check
               ( I.Decl (psi_, ld_),
                 shiftBlock (b_, delta_),
                 p_,
                 (f'_, F.dot1n (g_, s')) )
           else raise (Error "Typecheck Error: Block Abstraction")
-        end
+          end
       | psi_, delta_, F.Inx (m_, p_), (F.Ex (I.Dec (_, v'_), f'_), s') -> begin
           TypeCheck.typeCheck (F.makectx psi_, (m_, I.EClo (v'_, s')));
           check (psi_, delta_, p_, (f'_, I.Dot (I.Exp m_, s')))
@@ -218,8 +218,8 @@ end) : Funtypecheck_intf.FUNTYPECHECK = struct
 
     and assume = function
       | psi_, delta_, empty_ -> ([], [], I.id)
-      | psi_, delta_, F.Split (kk, ds_) -> begin
-          match infer (delta_, kk) with
+      | psi_, delta_, F.Split (kk, ds_) ->
+          begin match infer (delta_, kk) with
           | F.MDec (name, F.Ex (d_, f_)), s ->
               let ld_ = F.Prim (I.decSub (d_, s)) in
               let dd_ = F.MDec (name, F.forSub (f_, I.dot1 s)) in
@@ -230,7 +230,7 @@ end) : Funtypecheck_intf.FUNTYPECHECK = struct
                 F.mdecSub (dd_, s') :: delta'_,
                 I.comp (I.shift, s') )
           | _ -> raise (Error "Typecheck Error: Declaration")
-        end
+          end
       | psi_, delta_, F.New (b_, ds_) ->
           let _ =
             TypeCheck.typeCheck
@@ -241,8 +241,8 @@ end) : Funtypecheck_intf.FUNTYPECHECK = struct
             assume (I.Decl (psi_, F.Block b_), shiftBlock (b_, delta_), ds_)
           in
           (raiseType (b_, psi'_), raiseM (b_, delta'_), s')
-      | psi_, delta_, F.App ((kk, u_), ds_) -> begin
-          match infer (delta_, kk) with
+      | psi_, delta_, F.App ((kk, u_), ds_) ->
+          begin match infer (delta_, kk) with
           | F.MDec (name, F.All (F.Prim (I.Dec (_, v_)), f_)), s ->
               let _ =
                 try TypeCheck.typeCheck (F.makectx psi_, (u_, I.EClo (v_, s)))
@@ -267,9 +267,9 @@ end) : Funtypecheck_intf.FUNTYPECHECK = struct
                 (Error
                    ("Typecheck Error: Declaration App"
                    ^ FunPrint.forToString (I.Null, f_) [ "x" ]))
-        end
-      | psi_, delta_, F.PApp ((kk, k), ds_) -> begin
-          match infer (delta_, kk) with
+          end
+      | psi_, delta_, F.PApp ((kk, k), ds_) ->
+          begin match infer (delta_, kk) with
           | F.MDec (name, F.All (F.Block (F.CtxBlock (l, g_)), f_)), s ->
               let _ = validBlock (psi_, k, (l, g_)) in
               let dd_ = F.MDec (name, F.forSub (f_, psub (k, g_, s))) in
@@ -278,9 +278,9 @@ end) : Funtypecheck_intf.FUNTYPECHECK = struct
               in
               (psi'_, F.mdecSub (dd_, s') :: delta'_, s')
           | _ -> raise (Error "Typecheck Error: Declaration PApp")
-        end
-      | psi_, delta_, F.Left (kk, ds_) -> begin
-          match infer (delta_, kk) with
+          end
+      | psi_, delta_, F.Left (kk, ds_) ->
+          begin match infer (delta_, kk) with
           | F.MDec (name, F.And (f1_, f2_)), s ->
               let dd_ = F.MDec (name, F.forSub (f1_, s)) in
               let psi'_, delta'_, s' =
@@ -288,9 +288,9 @@ end) : Funtypecheck_intf.FUNTYPECHECK = struct
               in
               (psi'_, F.mdecSub (dd_, s') :: delta'_, s')
           | _ -> raise (Error "Typecheck Error: Declaration Left")
-        end
-      | psi_, delta_, F.Right (kk, ds_) -> begin
-          match infer (delta_, kk) with
+          end
+      | psi_, delta_, F.Right (kk, ds_) ->
+          begin match infer (delta_, kk) with
           | F.MDec (name, F.And (f1_, f2_)), s ->
               let dd_ = F.MDec (name, F.forSub (f2_, s)) in
               let psi'_, delta'_, s' =
@@ -298,7 +298,7 @@ end) : Funtypecheck_intf.FUNTYPECHECK = struct
               in
               (psi'_, F.mdecSub (dd_, s') :: delta'_, s')
           | _ -> raise (Error "Typecheck Error: Declaration Left")
-        end
+          end
       | psi_, delta_, F.Lemma (cc, ds_) ->
           let (F.LemmaDec (names, _, f_)) = F.lemmaLookup cc in
           let name = foldr (fun (x__op, y__op) -> x__op ^ y__op) "" names in
@@ -308,10 +308,10 @@ end) : Funtypecheck_intf.FUNTYPECHECK = struct
 
     and checkSub = function
       | I.Null, I.Shift 0, I.Null -> ()
-      | I.Decl (psi_, F.Prim d_), I.Shift k, I.Null -> begin
-          if k > 0 then checkSub (psi_, I.Shift (k - 1), I.Null)
+      | I.Decl (psi_, F.Prim d_), I.Shift k, I.Null ->
+          begin if k > 0 then checkSub (psi_, I.Shift (k - 1), I.Null)
           else raise (Error "Substitution not well-typed")
-        end
+          end
       | I.Decl (psi_, F.Block (F.CtxBlock (_, g_))), I.Shift k, I.Null ->
           let g = I.ctxLength g_ in
           begin if k >= g then checkSub (psi_, I.Shift (k - g), I.Null)
@@ -345,14 +345,14 @@ end) : Funtypecheck_intf.FUNTYPECHECK = struct
             | ( (I.Decl (g'_, I.Dec (_, v'_)), w1),
                 I.Dot (I.Idx k', s1),
                 I.Decl (g_, I.Dec (_, v_)),
-                m ) -> begin
-                if k' = m then begin
-                  if Conv.conv ((v'_, w1), (v_, s1)) then
+                m ) ->
+                begin if k' = m then
+                  begin if Conv.conv ((v'_, w1), (v_, s1)) then
                     checkSub' ((g'_, I.comp (w1, I.shift)), s1, g_, m + 1)
                   else raise (Error "ContextBlock assignment not well-typed")
-                end
+                  end
                 else raise (Error "ContextBlock assignment out of order")
-              end
+                end
           in
           checkSub (psi'_, checkSub' ((g'_, w), s, g_, k), psi_)
 

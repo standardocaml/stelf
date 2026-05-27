@@ -25,10 +25,8 @@ module MakeClausePrint
       val formatConDec : IntSyn.conDec -> Formatter.format
       val implicit : bool ref
     end)
-    (Symbol : SYMBOL) :
-  CLAUSEPRINT =
-struct
-(*
+    (Symbol : SYMBOL) : CLAUSEPRINT = struct
+  (*
   (* Clause Printing *)
   (* Author: Frank Pfenning, Carsten Schuermann *)
   (* This is like printing of expressions, except that

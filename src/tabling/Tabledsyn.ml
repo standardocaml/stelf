@@ -14,9 +14,8 @@ open! Basis
 module MakeTabledSyn
     (Names : NAMES)
     (Table : TABLE with type key = int)
-    (Index : INDEX) : TABLEDSYN =
-struct
-(*
+    (Index : INDEX) : TABLEDSYN = struct
+  (*
   (*! structure IntSyn' : INTSYN !*)
   module Names : NAMES
 

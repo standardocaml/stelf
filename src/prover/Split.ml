@@ -205,10 +205,11 @@ end) : SPLIT with module State = Split__0.State' = struct
           (v_, I.id),
           w_,
           function
-          | u_ -> begin
-              if Unify.unifiable (I.Null, (x_, I.id), (u_, I.id)) then sc ()
+          | u_ ->
+              begin if Unify.unifiable (I.Null, (x_, I.id), (u_, I.id)) then
+                sc ()
               else ()
-            end )
+              end )
 
     let rec createSub = function
       | I.Null -> T.id
@@ -238,10 +239,11 @@ end) : SPLIT with module State = Split__0.State' = struct
         | (g_, i), ([], _, _, _) -> []
         | (g_, i), (x_ :: xs_, f_, w_, sc) ->
             let _ =
-              begin if !Global.chatter >= 6 then
-                print (("Split " ^ Print.expToString (I.Null, x_)) ^ ".\n")
-              else ()
-              end
+              Display.display'
+                (Display.Info.msg
+                   ~level:(Display.Info.from_chatter 6)
+                   (Display.Info.Form.string
+                      (("Split " ^ Print.expToString (I.Null, x_)) ^ ".\n")))
             in
             let os_ = splitXs (g_, i + 1) (xs_, f_, w_, sc) in
             let _ = resetCases () in
@@ -255,12 +257,12 @@ end) : SPLIT with module State = Split__0.State' = struct
                 end
               with Constraints.Error constrs ->
                 begin
-                  begin if !Global.chatter >= 6 then
-                    print
-                      (("Inactive split:\n" ^ Print.cnstrsToString constrs)
-                      ^ "\n")
-                  else ()
-                  end;
+                  Display.display'
+                    (Display.Info.msg
+                       ~level:(Display.Info.from_chatter 6)
+                       (Display.Info.Form.string
+                          (("Inactive split:\n" ^ Print.cnstrsToString constrs)
+                          ^ "\n")));
                   os_
                 end
             in

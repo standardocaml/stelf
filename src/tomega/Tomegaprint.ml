@@ -5,6 +5,7 @@ module Tomega = Lambda_.Tomega
 (* Printing of functional proof terms *)
 (* Author: Carsten Schuermann *)
 include Tomegaprint_intf
+
 (*  val lemmaDecToString : FunSyn.LemmaDec -> string *)
 (* signature TOMEGAPRINT *)
 
@@ -50,9 +51,8 @@ end) : TOMEGAPRINT = struct
       let rec evarName' = function
         | [] -> raise (Error "not found")
         | (T.EVar (_, _, _, _, _, (I.EVar (_, g_, r, _) as x_)) as y_) :: l_ ->
-          begin
-            if Names.evarName (g_, x_) = n then y_ else evarName' l_
-          end
+            begin if Names.evarName (g_, x_) = n then y_ else evarName' l_
+            end
       in
       evarName' !evarList
 
@@ -83,8 +83,8 @@ end) : TOMEGAPRINT = struct
           @ formatWorld cids
 
     let rec formatFor' = function
-      | psi_, T.All ((d_, explicit_), f_) -> begin
-          match d_ with
+      | psi_, T.All ((d_, explicit_), f_) ->
+          begin match d_ with
           | T.UDec d_ ->
               let g_ = T.coerceCtx psi_ in
               let d'_ = Names.decName (g_, d_) in
@@ -95,9 +95,9 @@ end) : TOMEGAPRINT = struct
                 Fmt.break_;
               ]
               @ formatFor' (I.Decl (psi_, T.UDec d'_), f_)
-        end
-      | psi_, T.All ((d_, implicit_), f_) -> begin
-          match d_ with
+          end
+      | psi_, T.All ((d_, implicit_), f_) ->
+          begin match d_ with
           | T.UDec d_ ->
               let g_ = T.coerceCtx psi_ in
               let d'_ = Names.decName (g_, d_) in
@@ -108,7 +108,7 @@ end) : TOMEGAPRINT = struct
                 Fmt.break_;
               ]
               @ formatFor' (I.Decl (psi_, T.UDec d'_), f_)
-        end
+          end
       | psi_, T.Ex ((d_, explicit_), f_) ->
           let g_ = T.coerceCtx psi_ in
           let d'_ = Names.decName (g_, d_) in
@@ -734,13 +734,13 @@ end) : TOMEGAPRINT = struct
 
     let rec formatCtx = function
       | I.Null -> []
-      | I.Decl (I.Null, T.UDec d_) -> begin
-          if !Global.chatter >= 4 then
+      | I.Decl (I.Null, T.UDec d_) ->
+          begin if !Global.chatter >= 4 then
             [ Fmt.hVbox [ Fmt.break_; P.formatDec (I.Null, d_) ] ]
           else [ P.formatDec (I.Null, d_) ]
-        end
-      | I.Decl (I.Null, T.PDec (Some s, f_, tc1_, tc2_)) -> begin
-          if !Global.chatter >= 4 then
+          end
+      | I.Decl (I.Null, T.PDec (Some s, f_, tc1_, tc2_)) ->
+          begin if !Global.chatter >= 4 then
             [
               Fmt.hVbox
                 [
@@ -760,7 +760,7 @@ end) : TOMEGAPRINT = struct
               Fmt.space;
               formatFor (I.Null, f_);
             ]
-        end
+          end
       | I.Decl (psi_, T.UDec d_) ->
           let g_ = T.coerceCtx psi_ in
           begin if !Global.chatter >= 4 then
@@ -772,8 +772,8 @@ end) : TOMEGAPRINT = struct
             @ [ Fmt.string ","; Fmt.break_ ]
             @ [ Fmt.break_; P.formatDec (g_, d_) ]
           end
-      | I.Decl (psi_, T.PDec (Some s, f_, tc1_, tc2_)) -> begin
-          if !Global.chatter >= 4 then
+      | I.Decl (psi_, T.PDec (Some s, f_, tc1_, tc2_)) ->
+          begin if !Global.chatter >= 4 then
             formatCtx psi_
             @ [ Fmt.string ","; Fmt.break_; Fmt.break_ ]
             @ [
@@ -798,7 +798,7 @@ end) : TOMEGAPRINT = struct
                 Fmt.space;
                 formatFor (psi_, f_);
               ]
-        end
+          end
 
     let rec ctxToString psi_ = Fmt.makestring_fmt (Fmt.hVbox (formatCtx psi_))
   end

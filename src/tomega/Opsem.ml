@@ -5,6 +5,7 @@ module Tomega = Lambda_.Tomega
 (* Operational Semantics for Delphin *)
 (* Author: Carsten Schuermann *)
 include Opsem_intf
+
 (* # 1 "src/tomega/Opsem.fun.ml" *)
 open! Basis
 
@@ -14,10 +15,8 @@ module MakeOpsem
     (Subordinate : Subordinate.Subordinate_.SUBORDINATE)
     (TomegaTypeCheck : TomegaTypecheck_intf.TOMEGATYPECHECK)
     (TomegaPrint : Tomegaprint.TOMEGAPRINT)
-    (Unify : UNIFY) :
-  OPSEM =
-struct
-(*
+    (Unify : UNIFY) : OPSEM = struct
+  (*
   (* Internal syntax for functional proof term calculus *)
   (* Author: Carsten Schuermann, Adam Poswolsky *)
   module Whnf : WHNF
@@ -134,9 +133,9 @@ struct
         T.PairPrg (evalPrg (psi_, (p1_, t)), evalPrg (psi_, (p2_, t)))
     | psi_, (T.Redex (p_, s_), t) ->
         evalRedex (psi_, evalPrg (psi_, (p_, t)), (s_, t))
-    | psi_, (T.Var k, t) -> begin
-        match T.varSub (k, t) with T.Prg p_ -> evalPrg (psi_, (p_, T.id))
-      end
+    | psi_, (T.Var k, t) ->
+        begin match T.varSub (k, t) with T.Prg p_ -> evalPrg (psi_, (p_, T.id))
+        end
     | psi_, (T.Const lemma, t) -> evalPrg (psi_, (T.lemmaDef lemma, t))
     | psi_, (T.Lam ((T.UDec (I.BDec _) as d_), p_), t) ->
         let d'_ = T.decSub (d_, t) in
@@ -271,9 +270,9 @@ struct
         matchSub (psi_, t1, t2);
         matchPrg (psi_, T.Var k, p2_)
       end
-    | psi_, T.Dot (T.Idx k1, t1), T.Dot (T.Idx k2, t2) -> begin
-        if k1 = k2 then matchSub (psi_, t1, t2) else raise NoMatch
-      end
+    | psi_, T.Dot (T.Idx k1, t1), T.Dot (T.Idx k2, t2) ->
+        begin if k1 = k2 then matchSub (psi_, t1, t2) else raise NoMatch
+        end
     | psi_, T.Dot (T.Idx k, t1), T.Dot (T.Block (I.LVar (r, s1, (c, s2))), t2)
       ->
         let s1' = Whnf.invert s1 in

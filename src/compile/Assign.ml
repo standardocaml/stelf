@@ -35,43 +35,43 @@ end) : ASSIGN = struct
       | ( g_,
           ((Root (h1_, s1_), s1) as us1_),
           ((Root (h2_, s2_), s2) as us2_),
-          cnstr ) -> begin
-          match (h1_, h2_) with
-          | Const c1, Const c2 -> begin
-              if c1 = c2 then assignSpine (g_, (s1_, s1), (s2_, s2), cnstr)
+          cnstr ) ->
+          begin match (h1_, h2_) with
+          | Const c1, Const c2 ->
+              begin if c1 = c2 then assignSpine (g_, (s1_, s1), (s2_, s2), cnstr)
               else raise (Assignment "Constant clash")
-            end
-          | BVar k1, BVar k2 -> begin
-              if k1 = k2 then assignSpine (g_, (s1_, s1), (s2_, s2), cnstr)
+              end
+          | BVar k1, BVar k2 ->
+              begin if k1 = k2 then assignSpine (g_, (s1_, s1), (s2_, s2), cnstr)
               else raise (Assignment "Bound variable clash")
-            end
-          | Skonst c1, Skonst c2 -> begin
-              if c1 = c2 then assignSpine (g_, (s1_, s1), (s2_, s2), cnstr)
+              end
+          | Skonst c1, Skonst c2 ->
+              begin if c1 = c2 then assignSpine (g_, (s1_, s1), (s2_, s2), cnstr)
               else raise (Assignment "Skolem constant clash")
-            end
-          | Def d1, Def d2 -> begin
-              if d1 = d2 then assignSpine (g_, (s1_, s1), (s2_, s2), cnstr)
+              end
+          | Def d1, Def d2 ->
+              begin if d1 = d2 then assignSpine (g_, (s1_, s1), (s2_, s2), cnstr)
               else
                 assignExp (g_, Whnf.expandDef us1_, Whnf.expandDef us2_, cnstr)
-            end
+              end
           | Def d1, _ -> assignExp (g_, Whnf.expandDef us1_, us2_, cnstr)
           | _, Def d2 -> assignExp (g_, us1_, Whnf.expandDef us2_, cnstr)
           | ( FgnConst (cs1, ConDec (n1, _, _, _, _, _)),
-              FgnConst (cs2, ConDec (n2, _, _, _, _, _)) ) -> begin
-              if cs1 = cs2 && n1 = n2 then cnstr
+              FgnConst (cs2, ConDec (n2, _, _, _, _, _)) ) ->
+              begin if cs1 = cs2 && n1 = n2 then cnstr
               else raise (Assignment "Foreign Constant clash")
-            end
+              end
           | ( FgnConst (cs1, ConDef (n1, _, _, w1_, _, _, _)),
-              FgnConst (cs2, ConDef (n2, _, _, v_, w2_, _, _)) ) -> begin
-              if cs1 = cs2 && n1 = n2 then cnstr
+              FgnConst (cs2, ConDef (n2, _, _, v_, w2_, _, _)) ) ->
+              begin if cs1 = cs2 && n1 = n2 then cnstr
               else assignExp (g_, (w1_, s1), (w2_, s2), cnstr)
-            end
+              end
           | FgnConst (_, ConDef (_, _, _, w1_, _, _, _)), _ ->
               assignExp (g_, (w1_, s1), us2_, cnstr)
           | _, FgnConst (_, ConDef (_, _, _, w2_, _, _, _)) ->
               assignExp (g_, us1_, (w2_, s2), cnstr)
           | _ -> raise (Assignment "Head mismatch ")
-        end
+          end
       | g_, (Lam (d1_, u1_), s1), (Lam (d2_, u2_), s2), cnstr ->
           assignExp
             (Decl (g_, decSub (d1_, s1)), (u1_, dot1 s1), (u2_, dot1 s2), cnstr)
@@ -257,9 +257,9 @@ end) : ASSIGN = struct
       | _, _ -> None
     in
     let rec ithElem = function
-      | k, (IntSyn.App (u_, s_), s) -> begin
-          if k = i then constExp (u_, s) else ithElem (k + 1, (s_, s))
-        end
+      | k, (IntSyn.App (u_, s_), s) ->
+          begin if k = i then constExp (u_, s) else ithElem (k + 1, (s_, s))
+          end
       | k, (Nil, s) -> None
     in
     ithElem (0, (s_, s))

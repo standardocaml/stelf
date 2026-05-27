@@ -173,21 +173,22 @@ end) : Uniquesearch_intf.UNIQUESEARCH = struct
               acc )
 
     and rSolve = function
-      | max, depth, ps', (C.Eq q_, s), C.DProg (g_, dPool), sc, acc -> begin
-          if Unify.unifiable (g_, ps', (q_, s)) then sc (I.Nil, acc) else acc
-        end
+      | max, depth, ps', (C.Eq q_, s), C.DProg (g_, dPool), sc, acc ->
+          begin if Unify.unifiable (g_, ps', (q_, s)) then sc (I.Nil, acc)
+          else acc
+          end
       | ( max,
           depth,
           ps',
           (C.Assign (q_, eqns), s),
           (C.DProg (g_, dPool) as dp),
           sc,
-          acc ) -> begin
-          match Assign.assignable (g_, ps', (q_, s)) with
+          acc ) ->
+          begin match Assign.assignable (g_, ps', (q_, s)) with
           | Some cnstr ->
               aSolve ((eqns, s), dp, cnstr, (fun () -> sc (I.Nil, acc)), acc)
           | None -> acc
-        end
+          end
       | ( max,
           depth,
           ps',
@@ -280,9 +281,9 @@ end) : Uniquesearch_intf.UNIQUESEARCH = struct
               acc )
 
     and aSolve = function
-      | (trivial_, s), dp, cnstr, sc, acc -> begin
-          if Assign.solveCnstr cnstr then sc () else acc
-        end
+      | (trivial_, s), dp, cnstr, sc, acc ->
+          begin if Assign.solveCnstr cnstr then sc () else acc
+          end
       | ( (C.UnifyEq (g'_, e1, n_, eqns), s),
           (C.DProg (g_, dPool) as dp),
           cnstr,
@@ -322,8 +323,8 @@ end) : Uniquesearch_intf.UNIQUESEARCH = struct
           in
           let rec matchDProg = function
             | I.Null, _, acc' -> matchSig' (Index.lookup (cidFromHead ha_), acc')
-            | I.Decl (dPool', C.Dec (r, s, ha'_)), n, acc' -> begin
-                if eqHead (ha_, ha'_) then
+            | I.Decl (dPool', C.Dec (r, s, ha'_)), n, acc' ->
+                begin if eqHead (ha_, ha'_) then
                   let acc''' =
                     CsManager.trail (function () ->
                         rSolve
@@ -338,7 +339,7 @@ end) : Uniquesearch_intf.UNIQUESEARCH = struct
                   in
                   matchDProg (dPool', n + 1, acc''')
                 else matchDProg (dPool', n + 1, acc')
-              end
+                end
             | I.Decl (dPool', parameter_), n, acc' ->
                 matchDProg (dPool', n + 1, acc')
           in
@@ -378,10 +379,10 @@ end) : Uniquesearch_intf.UNIQUESEARCH = struct
                   [] ge_
               in
               let gE' = List.length ge'_ in
-              begin if gE' > 0 then begin
-                if it > 0 then searchEx (it - 1, depth) (ge'_, sc, acc')
+              begin if gE' > 0 then
+                begin if it > 0 then searchEx (it - 1, depth) (ge'_, sc, acc')
                 else raise (Error "not found")
-              end
+                end
               else sc acc'
               end),
             acc )

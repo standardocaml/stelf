@@ -1,22 +1,22 @@
 open Global
 open Common
 
-
 (* Author: Frank Pfenning, Carsten Schuermann *)
 (* Modified: Roberto Virga *)
 module Make_Ast (Common : Common.COMMON) :
   Ast_intf.AST with module Common = Common = struct
   module Common = Common
   open Common
+
   type cid = Cid.t [@@deriving eq, ord, show]
   (** Constant identifier *)
- 
-  let equal_cid = Cid.equal 
-  let compare_cid = Cid.compare 
-  let pp_cid = Cid.pp 
+
+  let equal_cid = Cid.equal
+  let compare_cid = Cid.compare
+  let pp_cid = Cid.pp
   let show_cid = Cid.show
 
-  type nonrec name = string 
+  type nonrec name = string
   (** Variable name *)
 
   let equal_name (a : name) b = a = b
@@ -31,7 +31,8 @@ module Make_Ast (Common : Common.COMMON) :
   (** CS module identifier *)
 
   (** Contexts *)
-  type 'a ctx = Null | Decl of 'a ctx * 'a [@@deriving eq, ord, show { with_path = false }]
+  type 'a ctx = Null | Decl of 'a ctx * 'a
+  [@@deriving eq, ord, show { with_path = false }]
 
   let null_ = Null
 
@@ -155,11 +156,11 @@ module Make_Ast (Common : Common.COMMON) :
     | FgnExp of csid * fgnExp
     | NVar of int
     | Tag of
-      (Tag.t
-       [@equal fun _ _ -> true]
-       [@compare fun _ _ -> 0]
-       [@printer fun fmt _ -> Format.pp_print_string fmt "<tag>"])
-      * exp
+        (Tag.t
+        [@equal fun _ _ -> true]
+        [@compare fun _ _ -> 0]
+        [@printer fun fmt _ -> Format.pp_print_string fmt "<tag>"])
+        * exp
   [@@deriving eq, ord, show { with_path = false }]
 
   and head =
@@ -285,7 +286,8 @@ module Make_Ast (Common : Common.COMMON) :
     | AbbrevDef (name, _, _, _, _, _)
     | BlockDec (name, _, _, _)
     | BlockDef (name, _, _)
-    | SkoDec (name, _, _, _, _) -> name
+    | SkoDec (name, _, _, _, _) ->
+        name
 
   let conDecParent = function
     | ConDec (_, parent, _, _, _, _)
@@ -293,15 +295,16 @@ module Make_Ast (Common : Common.COMMON) :
     | AbbrevDef (_, parent, _, _, _, _)
     | BlockDec (_, parent, _, _)
     | BlockDef (_, parent, _)
-    | SkoDec (_, parent, _, _, _) -> parent
+    | SkoDec (_, parent, _, _, _) ->
+        parent
 
   let conDecImp = function
     | ConDec (_, _, imp, _, _, _)
     | ConDef (_, _, imp, _, _, _, _)
     | AbbrevDef (_, _, imp, _, _, _)
-    | SkoDec (_, _, imp, _, _) -> imp
-    | BlockDec _
-    | BlockDef _ -> 0
+    | SkoDec (_, _, imp, _, _) ->
+        imp
+    | BlockDec _ | BlockDef _ -> 0
 
   let conDecStatus = function
     | ConDec (_, _, _, status, _, _) -> status
@@ -311,7 +314,8 @@ module Make_Ast (Common : Common.COMMON) :
     | ConDec (_, _, _, _, exp, _)
     | ConDef (_, _, _, _, exp, _, _)
     | AbbrevDef (_, _, _, _, exp, _)
-    | SkoDec (_, _, _, exp, _) -> exp
+    | SkoDec (_, _, _, exp, _) ->
+        exp
     | _ -> assert false
 
   let conDecBlock = function
@@ -322,13 +326,10 @@ module Make_Ast (Common : Common.COMMON) :
     | ConDec (_, _, _, _, _, uni)
     | ConDef (_, _, _, _, _, uni, _)
     | AbbrevDef (_, _, _, _, _, uni)
-    | SkoDec (_, _, _, _, uni) -> uni
+    | SkoDec (_, _, _, _, uni) ->
+        uni
     | _ -> assert false
 
-  let strDecName = function
-    | StrDec (name, _) -> name
-
-  let strDecParent = function
-    | StrDec (_, parent) -> parent
-
-  end 
+  let strDecName = function StrDec (name, _) -> name
+  let strDecParent = function StrDec (_, parent) -> parent
+end

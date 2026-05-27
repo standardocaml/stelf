@@ -3,8 +3,9 @@ open! Basis
 
 (* Flit DAG generator *)
 
-(** Author: Roberto Virga *)
 include Flit_intf
+(** Author: Roberto Virga *)
+
 (* signature FLIT *)
 
 (* # 1 "src/flit/Flit_.fun.ml" *)

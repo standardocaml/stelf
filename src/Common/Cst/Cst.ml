@@ -1,4 +1,5 @@
 open Basis
+
 module type CST = CST.CST
 
 module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
@@ -6,7 +7,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
 
   (* Location type for source tracking - use simple int-based representation *)
   type loc = { start_pos : int; end_pos : int }
-    [@@deriving show {with_path = false}, eq]
+  [@@deriving show { with_path = false }, eq]
 
   (* Basic type aliases *)
   type name = string
@@ -14,8 +15,12 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
   type symbol = namespace * name
 
   (* Location helpers *)
-  let mk_loc (start_ : int) (end_ : int) : loc = { start_pos = start_; end_pos = end_ }
-  let loc_to_region (loc : loc) : Paths.region = Paths.Reg (loc.start_pos, loc.end_pos)
+  let mk_loc (start_ : int) (end_ : int) : loc =
+    { start_pos = start_; end_pos = end_ }
+
+  let loc_to_region (loc : loc) : Paths.region =
+    Paths.Reg (loc.start_pos, loc.end_pos)
+
   let ghost : loc = { start_pos = 0; end_pos = 0 }
 
   (* Mutual recursion: decl and term *)
@@ -35,7 +40,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     | Evar_ of string * loc
     | Fvar_ of string * loc
     | Typ_ of loc
-    [@@deriving show {with_path = false}, eq]
+  [@@deriving show { with_path = false }, eq]
 
   (* Constant/block declarations *)
   type conDec =
@@ -51,66 +56,62 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
 
   (* Mode syntax *)
   type mode = Plus_ | Star_ | Minus_ | Minus1_
+
   type modeTerm =
     | ModeTermRoot_ of term
     | ModeTermPi_ of mode * decl * modeTerm
+
   type modeSpine = ModeSpineInternal_ of (mode * string option) list
   type modeDec = ModeDec_ of modeTerm
 
-  (* Structure expressions and signature expressions *) 
+  (* Structure expressions and signature expressions *)
   type strexp = StrExp_ of symbol
+
   type inst =
     | ConInst_ of symbol * loc * term
     | StrInst_ of symbol * loc * strexp
 
-  type sigexp =
-    | TheSig_
-    | SigId_ of string
-    | WhereSig_ of sigexp * inst list
-
+  type sigexp = TheSig_ | SigId_ of string | WhereSig_ of sigexp * inst list
   type sigdef = SigDef_ of string option * sigexp
+
   type structDec =
     | StructDecl_ of string option * sigexp
     | StructDef_ of string option * strexp
 
   type structDef = StructDef_ of string option * strexp
-
   type fixity = Left_ | Right_ | Prefix_ | Postfix_ | Middle_ | FNone_
-
-  type block_item =
-    | BlockSome_ of decl
-    | BlockPi_   of decl
+  type block_item = BlockSome_ of decl | BlockPi_ of decl
 
   (* Top-level commands *)
   type cmd =
-    | QueryCmd_         of int option * int option * int option * query
-    | QueryTabledCmd_   of int option * int option * int option * query
-    | AdhocQueryCmd_    of query
-    | UniqueCmd_        of term
-    | ModeCmd_          of string * modeDec
-    | DefineCmd_        of define
-    | DeclCmd_          of term
-    | InlineCmd_        of string * term
-    | SymbolCmd_        of string * string
-    | FreezeCmd_        of string list
-    | ThawCmd_          of string list
-    | SortCmd_          of string * decl list
-    | TermCmd_          of decl
-    | BlockCmd_         of string * block_item list
-    | UnionCmd_         of string * string list
-    | WorldsCmd_        of string list * term
+    | QueryCmd_ of int option * int option * int option * query
+    | QueryTabledCmd_ of int option * int option * int option * query
+    | AdhocQueryCmd_ of query
+    | UniqueCmd_ of term
+    | ModeCmd_ of string * modeDec
+    | DefineCmd_ of define
+    | DeclCmd_ of term
+    | InlineCmd_ of string * term
+    | SymbolCmd_ of string * string
+    | FreezeCmd_ of string list
+    | ThawCmd_ of string list
+    | SortCmd_ of string * decl list
+    | TermCmd_ of decl
+    | BlockCmd_ of string * block_item list
+    | UnionCmd_ of string * string list
+    | WorldsCmd_ of string list * term
     | DeterministicCmd_ of string list
-    | ModuleCmd_        of string * string list * cmd list
-    | UseCmd_           of string * string * string list
-    | OpenCmd_          of string * string list
-    | EvalCmd_          of cmd list
-    | PrecCmd_          of fixity * int * string list
-    | SolveCmd_         of solve
+    | ModuleCmd_ of string * string list * cmd list
+    | UseCmd_ of string * string * string list
+    | OpenCmd_ of string * string list
+    | EvalCmd_ of cmd list
+    | PrecCmd_ of fixity * int * string list
+    | SolveCmd_ of solve
     | StopCmd_
     | QuitCmd_
-    | HelpCmd_          of string option
-    | GetCmd_           of string
-    | SetCmd_           of string * string
+    | HelpCmd_ of string option
+    | GetCmd_ of string
+    | SetCmd_ of string * string
     | VersionCmd_
 
   (* Term constructor module *)
@@ -126,36 +127,24 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     let qualified ?fc:(loc_ = ghost) (namespace, name) =
       Quid_ (namespace, name, loc_)
 
-    let text ?fc:(loc_ = ghost) str =
-      Scon_ (str, loc_)
-
-    let exist_var ?fc:(loc_ = ghost) name =
-      Evar_ (name, loc_)
-
-    let free_var ?fc:(loc_ = ghost) name =
-      Fvar_ (name, loc_)
+    let text ?fc:(loc_ = ghost) str = Scon_ (str, loc_)
+    let exist_var ?fc:(loc_ = ghost) name = Evar_ (name, loc_)
+    let free_var ?fc:(loc_ = ghost) name = Fvar_ (name, loc_)
 
     module Sugar = struct
-      let arrow ?fc:(loc_ = ghost) tm1 tm2 =
-        Arrow_ (tm1, tm2)
-
-      let backarrow ?fc:(loc_ = ghost) tm1 tm2 =
-        Arrow_ (tm2, tm1)
+      let arrow ?fc:(loc_ = ghost) tm1 tm2 = Arrow_ (tm1, tm2)
+      let backarrow ?fc:(loc_ = ghost) tm1 tm2 = Arrow_ (tm2, tm1)
     end
 
     let pi ?fc:(loc_ = ghost) decls body =
       let rec fold_right f lst acc =
-        match lst with
-        | [] -> acc
-        | x :: xs -> f x (fold_right f xs acc)
+        match lst with [] -> acc | x :: xs -> f x (fold_right f xs acc)
       in
       fold_right (fun d acc -> Pi_ (d, acc)) decls body
 
     let lam ?fc:(loc_ = ghost) decls body =
       let rec fold_right f lst acc =
-        match lst with
-        | [] -> acc
-        | x :: xs -> f x (fold_right f xs acc)
+        match lst with [] -> acc | x :: xs -> f x (fold_right f xs acc)
       in
       fold_right (fun d acc -> Lam_ (d, acc)) decls body
 
@@ -164,46 +153,33 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
       | [] -> head
       | _ ->
           let rec fold_left f acc lst =
-            match lst with
-            | [] -> acc
-            | x :: xs -> fold_left f (f acc x) xs
+            match lst with [] -> acc | x :: xs -> fold_left f (f acc x) xs
           in
           fold_left (fun acc arg -> App_ (acc, arg)) head args
 
-    let has_type ?fc:(loc_ = ghost) tm ty =
-      Hastype_ (tm, ty)
-
-    let[@warning "-16"] omitted ?fc:(loc_ = ghost) =
-      Omitted_ loc_
-
-    let typ ?fc:(loc_ = ghost) () =
-      Typ_ loc_
+    let has_type ?fc:(loc_ = ghost) tm ty = Hastype_ (tm, ty)
+    let[@warning "-16"] omitted ?fc:(loc_ = ghost) = Omitted_ loc_
+    let typ ?fc:(loc_ = ghost) () = Typ_ loc_
   end
 
   (* Declaration constructor module *)
   module Decl = struct
     type nonrec t = decl
 
-    let decl1 ?fc:(loc_ = ghost) names typ =
-
-      Dec_ (names, typ, loc_)
-
-    let decl0 ?fc:(loc_ = ghost) names =
-      Dec_ (names, Omitted_ ghost, loc_)
+    let decl1 ?fc:(loc_ = ghost) names typ = Dec_ (names, typ, loc_)
+    let decl0 ?fc:(loc_ = ghost) names = Dec_ (names, Omitted_ ghost, loc_)
   end
 
   (* Constant/block declaration constructor module *)
   module ConDec = struct
     type nonrec t = conDec
 
-    let constant_decl ?fc:(loc_ = ghost) decl =
-      ConstantDecl_ decl
+    let constant_decl ?fc:(loc_ = ghost) decl = ConstantDecl_ decl
 
     let block_decl ?fc:(loc_ = ghost) name decls1 decls2 =
       BlockDecl_ (name, decls1, decls2)
 
-    let block_def ?fc:(loc_ = ghost) name symbols =
-      BlockDef_ (name, symbols)
+    let block_def ?fc:(loc_ = ghost) name symbols = BlockDef_ (name, symbols)
 
     let constant_def ?fc:(loc_ = ghost) name term1 term2_opt =
       ConstantDef_ (name, term1, term2_opt)
@@ -224,8 +200,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
       type nonrec term = modeTerm
       type nonrec spine = modeSpine
 
-      let mode_nil ?fc:(loc_ = ghost) () =
-        ModeSpineInternal_ []
+      let mode_nil ?fc:(loc_ = ghost) () = ModeSpineInternal_ []
 
       let mode_app ?fc:(loc_ = ghost) (m, name_opt) (ModeSpineInternal_ spine) =
         ModeSpineInternal_ ((m, name_opt) :: spine)
@@ -238,9 +213,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
 
     module Full = struct
       let mode_root ?fc:(loc_ = ghost) tm = ModeTermRoot_ tm
-
       let mode_pi ?fc:(loc_ = ghost) m d body = ModeTermPi_ (m, d, body)
-
       let to_modeDec ?fc:(loc_ = ghost) mt = ModeDec_ mt
     end
   end
@@ -253,8 +226,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     type nonrec sigdef = sigdef
     type nonrec structdec = structDec
 
-    let str_exp ?fc:(loc_ = ghost) symbol =
-      StrExp_ symbol
+    let str_exp ?fc:(loc_ = ghost) symbol = StrExp_ symbol
 
     let con_inst ?fc:(loc_ = ghost) (symbol, loc2) term =
       ConInst_ (symbol, loc2, term)
@@ -262,17 +234,10 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     let str_inst ?fc:(loc_ = ghost) (symbol, loc2) strexp =
       StrInst_ (symbol, loc2, strexp)
 
-    let[@warning "-16"] thesig ?fc:(loc_ = ghost) =
-      TheSig_
-
-    let sig_id ?fc:(loc_ = ghost) name =
-      SigId_ name
-
-    let where_sig ?fc:(loc_ = ghost) sigexp insts =
-      WhereSig_ (sigexp, insts)
-
-    let sig_def ?fc:(loc_ = ghost) name_opt sigexp =
-      SigDef_ (name_opt, sigexp)
+    let[@warning "-16"] thesig ?fc:(loc_ = ghost) = TheSig_
+    let sig_id ?fc:(loc_ = ghost) name = SigId_ name
+    let where_sig ?fc:(loc_ = ghost) sigexp insts = WhereSig_ (sigexp, insts)
+    let sig_def ?fc:(loc_ = ghost) name_opt sigexp = SigDef_ (name_opt, sigexp)
 
     let struct_decl ?fc:(loc_ = ghost) name_opt sigexp =
       StructDecl_ (name_opt, sigexp)
@@ -287,14 +252,12 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     type nonrec define = define
     type nonrec solve = solve
 
-    let query ?fc:(loc_ = ghost) name_opt term =
-      Query_ (name_opt, term)
+    let query ?fc:(loc_ = ghost) name_opt term = Query_ (name_opt, term)
 
     let define ?fc:(loc_ = ghost) name_opt term1 term2_opt =
       Define_ (name_opt, term1, term2_opt)
 
-    let solve ?fc:(loc_ = ghost) name_opt term =
-      Solve_ (name_opt, term)
+    let solve ?fc:(loc_ = ghost) name_opt term = Solve_ (name_opt, term)
   end
 
   (* Command constructor module *)
@@ -325,26 +288,26 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     let stop ?fc:(_ = ghost) () = StopCmd_
 
     module Repl = struct
-      let quit    ?fc:(_ = ghost) ()    = QuitCmd_
-      let help    ?fc:(_ = ghost) t     = HelpCmd_ t
-      let get     ?fc:(_ = ghost) s     = GetCmd_ s
-      let set     ?fc:(_ = ghost) s v   = SetCmd_ (s, v)
-      let version ?fc:(_ = ghost) ()    = VersionCmd_
+      let quit ?fc:(_ = ghost) () = QuitCmd_
+      let help ?fc:(_ = ghost) t = HelpCmd_ t
+      let get ?fc:(_ = ghost) s = GetCmd_ s
+      let set ?fc:(_ = ghost) s v = SetCmd_ (s, v)
+      let version ?fc:(_ = ghost) () = VersionCmd_
     end
   end
 
   module Fixity = struct
-    let left    = Left_
-    let right   = Right_
-    let prefix  = Prefix_
+    let left = Left_
+    let right = Right_
+    let prefix = Prefix_
     let postfix = Postfix_
-    let middle  = Middle_
-    let none    = FNone_
+    let middle = Middle_
+    let none = FNone_
   end
 
   module BlockItem = struct
     let some d = BlockSome_ d
-    let pi   d = BlockPi_   d
+    let pi d = BlockPi_ d
   end
 
   module Thm = struct
@@ -375,21 +338,27 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
       (predicate_, order1_, order2_, callpats_)
 
     type tableddecl = string * loc
+
     let tableddecl tableddecl_ = tableddecl_
 
     type keepTabledecl = string * loc
+
     let keepTabledecl keepTabledecl_ = keepTabledecl_
 
     type prove = int * tdecl
+
     let prove prove_ = prove_
 
     type establish = int * tdecl
+
     let establish establish_ = establish_
 
     type assert_ = callpats
+
     let assert_ assert__ = assert__
 
     type decs = decl list
+
     type theorem =
       | Top_
       | Exists_ of decs * theorem
@@ -409,6 +378,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     let dec (name_, theorem_) = (name_, theorem_)
 
     type wdecl = (string list * string) list * callpats
+
     let wdecl wdecl_ = wdecl_
   end
 
@@ -421,12 +391,9 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
       | Scon_ (_, loc)
       | Evar_ (_, loc)
       | Fvar_ (_, loc)
-      | Typ_ loc -> Some loc
-      | Arrow_ _
-      | Pi_ _
-      | Lam_ _
-      | App_ _
-      | Hastype_ _ -> None
+      | Typ_ loc ->
+          Some loc
+      | Arrow_ _ | Pi_ _ | Lam_ _ | App_ _ | Hastype_ _ -> None
 
     let term_lcid = function Lcid_ (ns, n, _) -> Some (ns, n) | _ -> None
     let term_ucid = function Ucid_ (ns, n, _) -> Some (ns, n) | _ -> None
@@ -436,15 +403,12 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     let term_fvar = function Fvar_ (s, _) -> Some s | _ -> None
     let term_typ = function Typ_ _ -> true | _ -> false
     let term_omitted = function Omitted_ _ -> true | _ -> false
-
     let term_arrow = function Arrow_ (a, b) -> Some (a, b) | _ -> None
     let term_pi = function Pi_ (d, t) -> Some (d, t) | _ -> None
     let term_lam = function Lam_ (d, t) -> Some (d, t) | _ -> None
     let term_app = function App_ (a, b) -> Some (a, b) | _ -> None
     let term_has_type = function Hastype_ (a, b) -> Some (a, b) | _ -> None
-
     let decl_fields (Dec_ (names, t, loc)) = (names, t, loc)
-
     let condec_constant_decl = function ConstantDecl_ d -> Some d | _ -> None
 
     let condec_constant_def = function
@@ -470,8 +434,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
       | Minus1_ -> `Minus1
 
     let mode_short = function
-      | ModeDec_ (ModeTermRoot_ (Quid_ (ns, id, _))) ->
-          Some ((ns, id), [])
+      | ModeDec_ (ModeTermRoot_ (Quid_ (ns, id, _))) -> Some ((ns, id), [])
       | _ -> None
 
     let mode_full = function
@@ -479,7 +442,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
           let rec go = function
             | ModeTermPi_ (m, Dec_ (names, _ty, _), body) ->
                 let name_opt = match names with n :: _ -> n | [] -> None in
-                let (modes, root) = go body in
+                let modes, root = go body in
                 ((m, name_opt) :: modes, root)
             | ModeTermRoot_ tm -> ([], tm)
           in
@@ -513,9 +476,15 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
       | StructDef_ (name, strexp) -> Some (name, strexp)
       | StructDecl_ _ -> None
 
-    let thm_order_varg = function Thm.Varg_ (r, names) -> Some (r, names) | _ -> None
+    let thm_order_varg = function
+      | Thm.Varg_ (r, names) -> Some (r, names)
+      | _ -> None
+
     let thm_order_lex = function Thm.Lex_ (r, os) -> Some (r, os) | _ -> None
-    let thm_order_simul = function Thm.Simul_ (r, os) -> Some (r, os) | _ -> None
+
+    let thm_order_simul = function
+      | Thm.Simul_ (r, os) -> Some (r, os)
+      | _ -> None
 
     let thm_callpats cps = cps
     let thm_tdecl (o, cps) = (o, cps)
@@ -526,7 +495,6 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     let thm_prove p = p
     let thm_establish p = p
     let thm_assert a = a
-
     let thm_theorem_top = function Thm.Top_ -> true | _ -> false
 
     let thm_theorem_exists = function
@@ -550,7 +518,6 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     let thm_theoremdec td = td
     let thm_wdecl wd = wd
   end
-end   
+end
 
 module Cst : CST = Make_Cst (Paths.Paths_)
- 

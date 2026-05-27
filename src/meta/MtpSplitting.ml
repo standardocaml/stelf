@@ -182,9 +182,9 @@ end) : MtpSplitting_intf.MTPSPLITTING = struct
           let m' =
             foldr
               (function
-                | I.Dec (_, v_), m -> begin
-                    if I.targetFam v_ = a then m + 1 else m
-                  end)
+                | I.Dec (_, v_), m ->
+                    begin if I.targetFam v_ = a then m + 1 else m
+                    end)
               0 g2_
           in
           maxNumberParams' (n - 1) + m'

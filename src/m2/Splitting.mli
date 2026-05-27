@@ -3,7 +3,10 @@ include module type of Splitting_intf
 module Splitting (Splitting__0 : sig
   module Global : GLOBAL
   module MetaSyn' : Metasyn.METASYN
-  module MetaAbstract : MetaAbstract_intf.METAABSTRACT with module MetaSyn = MetaSyn'
+
+  module MetaAbstract :
+    MetaAbstract_intf.METAABSTRACT with module MetaSyn = MetaSyn'
+
   module MetaPrint : MetaPrint_intf.METAPRINT with module MetaSyn = MetaSyn'
   module ModeTable : Modetable.MODETABLE
 

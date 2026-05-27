@@ -3,13 +3,9 @@
 (library
  (name terminate)
  (public_name stelf.terminate)
- (modules
-  Checking
-  Reduces
-  Terminate_
-  Checking_intf
-  Reduces_intf)
+ (modules Checking Reduces Terminate_ Checking_intf Reduces_intf)
  (libraries
+  display
   global
   trail
   intsyn
@@ -50,7 +46,7 @@
    -open
    Formatter
    -open
-  Formatter__Formatter_
+   Formatter__Formatter_
    -open
    Index
    -open

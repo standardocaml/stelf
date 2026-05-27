@@ -20,6 +20,7 @@
   CsManager_intf
   Solvers_intf)
  (libraries
+  display
   trail
   global
   domains
@@ -71,7 +72,7 @@
    -open
    Formatter
    -open
-  Formatter__Formatter_))
+   Formatter__Formatter_))
  (wrapped true)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq ppx_deriving.ord)))

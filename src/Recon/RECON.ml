@@ -1,5 +1,5 @@
 module type RECON = sig
-include S.S
+  include S.S
   module ReconThm : RECON_THM.RECON_THM
   module ReconTerm : RECON_TERM.RECON_TERM
   module ReconConDec : RECON_CONDEC.RECON_CONDEC

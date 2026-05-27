@@ -4,5 +4,4 @@
 
 (* # 1 "src/server/SigintSmlnj.sml.ml" *)
 open! Basis
-
 module SigINT : Sigint.SIGINT

@@ -68,27 +68,27 @@ end) : Cs.CS = struct
     let rec catConcat = function
       | Concat [], concat2 -> concat2
       | concat1, Concat [] -> concat1
-      | Concat al1_, Concat al2_ -> begin
-          match (List.rev al1_, al2_) with
+      | Concat al1_, Concat al2_ ->
+          begin match (List.rev al1_, al2_) with
           | String str1 :: revAL1', String str2 :: al2'_ ->
               Concat (List.rev revAL1' @ (String (str1 ^ str2) :: al2'_))
           | _, _ -> Concat (al1_ @ al2_)
-        end
+          end
 
     let rec fromExpW = function
-      | (FgnExp (cs, fe), _) as us_ -> begin
-          if cs = !myID then normalize (extractConcat fe)
+      | (FgnExp (cs, fe), _) as us_ ->
+          begin if cs = !myID then normalize (extractConcat fe)
           else Concat [ Exp us_ ]
-        end
-      | (Root (FgnConst (cs, conDec), _), _) as us_ -> begin
-          if cs = !myID then begin
-            match fromString (conDecName conDec) with
-            | Some str -> begin
-                if str = "" then Concat [] else Concat [ String str ]
-              end
           end
+      | (Root (FgnConst (cs, conDec), _), _) as us_ ->
+          begin if cs = !myID then
+            begin match fromString (conDecName conDec) with
+            | Some str ->
+                begin if str = "" then Concat [] else Concat [ String str ]
+                end
+            end
           else Concat [ Exp us_ ]
-        end
+          end
       | us_ -> Concat [ Exp us_ ]
 
     and fromExp us_ = fromExpW (Whnf.whnf us_)
@@ -121,11 +121,11 @@ end) : Cs.CS = struct
     let rec index (str1, str2) =
       let max = String.size str2 - String.size str1 in
       let rec index' i =
-        begin if i <= max then begin
-          if String.isPrefix str1 (String.extract (str2, i, None)) then
+        begin if i <= max then
+          begin if String.isPrefix str1 (String.extract (str2, i, None)) then
             i :: index' (i + 1)
           else index' (i + 1)
-        end
+          end
         else []
         end
       in
@@ -153,13 +153,12 @@ end) : Cs.CS = struct
 
     and sameExpW = function
       | ((Root (h1_, s1_), s1) as us1_), ((Root (h2_, s2_), s2) as us2_) ->
-        begin
-          match (h1_, h2_) with
+          begin match (h1_, h2_) with
           | BVar k1, BVar k2 -> k1 = k2 && sameSpine ((s1_, s1), (s2_, s2))
           | FVar (n1, _, _), FVar (n2, _, _) ->
               n1 = n2 && sameSpine ((s1_, s1), (s2_, s2))
           | _ -> false
-        end
+          end
       | ( (((EVar (r1, g1_, v1_, cnstrs1) as u1_), s1) as us1_),
           (((EVar (r2, g2_, v2_, cnstrs2) as u2_), s2) as us2_) ) ->
           r1 == r2 && sameSub (s1, s2)
@@ -202,48 +201,50 @@ end) : Cs.CS = struct
     and unifyRigid (g_, Concat al1_, Concat al2_) =
       let rec unifyRigid' = function
         | [], [] -> MultAssign []
-        | String str1 :: al1_, String str2 :: al2_ -> begin
-            if str1 = str2 then unifyRigid' (al1_, al2_) else Failure
-          end
+        | String str1 :: al1_, String str2 :: al2_ ->
+            begin if str1 = str2 then unifyRigid' (al1_, al2_) else Failure
+            end
         | ( Exp ((EVar (r, _, _, _) as u1_), s) :: al1_,
             Exp ((Root (FVar _, _) as u2_), _) :: al2_ ) ->
             let ss = Whnf.invert s in
-            begin if Unify.invertible (g_, (u2_, id), ss, r) then begin
-              match unifyRigid' (al1_, al2_) with
+            begin if Unify.invertible (g_, (u2_, id), ss, r) then
+              begin match unifyRigid' (al1_, al2_) with
               | MultAssign l -> MultAssign ((g_, u1_, u2_, ss) :: l)
               | Failure -> Failure
-            end
+              end
             else Failure
             end
         | ( Exp ((Root (FVar _, _) as u1_), _) :: al1_,
             Exp ((EVar (r, _, _, _) as u2_), s) :: al2_ ) ->
             let ss = Whnf.invert s in
-            begin if Unify.invertible (g_, (u1_, id), ss, r) then begin
-              match unifyRigid' (al1_, al2_) with
+            begin if Unify.invertible (g_, (u1_, id), ss, r) then
+              begin match unifyRigid' (al1_, al2_) with
               | MultAssign l -> MultAssign ((g_, u2_, u1_, ss) :: l)
               | Failure -> Failure
-            end
+              end
             else Failure
             end
         | ( Exp ((Root (FVar _, _), _) as us1_) :: al1_,
-            Exp ((Root (FVar _, _), _) as us2_) :: al2_ ) -> begin
-            if sameExpW (us1_, us2_) then unifyRigid' (al1_, al2_) else Failure
-          end
+            Exp ((Root (FVar _, _), _) as us2_) :: al2_ ) ->
+            begin if sameExpW (us1_, us2_) then unifyRigid' (al1_, al2_)
+            else Failure
+            end
         | ( Exp ((EVar (_, _, _, _), _) as us1_) :: al1_,
-            Exp ((EVar (_, _, _, _), _) as us2_) :: al2_ ) -> begin
-            if sameExpW (us1_, us2_) then unifyRigid' (al1_, al2_) else Failure
-          end
+            Exp ((EVar (_, _, _, _), _) as us2_) :: al2_ ) ->
+            begin if sameExpW (us1_, us2_) then unifyRigid' (al1_, al2_)
+            else Failure
+            end
         | _ -> Failure
       in
       unifyRigid' (al1_, al2_)
 
     let rec unifyString = function
-      | g_, Concat (String prefix :: al_), str, cnstr -> begin
-          if String.isPrefix prefix str then
+      | g_, Concat (String prefix :: al_), str, cnstr ->
+          begin if String.isPrefix prefix str then
             let suffix = String.extract (str, String.size prefix, None) in
             unifyString (g_, Concat al_, suffix, cnstr)
           else Failure
-        end
+          end
       | g_, Concat al_, str, cnstr ->
           let rec unifyString' = function
             | al_, [] -> (Failure, [])
@@ -253,8 +254,8 @@ end) : Cs.CS = struct
             | Exp (us1_1, us1_2) :: Exp (us2_1, us2_2) :: al_, _ ->
                 ( MultDelay ([ EClo (us1_1, us1_2); EClo (us2_1, us2_2) ], cnstr),
                   [] )
-            | Exp ((EVar (r, _, _, _) as u_), s) :: al_, candidates -> begin
-                if Whnf.isPatSub s then
+            | Exp ((EVar (r, _, _, _) as u_), s) :: al_, candidates ->
+                begin if Whnf.isPatSub s then
                   let rec assign arg__1 arg__2 =
                     begin match (arg__1, arg__2) with
                     | r, [] -> None
@@ -263,31 +264,31 @@ end) : Cs.CS = struct
                           EVar (r', _, _, _),
                           Root (FgnConst (cs, conDec), Nil),
                           _ )
-                        :: l_ ) -> begin
-                        if r == r' then fromString (conDecName conDec)
+                        :: l_ ) ->
+                        begin if r == r' then fromString (conDecName conDec)
                         else assign r l_
-                      end
+                        end
                     | r, _ :: l_ -> assign r l_
                     end
                   in
                   begin match unifyString' (al_, candidates) with
-                  | MultAssign l_, parsed :: parsedL -> begin
-                      match assign r l_ with
+                  | MultAssign l_, parsed :: parsedL ->
+                      begin match assign r l_ with
                       | None ->
                           let ss = Whnf.invert s in
                           let w_ = stringExp parsed in
                           (MultAssign ((g_, u_, w_, ss) :: l_), parsedL)
-                      | Some parsed' -> begin
-                          if parsed = parsed' then (MultAssign l_, parsedL)
+                      | Some parsed' ->
+                          begin if parsed = parsed' then (MultAssign l_, parsedL)
                           else (Failure, [])
-                        end
-                    end
+                          end
+                      end
                   | MultDelay (ul_, cnstr), _ ->
                       (MultDelay (EClo (u_, s) :: ul_, cnstr), [])
                   | Failure, _ -> (Failure, [])
                   end
                 else (MultDelay ([ EClo (u_, s) ], cnstr), [])
-              end
+                end
             | Exp (u_, s_) :: al_, _ ->
                 (MultDelay ([ EClo (u_, s_) ], cnstr), [])
             | String str :: [], candidates ->
@@ -336,37 +337,37 @@ end) : Cs.CS = struct
       | [], [] -> MultAssign []
       | [], _ -> Failure
       | _, [] -> Failure
-      | String str1 :: [], String str2 :: [] -> begin
-          if str1 = str2 then MultAssign [] else Failure
-        end
-      | Exp ((EVar (r, _, _, _) as u_), s) :: [], _ -> begin
-          if Whnf.isPatSub s then
+      | String str1 :: [], String str2 :: [] ->
+          begin if str1 = str2 then MultAssign [] else Failure
+          end
+      | Exp ((EVar (r, _, _, _) as u_), s) :: [], _ ->
+          begin if Whnf.isPatSub s then
             let ss = Whnf.invert s in
             begin if Unify.invertible (g_, (u2_, id), ss, r) then
               MultAssign [ (g_, u_, u2_, ss) ]
             else MultDelay ([ u1_; u2_ ], cnstr)
             end
           else MultDelay ([ u1_; u2_ ], cnstr)
-        end
-      | _, Exp ((EVar (r, _, _, _) as u_), s) :: [] -> begin
-          if Whnf.isPatSub s then
+          end
+      | _, Exp ((EVar (r, _, _, _) as u_), s) :: [] ->
+          begin if Whnf.isPatSub s then
             let ss = Whnf.invert s in
             begin if Unify.invertible (g_, (u1_, id), ss, r) then
               MultAssign [ (g_, u_, u1_, ss) ]
             else MultDelay ([ u1_; u2_ ], cnstr)
             end
           else MultDelay ([ u1_; u2_ ], cnstr)
-        end
+          end
       | String str :: [], _ -> unifyString (g_, concat2, str, cnstr)
       | _, String str :: [] -> unifyString (g_, concat1, str, cnstr)
-      | _ -> begin
-          match unifyRigid (g_, concat1, concat2) with
+      | _ ->
+          begin match unifyRigid (g_, concat1, concat2) with
           | MultAssign _ as result -> result
-          | Failure -> begin
-              if sameConcat (concat1, concat2) then MultAssign []
+          | Failure ->
+              begin if sameConcat (concat1, concat2) then MultAssign []
               else MultDelay ([ u1_; u2_ ], cnstr)
-            end
-        end
+              end
+          end
       end
 
     and toFgn = function

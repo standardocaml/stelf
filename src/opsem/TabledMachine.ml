@@ -204,8 +204,8 @@ end) : TABLED = struct
     | (C.DProg _ as dp), (C.Atom p, s) -> (dp, (p, s))
     | C.DProg (g_, dPool), (C.Impl (r, a_, ha_, g), s) ->
         let d'_ = IntSyn.Dec (None, I.EClo (a_, s)) in
-        begin if !TableParam.strengthen then begin
-          match MT.memberCtx ((g_, I.EClo (a_, s)), g_) with
+        begin if !TableParam.strengthen then
+          begin match MT.memberCtx ((g_, I.EClo (a_, s)), g_) with
           | Some _ ->
               let (C.Atom p) = g in
               let x_ = I.newEVar (g_, I.EClo (a_, s)) in
@@ -215,7 +215,7 @@ end) : TABLED = struct
               getHypGoal
                 ( C.DProg (I.Decl (g_, d'_), I.Decl (dPool, C.Dec (r, s, ha_))),
                   (g, I.dot1 s) )
-        end
+          end
         else
           getHypGoal
             ( C.DProg (I.Decl (g_, d'_), I.Decl (dPool, C.Dec (r, s, ha_))),
@@ -243,14 +243,14 @@ end) : TABLED = struct
       begin if flag then TableParam.Complete else TableParam.Incomplete
       end
     in
-    begin if TabledSyn.keepTable (IntSyn.targetFam u'_) then begin
-      match MT.callCheck (dAVars_, dEVars_, g'_, u'_, eqn', status) with
+    begin if TabledSyn.keepTable (IntSyn.targetFam u'_) then
+      begin match MT.callCheck (dAVars_, dEVars_, g'_, u'_, eqn', status) with
       | T.RepeatedEntry (_, answRef, _) ->
           TableParam.globalTable :=
             (dAVars_, dEVars_, g'_, u'_, eqn', answRef, status)
             :: !TableParam.globalTable
       | _ -> raise (Error "Top level goal should always in the table\n")
-    end
+      end
     else ()
     end
 
@@ -259,13 +259,13 @@ end) : TABLED = struct
   let rec fillTable () =
     let rec insert = function
       | [] -> ()
-      | (dAVars_, dEVars_, g'_, u'_, eqn', answRef, status) :: rest -> begin
-          match
+      | (dAVars_, dEVars_, g'_, u'_, eqn', answRef, status) :: rest ->
+          begin match
             MT.insertIntoTree (dAVars_, dEVars_, g'_, u'_, eqn', answRef, status)
           with
           | T.NewEntry _ -> insert rest
           | _ -> ()
-        end
+          end
     in
     insert !TableParam.globalTable
 
@@ -403,8 +403,8 @@ end) : TABLED = struct
     ref (fun _ -> failwith "solve_fn not yet initialized")
 
   let rec solve = function
-    | (C.Atom p, s), (C.DProg (g_, dPool) as dp), sc -> begin
-        if TabledSyn.tabledLookup (I.targetFam p) then
+    | (C.Atom p, s), (C.DProg (g_, dPool) as dp), sc ->
+        begin if TabledSyn.tabledLookup (I.targetFam p) then
           let g'_, dAVars_, dEVars_, u'_, eqn', s' =
             A.abstractEVarCtx (dp, p, s)
           in
@@ -424,13 +424,13 @@ end) : TABLED = struct
                 ( (p, s),
                   dp,
                   function
-                  | pskeleton -> begin
-                      match MT.answerCheck (s', answRef, pskeleton) with
+                  | pskeleton ->
+                      begin match MT.answerCheck (s', answRef, pskeleton) with
                       | repeated -> ()
                       | new_ -> sc pskeleton
-                    end )
-          | T.RepeatedEntry (asub, answRef, Incomplete) -> begin
-              if T.noAnswers answRef then begin
+                      end )
+          | T.RepeatedEntry (asub, answRef, Incomplete) ->
+              begin if T.noAnswers answRef then begin
                 suspGoals_ :=
                   ( Loop,
                     (g'_, u'_, s'),
@@ -454,11 +454,11 @@ end) : TABLED = struct
                     :: !suspGoals_;
                   retrieve (ref 0, (g'_, u'_, s'), (asub, answRef), sc)
                 end
-            end
-          | T.RepeatedEntry (asub, answRef, Complete) -> begin
-              if T.noAnswers answRef then ()
+              end
+          | T.RepeatedEntry (asub, answRef, Complete) ->
+              begin if T.noAnswers answRef then ()
               else retrieve (ref 0, (g'_, u'_, s'), (asub, answRef), sc)
-            end
+              end
           | T.DivergingEntry (asub, answRef) -> begin
               suspGoals_ :=
                 ( Divergence ((p, s), dp),
@@ -479,11 +479,11 @@ end) : TABLED = struct
               G' |- s'^k : DAVars, DEVars, G'
                . |- [s'](Pi G'. U')     and  G |- [s'^k]U' = [s]p *)
         else matchAtom ((p, s), dp, sc)
-      end
+        end
     | (C.Impl (r, a_, ha_, g), s), C.DProg (g_, dPool), sc ->
         let d'_ = I.Dec (None, I.EClo (a_, s)) in
-        begin if !TableParam.strengthen then begin
-          match MT.memberCtx ((g_, I.EClo (a_, s)), g_) with
+        begin if !TableParam.strengthen then
+          begin match MT.memberCtx ((g_, I.EClo (a_, s)), g_) with
           | Some _ ->
               let x_ = I.newEVar (g_, I.EClo (a_, s)) in
               !solve_fn_ref
@@ -495,7 +495,7 @@ end) : TABLED = struct
                 ( (g, I.dot1 s),
                   C.DProg (I.Decl (g_, d'_), I.Decl (dPool, C.Dec (r, s, ha_))),
                   function o_ -> sc o_ )
-        end
+          end
         else
           !solve_fn_ref
             ( (g, I.dot1 s),
@@ -510,14 +510,14 @@ end) : TABLED = struct
             function o_ -> sc o_ )
 
   and rSolve = function
-    | ps', (C.Eq q_, s), C.DProg (g_, dPool), sc -> begin
-        if Unify.unifiable (g_, ps', (q_, s)) then sc [] else ()
-      end
-    | ps', (C.Assign (q_, eqns), s), (C.DProg (g_, dPool) as dp), sc -> begin
-        match Assign.assignable (g_, ps', (q_, s)) with
+    | ps', (C.Eq q_, s), C.DProg (g_, dPool), sc ->
+        begin if Unify.unifiable (g_, ps', (q_, s)) then sc [] else ()
+        end
+    | ps', (C.Assign (q_, eqns), s), (C.DProg (g_, dPool) as dp), sc ->
+        begin match Assign.assignable (g_, ps', (q_, s)) with
         | Some cnstr -> aSolve ((eqns, s), dp, cnstr, function s_ -> sc s_)
         | None -> ()
-      end
+        end
     | ps', (C.And (r, a_, g), s), (C.DProg (g_, dPool) as dp), sc ->
         let x_ = I.newEVar (g_, I.EClo (a_, s)) in
         rSolve
@@ -541,9 +541,9 @@ end) : TABLED = struct
   (* fail *)
 
   and aSolve = function
-    | (trivial_, s), dp, cnstr, sc -> begin
-        if Assign.solveCnstr cnstr then sc [] else ()
-      end
+    | (trivial_, s), dp, cnstr, sc ->
+        begin if Assign.solveCnstr cnstr then sc [] else ()
+        end
     | (C.UnifyEq (g'_, e1, n_, eqns), s), (C.DProg (g_, dPool) as dp), cnstr, sc
       ->
         let g''_ = append (g'_, g_) in
@@ -569,8 +569,8 @@ end) : TABLED = struct
     in
     let rec matchDProg = function
       | I.Null, I.Null, _ -> matchSig (Index.lookup (cidFromHead ha_))
-      | I.Decl (g_, _), I.Decl (dPool', C.Dec (r, s, ha'_)), k -> begin
-          if eqHead (ha_, ha'_) then begin
+      | I.Decl (g_, _), I.Decl (dPool', C.Dec (r, s, ha'_)), k ->
+          begin if eqHead (ha_, ha'_) then begin
             CsManager.trail (function () ->
                 rSolve
                   ( ps',
@@ -580,7 +580,7 @@ end) : TABLED = struct
             matchDProg (g_, dPool', k + 1)
           end
           else matchDProg (g_, dPool', k + 1)
-        end
+          end
       | I.Decl (g_, _), I.Decl (dPool', parameter_), k ->
           matchDProg (g_, dPool', k + 1)
       (* dynamic program exhausted, try signature *)
@@ -661,20 +661,20 @@ end) : TABLED = struct
      else fail
      *)
   let rec retrieval = function
-    | Loop, (g'_, u'_, s'), sc, (asub, answRef), n -> begin
-        if T.noAnswers answRef then ()
+    | Loop, (g'_, u'_, s'), sc, (asub, answRef), n ->
+        begin if T.noAnswers answRef then ()
         else retrieve (n, (g'_, u'_, s'), (asub, answRef), sc)
-      end
+        end
     | Divergence ((p, s), dp), (g'_, u'_, s'), sc, (asub, answRef), n ->
         matchAtom
           ( (p, s),
             dp,
             function
-            | pskeleton -> begin
-                match MT.answerCheck (s', answRef, pskeleton) with
+            | pskeleton ->
+                begin match MT.answerCheck (s', answRef, pskeleton) with
                 | repeated -> ()
                 | new_ -> sc pskeleton
-              end )
+                end )
 
   let rec tableSize () = MT.tableSize ()
   let rec suspGoalNo () = List.length !suspGoals_

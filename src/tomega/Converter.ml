@@ -26,10 +26,8 @@ module MakeConverter
     (Subordinate : Subordinate.Subordinate_.SUBORDINATE)
     (TypeCheck : Typecheck_.TYPECHECK)
     (Redundant : Redundant_intf.REDUNDANT)
-    (TomegaAbstract : TomegaAbstract_intf.TOMEGAABSTRACT) :
-  CONVERTER =
-struct
-(*
+    (TomegaAbstract : TomegaAbstract_intf.TOMEGAABSTRACT) : CONVERTER = struct
+  (*
   (* Converter from relational representation to a functional
    representation of proof terms *)
   (* Author: Carsten Schuermann *)
@@ -116,8 +114,10 @@ struct
       end
 
     let rec chatter chlev f =
-      begin if !Global.chatter >= chlev then print ("[tomega] " ^ f ()) else ()
-      end
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter chlev)
+           (Display.Info.Form.string ("[tomega] " ^ f ())))
 
     let rec strengthenExp (u_, s) = Whnf.normalize (Whnf.cloInv (u_, s), I.id)
     let rec strengthenSub (s, t) = Whnf.compInv (s, t)
@@ -143,12 +143,13 @@ struct
           T.Ex ((strengthenDec (d_, s), q_), strengthenFor (f_, I.dot1 s))
 
     let rec strengthenOrder = function
-        | Intsyn.Order.Arg ((u_, s1), (v_, s2)), s ->
+      | Intsyn.Order.Arg ((u_, s1), (v_, s2)), s ->
           Intsyn.Order.Arg
-          ((u_, strengthenSub (s1, s)), (v_, strengthenSub (s2, s)))
-        | Intsyn.Order.Simul os_, s ->
-          Intsyn.Order.Simul (map (function o_ -> strengthenOrder (o_, s)) os_)
-        | Intsyn.Order.Lex os_, s ->
+            ((u_, strengthenSub (s1, s)), (v_, strengthenSub (s2, s)))
+      | Intsyn.Order.Simul os_, s ->
+          Intsyn.Order.Simul
+            (map (function o_ -> strengthenOrder (o_, s)) os_)
+      | Intsyn.Order.Lex os_, s ->
           Intsyn.Order.Lex (map (function o_ -> strengthenOrder (o_, s)) os_)
 
     let rec strengthenTC = function
@@ -361,10 +362,11 @@ struct
       in
       let rec inBlock = function
         | I.Null, (bw, w1) -> (bw, w1)
-        | I.Decl (g_, d_), (bw, w1) -> begin
-            if isIdx1 (I.bvarSub (1, w1)) then inBlock (g_, (true, dot1inv w1))
+        | I.Decl (g_, d_), (bw, w1) ->
+            begin if isIdx1 (I.bvarSub (1, w1)) then
+              inBlock (g_, (true, dot1inv w1))
             else inBlock (g_, (bw, strengthenSub (w1, I.shift)))
-          end
+            end
       in
       let rec blockSub = function
         | I.Null, w -> (I.Null, w)
@@ -376,14 +378,13 @@ struct
       let rec strengthen' = function
         | I.Null, psi2_, l_, w1 -> (I.Null, I.id, I.id)
         | I.Decl (psi1_, (T.UDec (I.Dec (name, v_)) as ld_)), psi2_, l_, w1 ->
-          begin
-            if isIdx1 (I.bvarSub (1, w1)) then
+            begin if isIdx1 (I.bvarSub (1, w1)) then
               let w1' = dot1inv w1 in
               let psi1'_, w', z' = strengthen' (psi1_, ld_ :: psi2_, l_, w1') in
               let v'_ = strengthenExp (v_, w') in
               (I.Decl (psi1'_, T.UDec (I.Dec (name, v'_))), I.dot1 w', I.dot1 z')
-            else begin
-              if occursInPsi (1, (psi2_, l_)) then
+            else
+              begin if occursInPsi (1, (psi2_, l_)) then
                 let w1' = strengthenSub (w1, I.shift) in
                 let psi1'_, w', z' =
                   strengthen' (psi1_, ld_ :: psi2_, l_, w1')
@@ -399,8 +400,8 @@ struct
                 let l'_ = strengthenArgs (l_, w2') in
                 let psi1''_, w', z' = strengthen' (psi1_, psi2'_, l'_, w1') in
                 (psi1''_, I.comp (w', I.shift), z')
+              end
             end
-          end
         | I.Decl (psi1_, (T.PDec (name, f_, None, None) as d_)), psi2_, l_, w1
           ->
             let w1' = dot1inv w1 in
@@ -489,11 +490,11 @@ struct
       let g_, l_ = I.constBlock c in
       let rec makeSubst = function
         | n, g_, s, [], f -> (g_, f)
-        | n, g_, s, (I.Dec (x, v'_) as d_) :: l_, f -> begin
-            if S.belowEq (I.targetFam v'_, I.targetFam v_) then
+        | n, g_, s, (I.Dec (x, v'_) as d_) :: l_, f ->
+            begin if S.belowEq (I.targetFam v'_, I.targetFam v_) then
               makeSubst (n + 1, I.Decl (g_, I.decSub (d_, s)), I.dot1 s, l_, f)
             else makeSubst (n, g_, I.comp (s, I.shift), l_, f)
-          end
+            end
       in
       let g'_, f = makeSubst (1, g_, s, l_, function x, i -> I.Proj (x, i)) in
       (g_, renameExp f v_)
@@ -506,24 +507,22 @@ struct
       begin match (arg__7, arg__8) with
       | ( (l_, wmap, projs),
           ((psi0_, psi_), I.Pi (((I.Dec (_, v1_) as d_), Maybe), v2_), w) ) ->
-        begin
-          match
+          begin match
             traverseNeg (l_, wmap, projs)
               ((psi0_, I.Decl (psi_, T.UDec d_)), v2_, I.dot1 w)
           with
           | Some (w', pq'_) -> Some (peel w', pq'_)
-        end
+          end
       | ( (l_, wmap, projs),
           ((psi0_, psi_), I.Pi (((I.Dec (_, v1_) as d_), No), v2_), w) ) ->
-        begin
-          match
+          begin match
             traverseNeg (l_, wmap, projs)
               ((psi0_, I.Decl (psi_, T.UDec d_)), v2_, I.comp (w, I.shift))
           with
           | Some (w', pq'_) ->
               traversePos (l_, wmap, projs)
                 ((psi0_, psi_, I.Null), v1_, Some (peel w', pq'_))
-        end
+          end
       | (l_, wmap, projs), ((psi0_, psi_), I.Root (I.Const a, s_), w) ->
           let psi1_ = append (psi0_, psi_) in
           let w0 = I.Shift (I.ctxLength psi_) in
@@ -586,24 +585,24 @@ struct
             (T.Const l, f_)
           in
           let rec lookup = function
-            | (b :: [], None, f_), a -> begin
-                if a = b then
+            | (b :: [], None, f_), a ->
+                begin if a = b then
                   let p_ = T.Var n in
                   (p_, f_)
                 else lookupbase a
-              end
-            | (b :: [], Some (lemma :: []), f_), a -> begin
-                if a = b then
+                end
+            | (b :: [], Some (lemma :: []), f_), a ->
+                begin if a = b then
                   let p_ = T.Redex (T.Const lemma, T.AppPrg (T.Var n, T.Nil)) in
                   (p_, f_)
                 else lookupbase a
-              end
-            | (b :: l_, Some (lemma :: lemmas), T.And (f1_, f2_)), a -> begin
-                if a = b then
+                end
+            | (b :: l_, Some (lemma :: lemmas), T.And (f1_, f2_)), a ->
+                begin if a = b then
                   let p_ = T.Redex (T.Const lemma, T.AppPrg (T.Var n, T.Nil)) in
                   (p_, f1_)
                 else lookup ((l_, Some lemmas, f2_), a)
-              end
+                end
           in
           let hp_, f_ =
             begin if I.ctxLength psi0_ > 0 then
@@ -713,17 +712,16 @@ struct
     let rec transformWorlds (fams, T.Worlds cids) =
       let rec transformList = function
         | [], w -> []
-        | (I.Dec (x, v_) as d_) :: l_, w -> begin
-            if
+        | (I.Dec (x, v_) as d_) :: l_, w ->
+            begin if
               List.foldr
-                (function
-                  | a, b -> b && S.belowEq (a, I.targetFam v_))
+                (function a, b -> b && S.belowEq (a, I.targetFam v_))
                 true fams
             then transformList (l_, I.comp (w, I.shift))
             else
               let l'_ = transformList (l_, I.dot1 w) in
               I.Dec (x, strengthenExp (v_, w)) :: l'_
-          end
+            end
       in
       let rec transformWorlds' = function
         | [] -> ([], function c -> raise (Error "World not found"))
@@ -733,7 +731,10 @@ struct
             let cids'', wmap = transformWorlds' cids' in
             let cid' = I.sgnAdd (I.BlockDec (s, m, g_, l'_)) in
             ( cid' :: cids'',
-              function c -> begin if c = cid then cid' else wmap c end ))
+              function
+              | c ->
+                  begin if c = cid then cid' else wmap c
+                  end ))
       in
       let cids', wmap = transformWorlds' cids in
       (T.Worlds cids', wmap)
@@ -900,15 +901,17 @@ struct
           let name = I.conDecName (I.sgnLookup cid) in
           let _ = TomegaTypeCheck.checkPrg (I.Null, (p_, f_)) in
           let _ =
-            begin if !Global.chatter >= 4 then
-              print "[Redundancy Checker (factoring) ..."
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 4)
+                 (Display.Info.Form.string "[Redundancy Checker (factoring) ..."))
           in
           let factP = Redundant.convert p_ in
           let _ =
-            begin if !Global.chatter >= 4 then print "done]\n" else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 4)
+                 (Display.Info.Form.string "done]\n"))
           in
           let lemma = T.lemmaAdd (T.ValDec (name, factP, f_)) in
           (lemma, [], [])
@@ -921,15 +924,17 @@ struct
           let s = name cids in
           let _ = TomegaTypeCheck.checkPrg (I.Null, (p_, f_)) in
           let _ =
-            begin if !Global.chatter >= 4 then
-              print "[Redundancy Checker (factoring) ..."
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 4)
+                 (Display.Info.Form.string "[Redundancy Checker (factoring) ..."))
           in
           let factP = Redundant.convert p_ in
           let _ =
-            begin if !Global.chatter >= 4 then print "done]\n" else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 4)
+                 (Display.Info.Form.string "done]\n"))
           in
           let lemma = T.lemmaAdd (T.ValDec (s, factP, f_)) in
           let sels = installSelection (cids, projs, f_, lemma) in

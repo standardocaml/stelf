@@ -86,10 +86,10 @@ end) : MTPRECURSION = struct
 
     let rec closedCtx = function
       | I.Null -> ()
-      | I.Decl (g_, d_) -> begin
-          if Abstract.closedDec (g_, (d_, I.id)) then raise Domain
+      | I.Decl (g_, d_) ->
+          begin if Abstract.closedDec (g_, (d_, I.id)) then raise Domain
           else closedCtx g_
-        end
+          end
 
     let rec spine = function
       | 0 -> I.Nil
@@ -261,13 +261,13 @@ end) : MTPRECURSION = struct
           ((I.Root (I.BVar n, s'_), s'), vs'_),
           sc,
           ac,
-          ds_ ) -> begin
-          match I.ctxLookup (b_, n) with
+          ds_ ) ->
+          begin match I.ctxLookup (b_, n) with
           | S.Parameter _ ->
               let (I.Dec (_, v'_)) = I.ctxDec (g_, n) in
               ltSpine (gb_, k, (us_, vs_), ((s'_, s'), (v'_, I.id)), sc, ac, ds_)
           | S.Lemma _ -> ds_
-        end
+          end
       | gb_, _, _, ((I.EVar _, _), _), _, _, ds_ -> ds_
       | ( ((g_, b_) as gb_),
           k,
@@ -291,8 +291,8 @@ end) : MTPRECURSION = struct
                 sc',
                 ac,
                 ds'_ )
-          else begin
-            if Subordinate.below (I.targetFam v1'_, I.targetFam v_) then
+          else
+            begin if Subordinate.below (I.targetFam v1'_, I.targetFam v_) then
               let x_ = I.newEVar (g_, I.EClo (v1'_, s1')) in
               lt
                 ( gb_,
@@ -303,7 +303,7 @@ end) : MTPRECURSION = struct
                   ac,
                   ds'_ )
             else ds'_
-          end
+            end
           end
 
     and ltSpine (gb_, k, (us_, vs_), (ss'_, vs'_), sc, ac, ds_) =
@@ -368,8 +368,8 @@ end) : MTPRECURSION = struct
                 sc',
                 ac,
                 ds'_ )
-          else begin
-            if Subordinate.below (I.targetFam v1'_, I.targetFam v_) then
+          else
+            begin if Subordinate.below (I.targetFam v1'_, I.targetFam v_) then
               let x_ = I.newEVar (g_, I.EClo (v1'_, s1')) in
               let sc' = sc in
               let ds''_ =
@@ -384,7 +384,7 @@ end) : MTPRECURSION = struct
               in
               ds''_
             else ds'_
-          end
+            end
           end
       | gb_, k, (us_, vs_), (us'_, vs'_), sc, ac, ds_ ->
           lt (gb_, k, (us_, vs_), (us'_, vs'_), sc, ac, ds_)
@@ -444,11 +444,12 @@ end) : MTPRECURSION = struct
               ds_ )
 
     and ordeq = function
-      | (g_, b_), S.Arg (us_, vs_), S.Arg (us'_, vs'_), sc, ac, ds_ -> begin
-          if Unify.unifiable (g_, vs_, vs'_) && Unify.unifiable (g_, us_, us'_)
+      | (g_, b_), S.Arg (us_, vs_), S.Arg (us'_, vs'_), sc, ac, ds_ ->
+          begin if
+            Unify.unifiable (g_, vs_, vs'_) && Unify.unifiable (g_, us_, us'_)
           then sc ds_
           else ds_
-        end
+          end
       | gb_, S.Lex l_, S.Lex l'_, sc, ac, ds_ ->
           ordeqs (gb_, l_, l'_, sc, ac, ds_)
       | gb_, S.Simul l_, S.Simul l'_, sc, ac, ds_ ->

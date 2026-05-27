@@ -106,7 +106,6 @@ end
 
 (* # 1 "src/opsem/TableParam.sml.ml" *)
 open! Basis
-
 module TableParam = MakeTableParam (Global)
 (*! structure IntSyn' = IntSyn !*)
 (*! structure CompSyn' = CompSyn !*)

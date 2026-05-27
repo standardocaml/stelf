@@ -8,5 +8,4 @@ module CsEqStrings : module type of CsEqStrings
 module CsEqBools : module type of CsEqBools
 module CsIntegersWord : module type of CsIntegersWord
 include module type of Solvers_intf
-
 module CSInstaller : CS_INSTALLER

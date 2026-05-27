@@ -16,6 +16,7 @@
   Modesyn_intf
   Modetable_intf)
  (libraries
+  display
   global
   table
   intsyn

@@ -49,6 +49,7 @@
   Solve_intf
   Unknownexn_intf)
  (libraries
+  display
   timing
   stream
   debug

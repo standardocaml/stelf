@@ -4,6 +4,7 @@ open! Basis
 (* Total Declarations *)
 (* Author: Frank Pfenning *)
 include Total_intf
+
 (* may raise Error(msg) *)
 (* signature TOTAL *)
 
@@ -81,14 +82,14 @@ end) : TOTAL = struct
   let install = install
 
   let uninstall = function
-    | cid -> begin
-        match lookup cid with
+    | cid ->
+        begin match lookup cid with
         | None -> false
         | Some _ -> begin
             uninstall cid;
             true
           end
-      end
+        end
 
   let rec total cid =
     begin match lookup cid with None -> false | Some _ -> true
@@ -113,11 +114,12 @@ end) : TOTAL = struct
   (* G is unused here *)
   let rec checkDynOrder = function
     | g_, vs_, 0, occ -> begin
-        begin if !Global.chatter >= 5 then
-          print
-            "Output coverage: skipping redundant checking of third-order clause\n"
-        else ()
-        end;
+        Display.display'
+          (Display.Info.msg
+             ~level:(Display.Info.from_chatter 5)
+             (Display.Info.Form.string
+                "Output coverage: skipping redundant checking of third-order \
+                 clause\n"));
         ()
       end
     | g_, vs_, n, occ -> checkDynOrderW (g_, Whnf.whnf vs_, n, occ)
@@ -211,13 +213,15 @@ end) : TOTAL = struct
   let rec checkOutCover = function
     | [] -> ()
     | I.Const c :: cs -> begin
-        begin if !Global.chatter >= 4 then
-          print (N.qidToString (N.constQid c) ^ " ")
-        else ()
-        end;
+        Display.display'
+          (Display.Info.msg
+             ~level:(Display.Info.from_chatter 4)
+             (Display.Info.Form.string (N.qidToString (N.constQid c) ^ " ")));
         begin
-          begin if !Global.chatter >= 6 then print "\n" else ()
-          end;
+          Display.display'
+            (Display.Info.msg
+               ~level:(Display.Info.from_chatter 6)
+               (Display.Info.Form.string "\n"));
           begin try checkClause (I.Null, (I.constType c, I.id), P.top)
           with Error' (occ, msg) ->
             error (c, occ, msg);
@@ -226,13 +230,15 @@ end) : TOTAL = struct
         end
       end
     | I.Def d :: cs -> begin
-        begin if !Global.chatter >= 4 then
-          print (N.qidToString (N.constQid d) ^ " ")
-        else ()
-        end;
+        Display.display'
+          (Display.Info.msg
+             ~level:(Display.Info.from_chatter 4)
+             (Display.Info.Form.string (N.qidToString (N.constQid d) ^ " ")));
         begin
-          begin if !Global.chatter >= 6 then print "\n" else ()
-          end;
+          Display.display'
+            (Display.Info.msg
+               ~level:(Display.Info.from_chatter 6)
+               (Display.Info.Form.string "\n"));
           begin try checkClause (I.Null, (I.constType d, I.id), P.top)
           with Error' (occ, msg) ->
             error (d, occ, msg);
@@ -262,10 +268,11 @@ end) : TOTAL = struct
       try
         begin
           Timers.time Timers.terminate Reduces.checkFam a;
-          begin if !Global.chatter >= 4 then
-            print (("Terminates: " ^ N.qidToString (N.constQid a)) ^ "\n")
-          else ()
-          end
+          Display.display'
+            (Display.Info.msg
+               ~level:(Display.Info.from_chatter 4)
+               (Display.Info.Form.string
+                  (("Terminates: " ^ N.qidToString (N.constQid a)) ^ "\n")))
         end
       with Reduces.Error msg -> raise (Reduces.Error msg)
     in
@@ -275,20 +282,22 @@ end) : TOTAL = struct
       try
         begin
           Timers.time Timers.coverage Cover.checkCovers (a, ms);
-          begin if !Global.chatter >= 4 then
-            print (("Covers (input): " ^ N.qidToString (N.constQid a)) ^ "\n")
-          else ()
-          end
+          Display.display'
+            (Display.Info.msg
+               ~level:(Display.Info.from_chatter 4)
+               (Display.Info.Form.string
+                  (("Covers (input): " ^ N.qidToString (N.constQid a)) ^ "\n")))
         end
       with Cover.Error msg -> raise (Cover.Error msg)
     in
     let _ =
-      begin if !Global.chatter >= 4 then
-        print
-          (("Output coverage checking family " ^ N.qidToString (N.constQid a))
-          ^ "\n")
-      else ()
-      end
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter 4)
+           (Display.Info.Form.string
+              (("Output coverage checking family "
+               ^ N.qidToString (N.constQid a))
+              ^ "\n")))
     in
     let _ = ModeCheck.checkFreeOut (a, ms) in
     let cs = Index.lookup a in
@@ -299,10 +308,11 @@ end) : TOTAL = struct
           begin
             begin if !Global.chatter = 4 then print "\n" else ()
             end;
-            begin if !Global.chatter >= 4 then
-              print (("Covers (output): " ^ N.qidToString (N.constQid a)) ^ "\n")
-            else ()
-            end
+            Display.display'
+              (Display.Info.msg
+                 ~level:(Display.Info.from_chatter 4)
+                 (Display.Info.Form.string
+                    (("Covers (output): " ^ N.qidToString (N.constQid a)) ^ "\n")))
           end
         end
       with Cover.Error msg -> raise (Cover.Error msg)

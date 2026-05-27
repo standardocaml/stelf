@@ -168,20 +168,20 @@ end) : MtpSearch_intf.MTPSEARCH = struct
               function m_ -> sc (I.Lam (d'_, m_)) )
 
     and rSolve = function
-      | max, depth, ps', (C.Eq q_, s), C.DProg (g_, dPool), sc -> begin
-          if Unify.unifiable (g_, ps', (q_, s)) then sc I.Nil else ()
-        end
+      | max, depth, ps', (C.Eq q_, s), C.DProg (g_, dPool), sc ->
+          begin if Unify.unifiable (g_, ps', (q_, s)) then sc I.Nil else ()
+          end
       | ( max,
           depth,
           ps',
           (C.Assign (q_, eqns), s),
           (C.DProg (g_, dPool) as dp),
-          sc ) -> begin
-          match Assign.assignable (g_, ps', (q_, s)) with
+          sc ) ->
+          begin match Assign.assignable (g_, ps', (q_, s)) with
           | Some cnstr ->
               aSolve ((eqns, s), dp, cnstr, function () -> sc I.Nil)
           | None -> ()
-        end
+          end
       | max, depth, ps', (C.And (r, a_, g), s), (C.DProg (g_, dPool) as dp), sc
         ->
           let x_ = I.newEVar (g_, I.EClo (a_, s)) in
@@ -215,8 +215,8 @@ end) : MtpSearch_intf.MTPSEARCH = struct
               (r, I.Dot (I.Exp x'_, s)),
               dp,
               function
-              | s_ -> begin
-                  if isInstantiated x_ then sc (I.App (x'_, s_))
+              | s_ ->
+                  begin if isInstantiated x_ then sc (I.App (x'_, s_))
                   else
                     solve
                       ( max,
@@ -231,7 +231,7 @@ end) : MtpSearch_intf.MTPSEARCH = struct
                                 sc (I.App (I.EClo (m_, w), s_))
                               end
                             with Unify.Unify _ -> ()) )
-                end )
+                  end )
       | ( max,
           depth,
           ps',
@@ -262,9 +262,9 @@ end) : MtpSearch_intf.MTPSEARCH = struct
               sc )
 
     and aSolve = function
-      | (trivial_, s), dp, cnstr, sc -> begin
-          if Assign.solveCnstr cnstr then sc () else ()
-        end
+      | (trivial_, s), dp, cnstr, sc ->
+          begin if Assign.solveCnstr cnstr then sc () else ()
+          end
       | ( (C.UnifyEq (g'_, e1, n_, eqns), s),
           (C.DProg (g_, dPool) as dp),
           cnstr,
@@ -301,8 +301,8 @@ end) : MtpSearch_intf.MTPSEARCH = struct
           in
           let rec matchDProg = function
             | I.Null, _ -> matchSig' (Index.lookup (cidFromHead ha_))
-            | I.Decl (dPool', C.Dec (r, s, ha'_)), n -> begin
-                if eqHead (ha_, ha'_) then
+            | I.Decl (dPool', C.Dec (r, s, ha'_)), n ->
+                begin if eqHead (ha_, ha'_) then
                   let _ =
                     CsManager.trail (function () ->
                         rSolve
@@ -315,7 +315,7 @@ end) : MtpSearch_intf.MTPSEARCH = struct
                   in
                   matchDProg (dPool', n + 1)
                 else matchDProg (dPool', n + 1)
-              end
+                end
             | I.Decl (dPool', parameter_), n -> matchDProg (dPool', n + 1)
           in
           matchDProg (dPool, 1)
@@ -373,9 +373,9 @@ end) : MtpSearch_intf.MTPSEARCH = struct
                       [] ge_
                   in
                   let gE' = List.length ge'_ in
-                  begin if gE' > 0 then begin
-                    if it > 0 then searchEx (it - 1, 1) (ge'_, sc) else ()
-                  end
+                  begin if gE' > 0 then
+                    begin if it > 0 then searchEx (it - 1, 1) (ge'_, sc) else ()
+                    end
                   else sc max
                   end
                 end );

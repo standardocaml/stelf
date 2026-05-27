@@ -3,23 +3,25 @@ module type RECON_TERM = RECON_TERM.RECON_TERM
 (* Logic copied from src/frontend/ReconTerm.ml.
    The functor takes a second parameter R for the modules that are not in S.S.
    See "Problems" comment at the bottom of this file. *)
-module Make_ReconTerm (M : S.S) (R : sig
-  module Names : NAMES
-  module Approx : APPROX
-  module Whnf : WHNF
-  module Unify : UNIFY
-  module Abstract : ABSTRACT
-  module Print : PRINT
-  module StringTree : TABLE with type key = string
-  module Msg : MSG
-  module CsManager : Solvers.CsManager_intf.CS_MANAGER
-end) = struct
+module Make_ReconTerm
+    (M : S.S)
+    (R : sig
+      module Names : NAMES
+      module Approx : APPROX
+      module Whnf : WHNF
+      module Unify : UNIFY
+      module Abstract : ABSTRACT
+      module Print : PRINT
+      module StringTree : TABLE with type key = string
+      module Msg : MSG
+      module CsManager : Solvers.CsManager_intf.CS_MANAGER
+    end) =
+struct
   module M = M
   module Cst = M.Cst
   module Ast = M.Ast
   module Paths = M.Paths
   module Syntax = M.Syntax
-
   module Names = R.Names
   module Approx = R.Approx
   module Whnf = R.Whnf
@@ -29,7 +31,9 @@ end) = struct
   module StringTree = R.StringTree
   module Msg = R.Msg
   module CsManager = R.CsManager
+
   let loc_to_region : Cst.loc -> Paths.region = Cst.loc_to_region
+
   module F = Print.Formatter
   module Apx = Approx
 
@@ -60,8 +64,8 @@ end) = struct
       errorCount := 0;
       errorFileName := fileName
     end
-  
-  let rec die r = 
+
+  let rec die r =
     raise
       (Error
          (Paths.wrap
@@ -177,8 +181,8 @@ end) = struct
   let rec getEVarTypeApx name =
     begin match StringTree.lookup evarApxTable name with
     | Some v_ -> v_
-    | None -> begin
-        match Names.getEVarOpt name with
+    | None ->
+        begin match Names.getEVarOpt name with
         | Some (IntSyn.EVar (_, _, v_, _)) ->
             let v'_, _ (* Type *) = Apx.classToApx v_ in
             begin
@@ -191,7 +195,7 @@ end) = struct
               StringTree.insert evarApxTable (name, v_);
               v_
             end
-      end
+        end
     end
 
   let rec getFVarTypeApx name =
@@ -256,7 +260,7 @@ end) = struct
     | Scon_ of string * Paths.region
     | Omitapx_ of Apx.exp * Apx.exp * Apx.uni * Paths.region
     | Omitexact_ of IntSyn.exp * IntSyn.exp * Paths.region
-    [@@deriving show {with_path = false}]
+  [@@deriving show { with_path = false }]
 
   and dec = Dec_ of string option * term * Paths.region
 
@@ -274,9 +278,7 @@ end) = struct
   let rec hastype (tm1, tm2) = Hastype_ (tm1, tm2)
   let rec omitted r = Omitted_ r
   let rec dec (nameOpt, tm, r) = Dec_ (nameOpt, tm, r)
-
   let rec backarrow (tm1, tm2) = Arrow_ (tm2, tm1)
-
   let rec dec0 (nameOpt, r) = Dec_ (nameOpt, Omitted_ r, r)
 
   (* Internal job type — uses the richer internal term/dec *)
@@ -300,22 +302,47 @@ end) = struct
       let loc = match V.term_loc t with Some l -> l | None -> Cst.ghost in
       loc_to_region loc
     in
-    match V.term_arrow t with Some (a, b) -> Arrow_ (cst_term_to_term a, cst_term_to_term b) | None ->
-    match V.term_pi   t with Some (d, b) -> Pi_ (cst_decl_to_dec d, cst_term_to_term b) | None ->
-    match V.term_lam  t with Some (d, b) -> Lam_ (cst_decl_to_dec d, cst_term_to_term b) | None ->
-    match V.term_app  t with Some (a, b) -> App_ (cst_term_to_term a, cst_term_to_term b) | None ->
-    match V.term_has_type t with Some (a, b) -> Hastype_ (cst_term_to_term a, cst_term_to_term b) | None ->
-    match V.term_lcid t with Some (ns, n) -> Lcid_ (ns, n, loc_r ()) | None ->
-    match V.term_ucid t with Some (ns, n) -> Ucid_ (ns, n, loc_r ()) | None ->
-    match V.term_quid t with Some (ns, n) -> Quid_ (ns, n, loc_r ()) | None ->
-    match V.term_scon t with Some s -> Scon_ (s, loc_r ()) | None ->
-    match V.term_evar t with Some s -> Evar_ (s, loc_r ()) | None ->
-    match V.term_fvar t with Some s -> Fvar_ (s, loc_r ()) | None ->
-    if V.term_typ t then Typ_ (loc_r ())
-    else Omitted_ (loc_r ())
+    match V.term_arrow t with
+    | Some (a, b) -> Arrow_ (cst_term_to_term a, cst_term_to_term b)
+    | None -> (
+        match V.term_pi t with
+        | Some (d, b) -> Pi_ (cst_decl_to_dec d, cst_term_to_term b)
+        | None -> (
+            match V.term_lam t with
+            | Some (d, b) -> Lam_ (cst_decl_to_dec d, cst_term_to_term b)
+            | None -> (
+                match V.term_app t with
+                | Some (a, b) -> App_ (cst_term_to_term a, cst_term_to_term b)
+                | None -> (
+                    match V.term_has_type t with
+                    | Some (a, b) ->
+                        Hastype_ (cst_term_to_term a, cst_term_to_term b)
+                    | None -> (
+                        match V.term_lcid t with
+                        | Some (ns, n) -> Lcid_ (ns, n, loc_r ())
+                        | None -> (
+                            match V.term_ucid t with
+                            | Some (ns, n) -> Ucid_ (ns, n, loc_r ())
+                            | None -> (
+                                match V.term_quid t with
+                                | Some (ns, n) -> Quid_ (ns, n, loc_r ())
+                                | None -> (
+                                    match V.term_scon t with
+                                    | Some s -> Scon_ (s, loc_r ())
+                                    | None -> (
+                                        match V.term_evar t with
+                                        | Some s -> Evar_ (s, loc_r ())
+                                        | None -> (
+                                            match V.term_fvar t with
+                                            | Some s -> Fvar_ (s, loc_r ())
+                                            | None ->
+                                                if V.term_typ t then
+                                                  Typ_ (loc_r ())
+                                                else Omitted_ (loc_r ())))))))))
+            ))
 
   and cst_decl_to_dec (d : Cst.decl) : dec =
-    let (names, tm, loc) = Cst.View.decl_fields d in
+    let names, tm, loc = Cst.View.decl_fields d in
     (* Cst.decl allows a list of names; internal dec has one name option. *)
     let name_opt = match names with [] -> None | n :: _ -> n in
     Dec_ (name_opt, cst_term_to_term tm, loc_to_region loc)
@@ -368,8 +395,7 @@ end) = struct
   let termRegion (t : Cst.term) : Paths.region =
     termRegion_ (cst_term_to_term t)
 
-  let decRegion (d : Cst.decl) : Paths.region =
-    decRegion_ (cst_decl_to_dec d)
+  let decRegion (d : Cst.decl) : Paths.region = decRegion_ (cst_decl_to_dec d)
 
   let ctxRegion (g : Cst.decl Ast.ctx) : Paths.region option =
     let rec cvt = function
@@ -390,8 +416,8 @@ end) = struct
     let notGround = Apx.makeGroundUni l_ in
     let (Apx.Level i) = Apx.whnfUni l_ in
     begin if i > max then fatalError (termRegion tm, "Level too high\n" ^ msg)
-    else begin
-      if notGround then
+    else
+      begin if notGround then
         error
           ( termRegion tm,
             ((("Ambiguous level\n"
@@ -404,7 +430,7 @@ end) = struct
             end)
             ^ " level" )
       else ()
-    end
+      end
     end
 
   let rec findOmitted (g_, qid, r) =
@@ -420,25 +446,25 @@ end) = struct
     | IntSyn.Null, name, k -> None
     | IntSyn.Decl (g_, Dec (None, _)), name, k -> findBVar' (g_, name, k + 1)
     | IntSyn.Decl (g_, NDec _), name, k -> findBVar' (g_, name, k + 1)
-    | IntSyn.Decl (g_, Dec (Some name', _)), name, k -> begin
-        if name = name' then Some k else findBVar' (g_, name, k + 1)
-      end
+    | IntSyn.Decl (g_, Dec (Some name', _)), name, k ->
+        begin if name = name' then Some k else findBVar' (g_, name, k + 1)
+        end
 
   let rec findBVar fc (g_, qid, r) =
     begin match Names.unqualified qid with
     | None -> fc (g_, qid, r)
-    | Some name -> begin
-        match findBVar' (g_, name, 1) with
+    | Some name ->
+        begin match findBVar' (g_, name, 1) with
         | None -> fc (g_, qid, r)
         | Some k -> Bvar_ (k, r)
-      end
+        end
     end
 
   let rec findConst fc (g_, qid, r) =
     begin match Names.constLookup qid with
     | None -> fc (g_, qid, r)
-    | Some cid -> begin
-        match IntSyn.sgnLookup cid with
+    | Some cid ->
+        begin match IntSyn.sgnLookup cid with
         | IntSyn.ConDec _ -> Constant_ (IntSyn.Const cid, r)
         | IntSyn.ConDef _ -> Constant_ (IntSyn.Def cid, r)
         | IntSyn.AbbrevDef _ -> Constant_ (IntSyn.NSDef cid, r)
@@ -450,25 +476,25 @@ end) = struct
                 ^ "' is not a constant, definition or abbreviation" );
             Omitted_ r
           end
-      end
+        end
     end
 
   let rec findCSConst fc (g_, qid, r) =
     begin match Names.unqualified qid with
     | None -> fc (g_, qid, r)
-    | Some name -> begin
-        match CsManager.parse name with
+    | Some name ->
+        begin match CsManager.parse name with
         | None -> fc (g_, qid, r)
         | Some (cs, conDec) -> Constant_ (IntSyn.FgnConst (cs, conDec), r)
-      end
+        end
     end
 
   let rec findEFVar fc (g_, qid, r) =
     begin match Names.unqualified qid with
     | None -> fc (g_, qid, r)
-    | Some name -> begin
-        if !queryMode then Evar_ (name, r) else Fvar_ (name, r)
-      end
+    | Some name ->
+        begin if !queryMode then Evar_ (name, r) else Fvar_ (name, r)
+        end
     end
 
   let rec findLCID x = findBVar (findConst (findCSConst findOmitted)) x
@@ -491,15 +517,15 @@ end) = struct
     | g_, (Quid_ (ids, name, r) as tm) ->
         let qid = Names.Qid (ids, name) in
         inferApx (g_, findQUID (g_, qid, r))
-    | g_, (Scon_ (name, r) as tm) -> begin
-        match CsManager.parse name with
+    | g_, (Scon_ (name, r) as tm) ->
+        begin match CsManager.parse name with
         | None -> begin
             error (r, "Strings unsupported in current signature");
             inferApx (g_, Omitted_ r)
           end
         | Some (cs, conDec) ->
             inferApx (g_, Constant_ (IntSyn.FgnConst (cs, conDec), r))
-      end
+        end
     | g_, (Constant_ (h_, r) as tm) ->
         let cd = headConDec h_ in
         let u'_, v'_, l'_ =
@@ -757,11 +783,11 @@ end) = struct
     | s, s_ -> e_ (s, IntSyn.App (eClo_ (u_, s), s_))
 
   let rec bvarElim n = function
-    | s, s_ -> begin
-        match IntSyn.bvarSub (n, s) with
+    | s, s_ ->
+        begin match IntSyn.bvarSub (n, s) with
         | Idx n' -> root_ (bVar_ n', s_)
         | Exp u_ -> redex_ (u_, s_)
-      end
+        end
 
   let rec fvarElim (name, v_, s) = function
     | s', s_ -> root_ (fVar_ (name, v_, IntSyn.comp (s, s')), s_)
@@ -772,11 +798,11 @@ end) = struct
     | IntSyn.BVar n -> bvarElim n
     | IntSyn.FVar (name, v_, s) -> fvarElim (name, v_, s)
     | IntSyn.NSDef d -> redexElim (IntSyn.constDef d)
-    | h_ -> begin
-        match IntSyn.conDecStatus (headConDec h_) with
+    | h_ ->
+        begin match IntSyn.conDecStatus (headConDec h_) with
         | Foreign (_, f) -> fun (_, s_) -> f s_
         | _ -> fun (_, s_) -> Root (h_, s_)
-      end
+        end
 
   let rec evarElim (IntSyn.EVar _ as x_) = function
     | s, s_ -> eClo_ (x_, Whnf.spineToSub (s_, s))
@@ -1353,11 +1379,7 @@ end) = struct
             l_ ),
           ok2 )
     | g_, Hastype_ (tm1, tm2), vhs_ ->
-        let ( tm2',
-              _,
-              _ ) =
-          inferExact (g_, tm2)
-        in
+        let tm2', _, _ = inferExact (g_, tm2) in
         let (tm1', b_, l_), ok1 = unifyExact (g_, tm1, vhs_) in
         ((Hastype_ (tm1', tm2'), b_, l_), ok1)
     | g_, Mismatch_ (tm1, tm2, location_msg, problem_msg), vhs_ ->
@@ -1367,13 +1389,7 @@ end) = struct
           delayMismatch (g_, l1_, l_, termRegion tm2', location_msg, problem_msg)
         in
         ((Mismatch_ (tm1', tm2', location_msg, problem_msg), b_, l_), ok2)
-    | ( g_,
-        Omitapx_
-          ( v_,
-            l_,
-            nL,
-            r ),
-        vhs_ ) ->
+    | g_, Omitapx_ (v_, l_, nL, r), vhs_ ->
         let l'_ = Apx.apxToClass (g_, l_, nL, false) in
         let v'_ = eClo_ vhs_ in
         ((Omitexact_ (v'_, l'_, r), Intro v'_, l'_), true)
@@ -1531,6 +1547,8 @@ end) = struct
   let rec externalInst x = raise Match
 
   (* Re-expose public-facing termRegion/decRegion for the RECON_TERM interface *)
-  let termRegion (t : Cst.term) : Paths.region = termRegion_ (cst_term_to_term t)
-  let decRegion  (d : Cst.decl) : Paths.region = decRegion_  (cst_decl_to_dec d)
+  let termRegion (t : Cst.term) : Paths.region =
+    termRegion_ (cst_term_to_term t)
+
+  let decRegion (d : Cst.decl) : Paths.region = decRegion_ (cst_decl_to_dec d)
 end

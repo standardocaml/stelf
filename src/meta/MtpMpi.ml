@@ -219,11 +219,11 @@ end) : MTPI = struct
               end )
         | k, Splitting o_ :: m_, ((Some k', Some o'_) as kOopt') ->
             let kOopt'' =
-              begin if MTPSplitting.applicable o_ then begin
-                match MTPSplitting.compare (o_, o'_) with
+              begin if MTPSplitting.applicable o_ then
+                begin match MTPSplitting.compare (o_, o'_) with
                 | Less -> (Some k, Some o_)
                 | _ -> kOopt'
-              end
+                end
               else kOopt'
               end
             in

@@ -4,8 +4,9 @@ open! Basis
 (* Printing *)
 (* Author: Frank Pfenning *)
 
-(** Modified: Jeff Polakow *)
 include Print_intf
+(** Modified: Jeff Polakow *)
+
 (* signature PRINT *)
 
 (* # 1 "src/print/Print_.fun.ml" *)
@@ -18,10 +19,8 @@ module MakePrint
     (Constraints : CONSTRAINTS)
     (Names : NAMES)
     (Formatter_param : FORMATTER)
-    (Symbol : SYMBOL) :
-  PRINT =
-struct
-(*
+    (Symbol : SYMBOL) : PRINT = struct
+  (*
   (* Printing *)
   (* Author: Frank Pfenning *)
   (* Modified: Jeff Polakow, Roberto Virga *)
@@ -108,10 +107,11 @@ struct
 
     let rec subToSpine (depth, s) =
       let rec sTS = function
-        | I.Shift k, s_ -> begin
-            if k < depth then sTS (I.Dot (I.Idx (k + 1), I.Shift (k + 1)), s_)
+        | I.Shift k, s_ ->
+            begin if k < depth then
+              sTS (I.Dot (I.Idx (k + 1), I.Shift (k + 1)), s_)
             else s_
-          end
+            end
         | I.Dot (I.Idx k, s), s_ -> sTS (s, I.App (I.Root (I.BVar k, I.Nil), s_))
         | I.Dot (I.Exp u_, s), s_ -> sTS (s, I.App (u_, s_))
       in
@@ -308,8 +308,8 @@ struct
 
     let rec fmtExpW = function
       | g_, d, ctx, (I.Uni l_, s) -> aa (ctx, fmtUni l_)
-      | g_, d, ctx, (I.Pi (((I.Dec (_, v1_) as d_), p_), v2_), s) -> begin
-          match p_ with
+      | g_, d, ctx, (I.Pi (((I.Dec (_, v1_) as d_), p_), v2_), s) ->
+          begin match p_ with
           | I.Maybe ->
               let d'_ = Names.decLUName (g_, d_) in
               fmtLevel
@@ -330,7 +330,7 @@ struct
                   d,
                   ctx,
                   (arrow (I.EClo (v1_, I.shift), v2_), I.dot1 s) )
-        end
+          end
       | g_, d, ctx, (I.Pi (((I.BDec _ as d_), p_), v2_), s) ->
           let d'_ = Names.decLUName (g_, d_) in
           fmtLevel
@@ -355,16 +355,16 @@ struct
               d,
               ctx,
               (brackets (g_, d, ((d'_, u_), s)), I.dot1 s) )
-      | g_, d, ctx, ((I.EVar _ as x_), s) -> begin
-          if !implicit then
+      | g_, d, ctx, ((I.EVar _ as x_), s) ->
+          begin if !implicit then
             aa (ctx, F.hVbox (fmtEVar (g_, x_) :: fmtSub (g_, d, s)))
           else fmtOpArgs (g_, d, ctx, evarArgs (g_, d, x_, s), I.id)
-        end
-      | g_, d, ctx, ((I.AVar _ as x_), s) -> begin
-          if !implicit then
+          end
+      | g_, d, ctx, ((I.AVar _ as x_), s) ->
+          begin if !implicit then
             aa (ctx, F.hVbox (fmtAVar (g_, x_) :: fmtSub (g_, d, s)))
           else fmtOpArgs (g_, d, ctx, evarArgs' (g_, d, x_, s), I.id)
-        end
+          end
       | g_, d, ctx, ((I.FgnExp (cs_fe, fe_fe) as u_), s) ->
           fmtExp
             (g_, d, ctx, (I.FgnExpStd.ToInternal.apply (cs_fe, fe_fe) (), s))
@@ -383,13 +383,13 @@ struct
       let opFmt = fmtCon (g_, c_) in
       let fixity = fixityCon c_ in
       let rec oe = function
-        | Exact s'_ -> begin
-            match fixity with
+        | Exact s'_ ->
+            begin match fixity with
             | FX.Nonfix -> OpArgs (FX.Nonfix, [ opFmt ], s'_)
             | FX.Prefix _ -> OpArgs (fixity, [ opFmt; F.break ], s'_)
             | FX.Postfix _ -> OpArgs (fixity, [ F.break; opFmt ], s'_)
             | FX.Infix _ -> OpArgs (fixity, [ F.break; opFmt; F.space ], s'_)
-          end
+            end
         | TooFew -> EtaLong (Whnf.etaExpandRoot (I.Root (c_, s_)))
         | TooMany (s'_, s''_) ->
             let opFmt' = fmtOpArgs (g_, d, noCtxt, oe (Exact s'_), I.id) in
@@ -398,18 +398,18 @@ struct
       oe (dropImp (impCon c_, s_, argNumber fixity))
 
     and opargs (g_, d, r_) =
-      begin if !implicit then begin
-        if !printInfix then opargsImplicitInfix (g_, d, r_)
+      begin if !implicit then
+        begin if !printInfix then opargsImplicitInfix (g_, d, r_)
         else opargsImplicit (g_, d, r_)
-      end
+        end
       else opargsExplicit (g_, d, r_)
       end
 
     and fmtOpArgs = function
-      | g_, d, ctx, (OpArgs (_, opFmts, s'_) as oa), s -> begin
-          if isNil s'_ then aa (ctx, List.hd opFmts)
+      | g_, d, ctx, (OpArgs (_, opFmts, s'_) as oa), s ->
+          begin if isNil s'_ then aa (ctx, List.hd opFmts)
           else fmtLevel (g_, d, ctx, (oa, s))
-        end
+          end
       | g_, d, ctx, EtaLong u'_, s -> fmtExpW (g_, d, ctx, (u'_, s))
 
     and fmtSub (g_, d, s) = str_ "[" :: fmtSub' (g_, d, 0, s)
@@ -438,15 +438,15 @@ struct
       | g_, d, l, (I.Nil, _) -> []
       | g_, d, l, (I.SClo (s_, s'), s) ->
           fmtSpine (g_, d, l, (s_, I.comp (s', s)))
-      | g_, d, l, (I.App (u_, s_), s) -> begin
-          if elide l then []
-          else begin
-            if addots l then [ ldots ]
+      | g_, d, l, (I.App (u_, s_), s) ->
+          begin if elide l then []
+          else
+            begin if addots l then [ ldots ]
             else
               fmtExp (g_, d + 1, appCtxt, (u_, s))
               :: fmtSpine' (g_, d, l, (s_, s))
+            end
           end
-        end
 
     and fmtSpine' = function
       | g_, d, l, (I.Nil, _) -> []
@@ -471,8 +471,8 @@ struct
           let accMore = eqFix (fixity, fixity') in
           let rhs =
             begin if accMore && elide l then []
-            else begin
-              if accMore && addots l then fmts @ [ ldots ]
+            else
+              begin if accMore && addots l then fmts @ [ ldots ]
               else
                 fmts
                 @ [
@@ -482,7 +482,7 @@ struct
                         Ctxt (FX.Infix (p, FX.None), [], 0),
                         snd (s_, s) );
                   ]
-            end
+              end
             end
           in
           begin if accMore then
@@ -498,15 +498,15 @@ struct
           let accMore = eqFix (fixity, fixity') in
           let lhs =
             begin if accMore && elide l then []
-            else begin
-              if accMore && addots l then [ ldots ] @ fmts
+            else
+              begin if accMore && addots l then [ ldots ] @ fmts
               else
                 [
                   fmtExp
                     (g_, d + 1, Ctxt (FX.Infix (p, FX.None), [], 0), fst (s_, s));
                 ]
                 @ fmts
-            end
+              end
             end
           in
           begin if accMore then
@@ -532,9 +532,9 @@ struct
           let accMore = eqFix (fixity', fixity) in
           let pfx =
             begin if accMore && elide l then []
-            else begin
-              if accMore && addots l then [ ldots; F.break ] else fmts
-            end
+            else
+              begin if accMore && addots l then [ ldots; F.break ] else fmts
+              end
             end
           in
           begin if accMore then
@@ -550,9 +550,9 @@ struct
           let accMore = eqFix (fixity', fixity) in
           let pfx =
             begin if accMore && elide l then []
-            else begin
-              if accMore && addots l then [ F.break; ldots ] else fmts
-            end
+            else
+              begin if accMore && addots l then [ F.break; ldots ] else fmts
+              end
             end
           in
           begin if accMore then
@@ -819,11 +819,11 @@ struct
 
     let rec mergeConstraints = function
       | [], cnstrs2 -> cnstrs2
-      | cnstr :: cnstrs1, cnstrs2 -> begin
-          if List.exists (eqCnstr cnstr) cnstrs2 then
+      | cnstr :: cnstrs1, cnstrs2 ->
+          begin if List.exists (eqCnstr cnstr) cnstrs2 then
             mergeConstraints (cnstrs1, cnstrs2)
           else cnstr :: mergeConstraints (cnstrs1, cnstrs2)
-        end
+          end
 
     let rec collectConstraints = function
       | [] -> []
@@ -1189,63 +1189,27 @@ structure WorldPrint = WorldPrint
    structure Print = Print);
 *)
 module Print =
-  MakePrint
-    (Whnf)
-    (Abstract)
-    (Constraints)
-    (Names)
-    (Formatter)
-    (SymbolAscii)
+  MakePrint (Whnf) (Abstract) (Constraints) (Names) (Formatter) (SymbolAscii)
 
 module ClausePrintFunctor = ClausePrint
-
 include Print
 
 module ClausePrint =
-  ClausePrintFunctor.MakeClausePrint
-    (Whnf)
-    (Names)
-    (Formatter)
-    (Print)
+  ClausePrintFunctor.MakeClausePrint (Whnf) (Names) (Formatter) (Print)
     (SymbolAscii)
 
 module PrintTeX =
-  MakePrint
-    (Whnf)
-    (Abstract)
-    (Constraints)
-    (Names)
-    (Formatter)
-    (SymbolTeX)
+  MakePrint (Whnf) (Abstract) (Constraints) (Names) (Formatter) (SymbolTeX)
 
 module ClausePrintTeX =
-  ClausePrintFunctor.MakeClausePrint
-    (Whnf)
-    (Names)
-    (Formatter)
-    (PrintTeX)
+  ClausePrintFunctor.MakeClausePrint (Whnf) (Names) (Formatter) (PrintTeX)
     (SymbolTeX)
 
 module PrintTwega =
-  PrintTwega.MakePrintTwega
-    (Whnf)
-    (Abstract)
-    (Constraints)
-    (Names)
-    (Formatter)
+  PrintTwega.MakePrintTwega (Whnf) (Abstract) (Constraints) (Names) (Formatter)
 
 module PrintXML =
-  PrintXml.MakePrintXML
-    (Whnf)
-    (Abstract)
-    (Constraints)
-    (Names)
-    (Formatter)
+  PrintXml.MakePrintXML (Whnf) (Abstract) (Constraints) (Names) (Formatter)
 
 module PrintOMDoc =
-  PrintOmdoc.MakePrintOMDoc
-    (Whnf)
-    (Abstract)
-    (Constraints)
-    (Names)
-    (Formatter)
+  PrintOmdoc.MakePrintOMDoc (Whnf) (Abstract) (Constraints) (Names) (Formatter)

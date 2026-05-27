@@ -14,10 +14,8 @@ module MakePrintOMDoc
     (Abstract : ABSTRACT)
     (Constraints : CONSTRAINTS)
     (Names : NAMES)
-    (Formatter_param : FORMATTER) :
-  PRINT_OMDOC =
-struct
-(*
+    (Formatter_param : FORMATTER) : PRINT_OMDOC = struct
+  (*
   (* Printing *)
   (* Author: Frank Pfenning *)
   (* Modified: Jeff Polakow *)
@@ -147,8 +145,8 @@ struct
 
     let rec fmtExpW = function
       | g_, (I.Uni l_, s), _ -> sexp [ fmtUni l_ ]
-      | g_, (I.Pi (((I.Dec (_, v1_) as d_), p_), v2_), s), imp -> begin
-          match p_ with
+      | g_, (I.Pi (((I.Dec (_, v1_) as d_), p_), v2_), s), imp ->
+          begin match p_ with
           | I.Maybe ->
               let (I.Dec (Some name, v1'_) as d'_) = Names.decLUName (g_, d_) in
               let g'_ = I.Decl (g_, d'_) in
@@ -179,7 +177,7 @@ struct
                   nl_unind ();
                   str_ "</om:OMA>";
                 ]
-        end
+          end
       | g_, (I.Root (h_, s_), s), _ ->
           let l = spineLength s_ in
           let out = ref "" in
@@ -198,11 +196,11 @@ struct
               in
               let imp = IntSyn.conDecImp (IntSyn.sgnLookup cid) in
               let test, args =
-                begin if test then begin
-                  match Names.getFixity cid with
+                begin if test then
+                  begin match Names.getFixity cid with
                   | Names.Fixity.Infix (_, _) -> (true, imp + 2)
                   | _ -> (false, 0)
-                end
+                  end
                 else (false, 0)
                 end
               in
@@ -322,12 +320,12 @@ struct
         (" fixity=\""
         ^ begin match fixity with
         | Names.Fixity.Nonfix -> "prefix"
-        | Names.Fixity.Infix (prec, assoc) -> begin
-            match assoc with
+        | Names.Fixity.Infix (prec, assoc) ->
+            begin match assoc with
             | Names.Fixity.Left -> "infixl"
             | Names.Fixity.Right -> "infixr"
             | Names.Fixity.None -> "infix"
-          end
+            end
         | Names.Fixity.Prefix prec -> "prefix"
         | Names.Fixity.Postfix prec -> "postfix"
         end)

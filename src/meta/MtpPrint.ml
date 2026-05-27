@@ -93,17 +93,17 @@ end) : MtpPrint_intf.MTPRINT = struct
 
     let rec formatCtx = function
       | I.Null, b_ -> []
-      | I.Decl (I.Null, d_), I.Decl (I.Null, t_) -> begin
-          if !Global.chatter >= 4 then
+      | I.Decl (I.Null, d_), I.Decl (I.Null, t_) ->
+          begin if !Global.chatter >= 4 then
             [
               Fmt.hVbox
                 (formatTag (I.Null, t_)
                 @ [ Fmt.break_; printFmt (Print.formatDec (I.Null, d_)) ]);
             ]
           else [ printFmt (Print.formatDec (I.Null, d_)) ]
-        end
-      | I.Decl (g_, d_), I.Decl (b_, t_) -> begin
-          if !Global.chatter >= 4 then
+          end
+      | I.Decl (g_, d_), I.Decl (b_, t_) ->
+          begin if !Global.chatter >= 4 then
             formatCtx (g_, b_)
             @ [ Fmt.string ","; Fmt.break_; Fmt.break_ ]
             @ [
@@ -115,7 +115,7 @@ end) : MtpPrint_intf.MTPRINT = struct
             formatCtx (g_, b_)
             @ [ Fmt.string ","; Fmt.break_ ]
             @ [ Fmt.break_; printFmt (Print.formatDec (g_, d_)) ]
-        end
+          end
 
     let rec formatState (S.State (n, (g_, b_), (ih_, oh_), d, o_, h_, f_)) =
       Fmt.vbox0 0 1

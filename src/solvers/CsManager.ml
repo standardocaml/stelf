@@ -11,13 +11,9 @@ open! Basis
 
 (* Constraint Solver Manager *)
 (* Author: Roberto Virga *)
-module MakeCsManager
-    (Global : GLOBAL)
-    (Unify : UNIFY)
-    (Fixity : FIXITY) :
-  CS_MANAGER with module Fixity = Fixity =
-struct
-(*
+module MakeCsManager (Global : GLOBAL) (Unify : UNIFY) (Fixity : FIXITY) :
+  CS_MANAGER with module Fixity = Fixity = struct
+  (*
   (*! structure IntSyn : INTSYN !*)
   (*! sharing Unify.IntSyn = IntSyn !*)
 *)
@@ -107,13 +103,13 @@ struct
       begin
         ArraySlice.appi
           (function
-            | cs, Solver (solver, active) -> begin
-                if !active then begin
+            | cs, Solver (solver, active) ->
+                begin if !active then begin
                   active := false;
                   (fun r -> r.reset) solver ()
                 end
                 else ()
-              end)
+                end)
           (ArraySlice.slice (csArray, 0, Some !nextCS));
         begin
           activeKeywords := [];
@@ -128,10 +124,11 @@ struct
           begin
             ArraySlice.appi
               (function
-                | cs, Solver (solver, _) -> begin
-                    if (fun r -> r.name) solver = name then raise (Found cs)
+                | cs, Solver (solver, _) ->
+                    begin if (fun r -> r.name) solver = name then
+                      raise (Found cs)
                     else ()
-                  end)
+                    end)
               (ArraySlice.slice (csArray, 0, Some !nextCS));
             None
           end
@@ -141,8 +138,8 @@ struct
       | Some cs ->
           let (Solver (solver, active)) = Array.sub (csArray, cs) in
           begin if !active then ()
-          else begin
-            if
+          else
+            begin if
               List.exists
                 (function s -> s = (fun r -> r.keywords) solver)
                 !activeKeywords
@@ -162,7 +159,7 @@ struct
                 end
               end
             end
-          end
+            end
           end
       | None -> raise (Error (("solver " ^ name) ^ " not found"))
       end
@@ -172,20 +169,20 @@ struct
       let rec parse' (cs, (solver : solver)) =
         begin match (fun r -> r.fgnConst) solver with
         | None -> ()
-        | Some fgnConDec -> begin
-            match (fun r -> r.parse) fgnConDec string with
+        | Some fgnConDec ->
+            begin match (fun r -> r.parse) fgnConDec string with
             | None -> ()
             | Some conDec -> raise (Parsed (cs, conDec))
-          end
+            end
         end
       in
       try
         begin
           ArraySlice.appi
             (function
-              | cs, Solver (solver, active) -> begin
-                  if !active then parse' (cs, solver) else ()
-                end)
+              | cs, Solver (solver, active) ->
+                  begin if !active then parse' (cs, solver) else ()
+                  end)
             (ArraySlice.slice (csArray, 0, Some !nextCS));
           None
         end
@@ -196,13 +193,13 @@ struct
     let rec reset () =
       ArraySlice.appi
         (function
-          | _, Solver (solver, active) -> begin
-              if !active then begin
+          | _, Solver (solver, active) ->
+              begin if !active then begin
                 markCount := 0;
                 (fun r -> r.reset) solver ()
               end
               else ()
-            end)
+              end)
         (ArraySlice.slice (csArray, 0, Some !nextCS))
 
     let rec mark () =
@@ -210,9 +207,9 @@ struct
         markCount := !markCount + 1;
         ArraySlice.appi
           (function
-            | _, Solver (solver, active) -> begin
-                if !active then (fun r -> r.mark) solver () else ()
-              end)
+            | _, Solver (solver, active) ->
+                begin if !active then (fun r -> r.mark) solver () else ()
+                end)
           (ArraySlice.slice (csArray, 0, Some !nextCS))
       end
 
@@ -222,9 +219,9 @@ struct
         | k -> begin
             ArraySlice.appi
               (function
-                | _, Solver (solver, active) -> begin
-                    if !active then (fun r -> r.unwind) solver () else ()
-                  end)
+                | _, Solver (solver, active) ->
+                    begin if !active then (fun r -> r.unwind) solver () else ()
+                    end)
               (ArraySlice.slice (csArray, 0, Some !nextCS));
             unwind' (k - 1)
           end
@@ -264,9 +261,6 @@ end
 
 (*! structure ModeSyn : MODESYN !*)
 (* functor CsManager *)
-include MakeCsManager
-    (Global)
-    (UnifyTrail)
-    (Names.Fixity)
+include MakeCsManager (Global) (UnifyTrail) (Names.Fixity)
 
 (* # 1 "src/solvers/CsManager.sml.ml" *)

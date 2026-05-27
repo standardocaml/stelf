@@ -11,10 +11,7 @@ open! Basis
 
 (* Printer for Compiled Syntax *)
 (* Author: Iliano Cervesato *)
-module Make_CPrint
-    (Print_ : PRINT)
-    (Formatter_ : FORMATTER)
-    (Names_ : NAMES) :
+module Make_CPrint (Print_ : PRINT) (Formatter_ : FORMATTER) (Names_ : NAMES) :
   CPRINT = struct
   (*! structure IntSyn = IntSyn' !*)
   (*! structure CompSyn = CompSyn' !*)

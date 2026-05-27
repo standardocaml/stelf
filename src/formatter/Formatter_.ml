@@ -572,8 +572,9 @@ We thus get:
           end
           :: nl_ ss :: res )
     | _mw, _id, _bl, _is, _ss, _mo, Ebk, res -> (0, res)
-    | mw, id, _bl, is, ss, _mo, Hbx ((min, _max), blanks, l), res -> begin
-        if !bailout_ && id + min >= mw && id mod !pagewidth_ >= !bailoutSpot_
+    | mw, id, _bl, is, ss, _mo, Hbx ((min, _max), blanks, l), res ->
+        begin if
+          !bailout_ && id + min >= mw && id mod !pagewidth_ >= !bailoutSpot_
         then
           pph
             ( mw + !pagewidth_,
@@ -585,15 +586,16 @@ We thus get:
               0,
               nl_ ss :: res )
         else pph (mw, id, blanks, is, ss, l, 0, res)
-      end
-    | mw, id, bl, _is, ss, _mo, Vbx ((min, _max), indent, skip, l), res -> begin
-        if !bailout_ && id + min >= mw && id mod !pagewidth_ >= !bailoutSpot_
+        end
+    | mw, id, bl, _is, ss, _mo, Vbx ((min, _max), indent, skip, l), res ->
+        begin if
+          !bailout_ && id + min >= mw && id mod !pagewidth_ >= !bailoutSpot_
         then
           let id = mw + !bailoutIndent_ in
           ppv
             (mw + !pagewidth_, id, id, bl, indent, skip, 0, 0, l, nl_ ss :: res)
         else ppv (mw, id, id, bl, indent, skip, 0, 0, l, res)
-      end
+        end
     | ( mw,
         id,
         _bl,
@@ -626,15 +628,16 @@ We thus get:
         ss,
         _mo,
         Hov (((min, max), (nmode, xmode)), blanks, indent, skip, l),
-        res ) -> begin
-        if max <= mw - id then begin
-          if xmode = Hori then pph (mw, id, blanks, is, ss, l, 0, res)
+        res ) ->
+        begin if max <= mw - id then
+          begin if xmode = Hori then pph (mw, id, blanks, is, ss, l, 0, res)
           else ppv (mw, id, id, blanks, indent, skip, 0, 0, l, res)
-        end
-        else begin
-          if !bailout_ && id + min >= mw && id mod !pagewidth_ >= !bailoutSpot_
-          then begin
-            if nmode = Hori then
+          end
+        else
+          begin if
+            !bailout_ && id + min >= mw && id mod !pagewidth_ >= !bailoutSpot_
+          then
+            begin if nmode = Hori then
               pph
                 ( mw + !pagewidth_,
                   mw + !bailoutIndent_,
@@ -657,13 +660,13 @@ We thus get:
                   0,
                   l,
                   nl_ ss :: res )
-          end
-          else begin
-            if nmode = Hori then pph (mw, id, blanks, is, ss, l, 0, res)
+            end
+          else
+            begin if nmode = Hori then pph (mw, id, blanks, is, ss, l, 0, res)
             else ppv (mw, id, id, blanks, indent, skip, 0, 0, l, res)
+            end
           end
         end
-      end
 
   (*
 %{\bf Improvements:}

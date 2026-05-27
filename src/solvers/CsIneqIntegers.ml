@@ -75,13 +75,16 @@ struct
       begin if
         Stdlib.( > ) stringLen suffixLen
         && String.substring (string, numLen, suffixLen) = suffix
-      then begin
-        match Integers.fromString (String.substring (string, 0, numLen)) with
-        | Some d -> begin
-            if Integers.( >= ) d zero_int then Some (geqNConDec d) else None
-          end
+      then
+        begin match
+          Integers.fromString (String.substring (string, 0, numLen))
+        with
+        | Some d ->
+            begin if Integers.( >= ) d zero_int then Some (geqNConDec d)
+            else None
+            end
         | None -> None
-      end
+        end
       else None
       end
 
@@ -330,9 +333,9 @@ struct
       let exception Found of int in
       let rec find (i, (l : label)) =
         begin match l.owner with
-        | Var (g_, mon') -> begin
-            if compatibleMon (mon, mon') then raise (Found i) else ()
-          end
+        | Var (g_, mon') ->
+            begin if compatibleMon (mon, mon') then raise (Found i) else ()
+            end
         | _ -> ()
         end
       in
@@ -378,23 +381,23 @@ struct
         let candidates =
           Array.foldl
             (function
-              | i, (l : label), rest -> begin
-                  if i <> row && (not (dead l)) && const i = constRow then
+              | i, (l : label), rest ->
+                  begin if i <> row && (not (dead l)) && const i = constRow then
                     i :: rest
                   else rest
-                end)
+                  end)
             []
             (tableau.rlabels, 0, nRows ())
         in
         let rec filter = function
           | j, l, [] -> []
-          | j, (l : label), candidates -> begin
-              if not (dead l) then
+          | j, (l : label), candidates ->
+              begin if not (dead l) then
                 List.filter
                   (function i -> coeff (i, j) = coeff (row, j))
                   candidates
               else candidates
-            end
+              end
         in
         begin match
           Array.foldl filter candidates (tableau.clabels, 0, nCols ())
@@ -408,18 +411,20 @@ struct
           let non_null =
             Array.foldl
               (function
-                | j, (l : label), rest -> begin
-                    if not (dead l) then
+                | j, (l : label), rest ->
+                    begin if not (dead l) then
                       let value = coeff (row, j) in
                       begin if value <> zero then (j, value) :: rest else rest
                       end
                     else rest
-                  end)
+                    end)
               []
               (tableau.clabels, 0, nCols ())
           in
           begin match non_null with
-          | (j, value) :: [] -> begin if value = one then Some j else None end
+          | (j, value) :: [] ->
+              begin if value = one then Some j else None
+              end
           | _ -> None
           end
         else None
@@ -427,9 +432,11 @@ struct
       in
       begin match isSubsumedByRow () with
       | Some i -> Some (Row i)
-      | None -> begin
-          match isSubsumedByCol () with Some j -> Some (Col j) | None -> None
-        end
+      | None ->
+          begin match isSubsumedByCol () with
+          | Some j -> Some (Col j)
+          | None -> None
+          end
       end
 
     let rec findPivot row =
@@ -495,21 +502,21 @@ struct
       begin
         Array.modify
           (function
-            | i, value -> begin
-                if i = row then -(value * pCoeffInverse)
+            | i, value ->
+                begin if i = row then -(value * pCoeffInverse)
                 else value - (pConst * pCol i * pCoeffInverse)
-              end)
+                end)
           (tableau.consts, 0, nRows ());
         begin
           Array2.modify Array2.ColMajor
             (function
-              | i, j, value -> begin
-                  match (i = row, j = col) with
+              | i, j, value ->
+                  begin match (i = row, j = col) with
                   | true, true -> pCoeffInverse
                   | true, false -> -(value * pCoeffInverse)
                   | false, true -> value * pCoeffInverse
                   | false, false -> value - (pRow j * pCol i * pCoeffInverse)
-                end)
+                  end)
             {
               base = tableau.coeffs;
               row = 0;
@@ -537,7 +544,7 @@ struct
         begin
           Unify.unify (g_, (toExp sum, id), (constant (floor d), id));
           true
-      end
+        end
       then ()
       else raise Error
       end
@@ -584,10 +591,10 @@ struct
 
     and maximizeRow row =
       let value = const row in
-      begin if value < zero then begin
-        match findPivot row with
-        | Some (i, j) -> begin
-            if i <> row then begin
+      begin if value < zero then
+        begin match findPivot row with
+        | Some (i, j) ->
+            begin if i <> row then begin
               Trail.log (tableau.trail, Pivot (i, j));
               begin
                 pivot (i, j);
@@ -595,9 +602,9 @@ struct
               end
             end
             else Unbounded j
-          end
+            end
         | None -> raise Error
-      end
+        end
       else Nonnegative value
       end
 
@@ -656,8 +663,8 @@ struct
             unifyRestr (restr, geqNExp zero_int);
             None
           end
-          else begin
-            match restriction l with
+          else
+            begin match restriction l with
             | Some (Restr (_, proof')) -> begin
                 unifyRestr (restr, proof');
                 None
@@ -666,13 +673,13 @@ struct
                 let non_null =
                   Array.foldl
                     (function
-                      | i, (l : label), rest -> begin
-                          if not (dead l) then
+                      | i, (l : label), rest ->
+                          begin if not (dead l) then
                             let value = coeff (i, col) in
                             begin if value <> zero then i :: rest else rest
                             end
                           else rest
-                        end)
+                          end)
                     []
                     (tableau.rlabels, 0, nRows ())
                 in
@@ -692,7 +699,7 @@ struct
                     end
                   end
                 end
-          end
+            end
           end
       | (Row row as pos), restr ->
           let l = label pos in
@@ -700,14 +707,14 @@ struct
             unifyRestr (restr, geqNExp (floor (const row)));
             None
           end
-          else begin
-            match restriction l with
+          else
+            begin match restriction l with
             | Some (Restr (_, proof')) -> begin
                 unifyRestr (restr, proof');
                 None
               end
-            | None -> begin
-                match maximizeRow row with
+            | None ->
+                begin match maximizeRow row with
                 | Unbounded col -> begin
                     Trail.log (tableau.trail, Restrict (Row row));
                     begin
@@ -730,8 +737,8 @@ struct
                       Some row
                     end
                   end
-              end
-          end
+                end
+            end
           end
 
     and insertEqual (g_, pos, sum) =
@@ -756,26 +763,27 @@ struct
         Trail.log (tableau.trail, UpdateOwner (pos, l.owner, l.tag));
         begin
           setOwnership (pos, Exp (g_, sum), ref 0);
-          begin if dead l then begin
-            match pos with
-            | Row row -> begin
-                if isConstant row then unifySum (g_, sum, const row)
-                else begin
-                  match isSubsumed row with Some pos' -> update (g_, pos', sum)
+          begin if dead l then
+            begin match pos with
+            | Row row ->
+                begin if isConstant row then unifySum (g_, sum, const row)
+                else
+                  begin match isSubsumed row with
+                  | Some pos' -> update (g_, pos', sum)
+                  end
                 end
-              end
             | Col col -> unifySum (g_, sum, zero)
-          end
+            end
           else
             let rec isVar = function
-              | Sum (m, (Mon (n, _) as mon) :: []) -> begin
-                  if m = zero_int && n = one_int then Some mon else None
-                end
+              | Sum (m, (Mon (n, _) as mon) :: []) ->
+                  begin if m = zero_int && n = one_int then Some mon else None
+                  end
               | sum -> None
             in
             begin match isVar sum with
-            | Some mon -> begin
-                match findMon mon with
+            | Some mon ->
+                begin match findMon mon with
                 | Some _ -> insertEqual (g_, pos, sum)
                 | None ->
                     let tag = ref 0 in
@@ -787,7 +795,7 @@ struct
                         delayMon (mon, ref (makeCnstr tag))
                       end
                     end
-              end
+                end
             | None -> insertEqual (g_, pos, sum)
             end
           end
@@ -808,16 +816,18 @@ struct
       let rec member (x, l) = List.exists (function y -> x = y) l in
       let rec test l = restricted l && not (dead l) in
       let rec reachable = function
-        | (Row row as pos) :: candidates, tried, closure -> begin
-            if member (pos, tried) then reachable (candidates, tried, closure)
+        | (Row row as pos) :: candidates, tried, closure ->
+            begin if member (pos, tried) then
+              reachable (candidates, tried, closure)
             else
               let new_candidates =
                 Array.foldl
                   (function
-                    | col, _, candidates -> begin
-                        if coeff (row, col) <> zero then Col col :: candidates
+                    | col, _, candidates ->
+                        begin if coeff (row, col) <> zero then
+                          Col col :: candidates
                         else candidates
-                      end)
+                        end)
                   []
                   (tableau.clabels, 0, nCols ())
               in
@@ -826,17 +836,19 @@ struct
                 end
               in
               reachable (new_candidates @ candidates, pos :: tried, closure')
-          end
-        | (Col col as pos) :: candidates, tried, closure -> begin
-            if member (pos, tried) then reachable (candidates, tried, closure)
+            end
+        | (Col col as pos) :: candidates, tried, closure ->
+            begin if member (pos, tried) then
+              reachable (candidates, tried, closure)
             else
               let candidates' =
                 Array.foldl
                   (function
-                    | row, _, candidates -> begin
-                        if coeff (row, col) <> zero then Row row :: candidates
+                    | row, _, candidates ->
+                        begin if coeff (row, col) <> zero then
+                          Row row :: candidates
                         else candidates
-                      end)
+                        end)
                   []
                   (tableau.rlabels, 0, nRows ())
               in
@@ -845,7 +857,7 @@ struct
                 end
               in
               reachable (candidates' @ candidates, pos :: tried, closure')
-          end
+            end
         | [], _, closure -> closure
       in
       let rec restrExp pos =
@@ -885,9 +897,9 @@ struct
     and isIntegral () =
       let exception Found of int in
       let rec find (i, (l : label)) =
-        begin if not (dead l) then begin
-          if denominator (const i) <> one_int then raise (Found i) else ()
-        end
+        begin if not (dead l) then
+          begin if denominator (const i) <> one_int then raise (Found i) else ()
+          end
         else ()
         end
       in
@@ -971,8 +983,8 @@ struct
         end
       in
       let rec killRow (i, (l : label)) =
-        begin if not (dead l) then begin
-          if isConstant i then begin
+        begin if not (dead l) then
+          begin if isConstant i then begin
             begin if denominator (const i) = one_int then () else raise Error
             end;
             begin
@@ -981,11 +993,11 @@ struct
                 (Array.sub (tableau.rlabels, i)).dead := true;
                 begin
                   begin match restriction l with
-                  | Some restr -> begin
-                      if denominator (const i) = one_int then
+                  | Some restr ->
+                      begin if denominator (const i) = one_int then
                         unifyRestr (restr, geqNExp (floor (const i)))
                       else raise Error
-                    end
+                      end
                   | None -> ()
                   end;
                   begin match l.owner with
@@ -997,8 +1009,8 @@ struct
               end
             end
           end
-          else begin
-            match isSubsumed i with
+          else
+            begin match isSubsumed i with
             | Some pos' ->
                 let l' = label pos' in
                 begin
@@ -1017,8 +1029,8 @@ struct
                   end
                 end
             | None -> ()
+            end
           end
-        end
         else ()
         end
       in
@@ -1042,9 +1054,9 @@ struct
           let g_ = ownerContext (label (Row row)).owner in
           let _ = restrict (boundUpper (g_, decomp, value)) in
           restrictBB resultR
-      | BranchSucceed result -> begin
-          match result with Some row -> minimizeBB row | None -> ()
-        end
+      | BranchSucceed result ->
+          begin match result with Some row -> minimizeBB row | None -> ()
+          end
       | _ -> ()
       end
 
@@ -1131,9 +1143,10 @@ struct
       | g_, s_, 0 -> (
           let rec solveGeq0 w_ =
             begin match isConstantExp w_ with
-            | Some d -> begin
-                if Integers.( >= ) d zero_int then geqNExp d else raise Error
-              end
+            | Some d ->
+                begin if Integers.( >= ) d zero_int then geqNExp d
+                else raise Error
+                end
             | None ->
                 let proof = newEVar (g_, geq0 w_) in
                 let _ =

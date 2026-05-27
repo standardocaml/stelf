@@ -6,8 +6,7 @@ module MakeSubordinate
     (Names : NAMES)
     (Table : TABLE with type key = int)
     (MemoTable : TABLE with type key = int * int)
-    (IntSet : Intset.INTSET) :
-  SUBORDINATE
+    (IntSet : Intset.INTSET) : SUBORDINATE
 (*
   (*! structure IntSyn' : INTSYN !*)
   (*! sharing Whnf.IntSyn = IntSyn' !*)

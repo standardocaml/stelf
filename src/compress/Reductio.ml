@@ -207,7 +207,9 @@ module Reductio = struct
     let rec search arg__0 arg__1 arg__2 =
       begin match (arg__0, arg__1, arg__2) with
       | n, [], (x : int) -> None
-      | n, h :: tl, x -> begin if x = h then Some n else search (n + 1) tl x end
+      | n, h :: tl, x ->
+          begin if x = h then Some n else search (n + 1) tl x
+          end
       end
     in
     makesubst (map (search 0 vs) inds, length vs)
@@ -256,19 +258,18 @@ module Reductio = struct
           (Elt (ATerm (ARoot (Const n', s'))) as elt') ) ->
         match_const_head (n, n', s, s', elt, elt', "c+ head mismatch")
     | EltC (Elt (ATerm (ARoot (Var n, s))), Elt (ATerm (ARoot (Var n', s')))) ->
-      begin
-        if n = n' then just_one' (SpineC (s, s'))
+        begin if n = n' then just_one' (SpineC (s, s'))
         else raise (Matching "var head mismatch")
-      end
+        end
     | EltC (AElt t, AElt t') -> just_one' (EltC (Elt (ATerm t), Elt (ATerm t')))
     | EltC (Ascribe (m, a), Ascribe (m', a')) ->
         match_two (EltC (Elt (NTerm m), Elt (NTerm m'))) (TypeC (a, a'))
     | EltC (Omit, Omit) -> []
-    | TypeC (TPi (m, a, b), TPi (m', a', b')) -> begin
-        if m = Minus && m' = Minus then
+    | TypeC (TPi (m, a, b), TPi (m', a', b')) ->
+        begin if m = Minus && m' = Minus then
           match_two (TypeC (a, a')) (TypeC (b, b'))
         else raise (Matching "mode mismatch")
-      end
+        end
     | TypeC (TRoot (n, s), TRoot (n', s')) ->
         match_type_const_head (n, n', s, s', "type family mismatch")
     | SpineC ([], []) -> []
@@ -486,12 +487,12 @@ module Reductio = struct
         check_type Con_lf (g_, a)
         && check_type con (ctxcons (a, g_), b)
         && Strict.check_strict_type plusconst b
-    | con, (g_, TPi (m, a, b)) -> begin
-        match (con, m) with
+    | con, (g_, TPi (m, a, b)) ->
+        begin match (con, m) with
         | Con_lf, Plus ->
             raise (Error "TPi(PLUS) where a pure LF function type expected")
         | _ -> check_type Con_lf (g_, a) && check_type con (ctxcons (a, g_), b)
-      end
+        end
     end
 
   and check_type' = function
@@ -538,10 +539,10 @@ module Reductio = struct
 
   and elt_synth = function
     | g_, AElt t -> synth (g_, t)
-    | g_, Ascribe (t, a) -> begin
-        if check (g_, NTerm t, a) then a
+    | g_, Ascribe (t, a) ->
+        begin if check (g_, NTerm t, a) then a
         else raise (Error "ascription doesn't check")
-      end
+        end
     | g_, Elt _ ->
         raise (Error "trying to synthesize a merely checkable element")
     | g_, Omit -> raise (Error "trying to synthesize an omitted argument")

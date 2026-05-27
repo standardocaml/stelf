@@ -1,6 +1,7 @@
 (* # 1 "src/opsem/Trace.sig.ml" *)
 open! Basis
 include Trace_intf
+
 (* reset trace, break, detail *)
 (* signature TRACE *)
 
@@ -65,14 +66,14 @@ end) : TRACE = struct
 
   let rec varsToEVarInst = function
     | [] -> []
-    | name :: names -> begin
-        match N.getEVarOpt name with
+    | name :: names ->
+        begin match N.getEVarOpt name with
         | None -> begin
             print (("Trace warning: ignoring unknown variable " ^ name) ^ "\n");
             varsToEVarInst names
           end
         | Some x_ -> (x_, name) :: varsToEVarInst names
-      end
+        end
 
   let rec printVars names = print (evarsToString (varsToEVarInst names))
 
@@ -98,10 +99,10 @@ end) : TRACE = struct
 
   let rec setDetail : int option -> unit = function
     | None -> print "Trace warning: detail is not a valid integer\n"
-    | Some n -> begin
-        if 0 <= n then detail := n
+    | Some n ->
+        begin if 0 <= n then detail := n
         else print "Trace warning: detail must be positive\n"
-      end
+        end
   (* andalso n <= 2 *)
 
   let traceTSpec : I.cid spec ref = ref None
@@ -109,16 +110,16 @@ end) : TRACE = struct
 
   let rec toCids = function
     | [] -> []
-    | name :: names -> begin
-        match N.stringToQid name with
+    | name :: names ->
+        begin match N.stringToQid name with
         | None -> begin
             print
               (("Trace warning: ignoring malformed qualified identifier " ^ name)
               ^ "\n");
             toCids names
           end
-        | Some qid -> begin
-            match N.constLookup qid with
+        | Some qid ->
+            begin match N.constLookup qid with
             | None -> begin
                 print
                   (("Trace warning: ignoring undeclared constant "
@@ -127,8 +128,8 @@ end) : TRACE = struct
                 toCids names
               end
             | Some cid -> cid :: toCids names
-          end
-      end
+            end
+        end
 
   let rec initTrace = function
     | None -> traceTSpec := None
@@ -360,8 +361,8 @@ end) : TRACE = struct
 
   let rec monitorBreak = function
     | None, g_, e -> false
-    | Some cids, g_, e -> begin
-        if monitorEvent (cids, e) then begin
+    | Some cids, g_, e ->
+        begin if monitorEvent (cids, e) then begin
           maintain (g_, e);
           begin
             traceEvent (g_, e);
@@ -372,7 +373,7 @@ end) : TRACE = struct
           end
         end
         else false
-      end
+        end
     | All, g_, e -> begin
         maintain (g_, e);
         begin
@@ -386,8 +387,8 @@ end) : TRACE = struct
 
   let rec monitorTrace = function
     | None, g_, e -> false
-    | Some cids, g_, e -> begin
-        if monitorEvent (cids, e) then begin
+    | Some cids, g_, e ->
+        begin if monitorEvent (cids, e) then begin
           maintain (g_, e);
           begin
             traceEvent (g_, e);
@@ -398,7 +399,7 @@ end) : TRACE = struct
           end
         end
         else false
-      end
+        end
     | All, g_, e -> begin
         maintain (g_, e);
         begin
@@ -413,15 +414,15 @@ end) : TRACE = struct
   let rec watchFor e =
     begin match !watchForTag with
     | None -> false
-    | Some t -> begin
-        match e with
+    | Some t ->
+        begin match e with
         | SolveGoal (Some t', _, _) -> t' = t
         | SucceedGoal (Some t', _, _) -> t' = t
         | CommitGoal (Some t', _, _) -> t' = t
         | RetryGoal (Some t', _, _) -> t' = t
         | FailGoal (Some t', _, _) -> t' = t
         | _ -> false
-      end
+        end
     end
 
   let rec skipping () =
@@ -429,9 +430,9 @@ end) : TRACE = struct
     end
 
   let rec signal (g_, e) =
-    begin if monitorDetail e then begin
-      if skipping () then begin
-        if watchFor e then begin
+    begin if monitorDetail e then
+      begin if skipping () then
+        begin if watchFor e then begin
           watchForTag := None;
           signal (g_, e)
         end
@@ -439,15 +440,15 @@ end) : TRACE = struct
           ignore (monitorTrace (!traceTSpec, g_, e));
           ()
         end
-      end
-      else begin
-        if monitorBreak (!breakTSpec, g_, e) then ()
+        end
+      else
+        begin if monitorBreak (!breakTSpec, g_, e) then ()
         else begin
           ignore (monitorTrace (!traceTSpec, g_, e));
           ()
         end
-      end (* stops, continues after input *)
-    end
+        end (* stops, continues after input *)
+      end
     else ()
     end
   (* prints trace, continues *)

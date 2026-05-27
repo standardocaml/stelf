@@ -23,7 +23,9 @@ module type APPROX = Approx.APPROX
 
 module Whnf : WHNF
 module Conv : CONV
+
 type spine = IntSyn.spine
+
 module Constraints : CONSTRAINTS
 module UnifyNoTrail : UNIFY
 module UnifyTrail : UNIFY

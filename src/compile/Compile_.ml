@@ -7,8 +7,9 @@ open CompSyn
 (* Modified: Jeff Polakow *)
 (* Modified: Carsten Schuermann *)
 
-(** Modified: Frank Pfenning *)
 include Compile_intf
+(** Modified: Frank Pfenning *)
+
 (* signature COMPILE *)
 
 (* # 1 "src/compile/Compile_.fun.ml" *)
@@ -25,10 +26,8 @@ module MakeCompile
     (SubTree : Subtree.SUBTREE)
     (CPrint : Cprint.CPRINT)
     (Print : PRINT)
-    (Names : NAMES) :
-  COMPILE =
-struct
-(*
+    (Names : NAMES) : COMPILE = struct
+  (*
   (*! structure IntSyn' : INTSYN !*)
   (*! structure CompSyn' : COMPSYN !*)
   (*! sharing CompSyn'.IntSyn = IntSyn' !*)
@@ -63,9 +62,9 @@ struct
        where B iff H is a constant with constraint status
     *)
   let rec isConstraint = function
-    | I.Const c -> begin
-        match I.constStatus c with I.Constraint _ -> true | _ -> false
-      end
+    | I.Const c ->
+        begin match I.constStatus c with I.Constraint _ -> true | _ -> false
+        end
     | h_ -> false
 
   (* head (A) = H, the head of V
@@ -100,17 +99,17 @@ struct
      adds to K and Vars as in collectExp and collectSpine
    *)
   let rec collectHead = function
-    | (I.BVar k as h), s_, k_, vars_, depth -> begin
-        if k > depth then begin
-          if etaSpine (s_, depth) then begin
-            if seen (k - depth, vars_) then
+    | (I.BVar k as h), s_, k_, vars_, depth ->
+        begin if k > depth then
+          begin if etaSpine (s_, depth) then
+            begin if seen (k - depth, vars_) then
               ((depth, Bvar (k - depth)) :: k_, vars_, true)
             else (k_, (depth, k - depth) :: vars_, false)
-          end
+            end
           else ((depth, Bvar (k - depth)) :: k_, vars_, true)
-        end
+          end
         else (k_, vars_, false)
-      end
+        end
     | _, _, k_, vars_, depth -> (k_, vars_, false)
 
   (* collectExp (U, K, Vars, depth) = (K', Vars')
@@ -156,9 +155,9 @@ struct
      Invariants: U is NF, S is in NF
   *)
   let rec shiftHead = function
-    | (I.BVar k as h), depth, total -> begin
-        if k > depth then I.BVar (k + total) else I.BVar k
-      end
+    | (I.BVar k as h), depth, total ->
+        begin if k > depth then I.BVar (k + total) else I.BVar k
+        end
     | (I.Const k as h), depth, total -> h
     | (I.Def k as h), depth, total -> h
     | (I.NSDef k as h), depth, total -> h
@@ -204,17 +203,17 @@ struct
       Eqn accumulates residual equation UnifyEq(Gl, M, N)
   *)
   let rec linearHead = function
-    | g_, (I.BVar k as h), s_, left, vars_, depth, total -> begin
-        if k > depth then begin
-          if etaSpine (s_, depth) then begin
-            if seen (k - depth, vars_) then
+    | g_, (I.BVar k as h), s_, left, vars_, depth, total ->
+        begin if k > depth then
+          begin if etaSpine (s_, depth) then
+            begin if seen (k - depth, vars_) then
               (left - 1, vars_, I.BVar (left + depth), true)
             else (left, (depth, k - depth) :: vars_, I.BVar (k + total), false)
-          end
+            end
           else (left - 1, vars_, I.BVar (left + depth), true)
-        end
+          end
         else (left, vars_, h, false)
-      end
+        end
     | g_, (I.Const k as h), s_, left, vars_, depth, total ->
         (left, vars_, h, false)
     | g_, (I.FgnConst (k, conDec_) as h), s_, left, vars_, depth, total ->
@@ -313,12 +312,14 @@ struct
     in
     let r = convertKRes (C.Assign (r'_, eqs_), List.rev k_, left) in
     begin
-      begin if !Global.chatter >= 6 then begin
-        print "\nClause LH Eqn";
-        print (CPrint.clauseToString "\t" (g_, r))
-      end
-      else ()
-      end;
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter 6)
+           (Display.Info.Form.string "\nClause LH Eqn"));
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter 6)
+           (Display.Info.Form.string (CPrint.clauseToString "\t" (g_, r))));
       r
     end
 
@@ -346,12 +347,15 @@ struct
     in
     let g'_ = convertKRes (g_, List.rev k_, left) in
     begin
-      begin if !Global.chatter >= 6 then begin
-        print "\nClause Sbt Eqn";
-        print (CPrint.clauseToString "\t" (g'_, C.Assign (h'_, eqs_)))
-      end
-      else ()
-      end;
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter 6)
+           (Display.Info.Form.string "\nClause Sbt Eqn"));
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter 6)
+           (Display.Info.Form.string
+              (CPrint.clauseToString "\t" (g'_, C.Assign (h'_, eqs_)))));
       (g'_, Some (h'_, eqs_))
     end
   (* insert R' together with Eqs and G and sc C.True *)
@@ -380,11 +384,11 @@ struct
         C.Impl (r_, a1_, ha1_, goal)
         (* A1 is used to build the proof term, Ha1 for indexing *)
         (* never optimize when compiling local assumptions *)
-    | fromCS, (g_, I.Pi (((I.Dec (_, a1_) as d_), I.Maybe), a2_)) -> begin
-        if notCS fromCS && isConstraint (head a1_) then
+    | fromCS, (g_, I.Pi (((I.Dec (_, a1_) as d_), I.Maybe), a2_)) ->
+        begin if notCS fromCS && isConstraint (head a1_) then
           raise (Error "Constraint appears in dynamic clause position")
         else C.All (d_, compileGoalN fromCS (I.Decl (g_, d_), a2_))
-      end
+        end
     end
   (* A = {x:A1} A2 *)
   (* A = A1 -> A2 *)
@@ -395,14 +399,14 @@ struct
 
   and compileDClauseN arg__3 arg__4 arg__5 =
     begin match (arg__3, arg__4, arg__5) with
-    | fromCS, opt, (g_, (I.Root (h, s_) as r_)) -> begin
-        if opt && !optimize = C.LinearHeads then compileLinearHead (g_, r_)
-        else begin
-          if notCS fromCS && isConstraint h then
+    | fromCS, opt, (g_, (I.Root (h, s_) as r_)) ->
+        begin if opt && !optimize = C.LinearHeads then compileLinearHead (g_, r_)
+        else
+          begin if notCS fromCS && isConstraint h then
             raise (Error "Constraint appears in dynamic clause position")
           else C.Eq r_
+          end
         end
-      end
     | fromCS, opt, (g_, I.Pi (((I.Dec (_, a1_) as d_), I.No), a2_)) ->
         C.And
           ( compileDClauseN fromCS opt (I.Decl (g_, d_), a2_),
@@ -611,15 +615,15 @@ struct
     begin match (arg__11, arg__12) with
     | fromCS, (a, I.ConDec (_, _, _, _, a_, Type)) ->
         installClause fromCS (a, a_)
-    | fromCS, (a, I.SkoDec (_, _, _, a_, Type)) -> begin
-        match !C.optimize with
+    | fromCS, (a, I.SkoDec (_, _, _, a_, Type)) ->
+        begin match !C.optimize with
         | No ->
             C.sProgInstall
               (a, C.SClause (compileDClauseN fromCS true (I.Null, a_)))
         | _ ->
             C.sProgInstall
               (a, C.SClause (compileDClauseN fromCS true (I.Null, a_)))
-      end
+        end
     | I.Clause, (a, I.ConDef (_, _, _, _, a_, I.Type, _)) ->
         C.sProgInstall
           ( a,
@@ -669,7 +673,8 @@ module SubTree = Subtree.SubTree (struct
   module RBSet = RBSet
 end)
 
-module Compile = MakeCompile (Whnf) (TypeCheck) (SubTree) (CPrint) (Print) (Names)
+module Compile =
+  MakeCompile (Whnf) (TypeCheck) (SubTree) (CPrint) (Print) (Names)
 
 module Assign__ = Assign.Assign (struct
   (*! structure IntSyn' = IntSyn !*)

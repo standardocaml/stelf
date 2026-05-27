@@ -3,18 +3,8 @@
 (library
  (name tabling)
  (public_name stelf.tabling)
- (modules
-  Tabledsyn
-  Tabled
-  Tabledsyn_intf)
- (libraries
-  table
-  intsyn
-  print
-  names
-  paths
-  index
-  basis)
+ (modules Tabledsyn Tabled Tabledsyn_intf)
+ (libraries display table intsyn print names paths index basis)
  (flags
   (:standard
    -w

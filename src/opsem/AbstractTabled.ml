@@ -89,38 +89,38 @@ end) : ABSTRACTTABLED = struct
     let rec member' p_ k_ =
       let rec exists' = function
         | I.Null -> None
-        | I.Decl (k'_, (l, Ev y_)) -> begin
-            if p_ (Ev y_) then Some l else exists' k'_
-          end
+        | I.Decl (k'_, (l, Ev y_)) ->
+            begin if p_ (Ev y_) then Some l else exists' k'_
+            end
       in
       exists' k_
 
     let rec member p_ k_ =
       let rec exists' = function
         | I.Null -> None
-        | I.Decl (k'_, (i, y_)) -> begin
-            if p_ y_ then Some i else exists' k'_
-          end
+        | I.Decl (k'_, (i, y_)) ->
+            begin if p_ y_ then Some i else exists' k'_
+            end
       in
       exists' k_
 
     let rec update' p_ k_ =
       let rec update' = function
         | I.Null -> I.Null
-        | I.Decl (k'_, (label, y_)) -> begin
-            if p_ y_ then I.Decl (k'_, (Body, y_))
+        | I.Decl (k'_, (label, y_)) ->
+            begin if p_ y_ then I.Decl (k'_, (Body, y_))
             else I.Decl (update' k'_, (label, y_))
-          end
+            end
       in
       update' k_
 
     let rec update p_ k_ =
       let rec update' = function
         | I.Null -> I.Null
-        | I.Decl (k'_, ((label, i), y_)) -> begin
-            if p_ y_ then I.Decl (k'_, ((Body, i), y_))
+        | I.Decl (k'_, ((label, i), y_)) ->
+            begin if p_ y_ then I.Decl (k'_, ((Body, i), y_))
             else I.Decl (update' k'_, ((label, i), y_))
-          end
+            end
       in
       update' k_
 
@@ -146,7 +146,9 @@ end) : ABSTRACTTABLED = struct
             I.No
 
     and occursInHead = function
-      | k, I.BVar k', dp_ -> begin if k = k' then I.Maybe else dp_ end
+      | k, I.BVar k', dp_ ->
+          begin if k = k' then I.Maybe else dp_
+          end
       | k, I.Const _, dp_ -> dp_
       | k, I.Def _, dp_ -> dp_
       | k, I.FgnConst _, dp_ -> dp_
@@ -244,11 +246,11 @@ end) : ABSTRACTTABLED = struct
           flag,
           d ) =
       begin match member' (eqEVar x_) k_ with
-      | Some label -> begin
-          if flag then
+      | Some label ->
+          begin if flag then
             collectSub (gss_, gl_, s, k_, I.Decl (dupVars_, Av (x_, d)), flag, d)
           else collectSub (gss_, gl_, s, k_, dupVars_, flag, d)
-        end
+          end
       | None ->
           let label =
             begin if flag then Body else TypeLabel
@@ -278,11 +280,11 @@ end) : ABSTRACTTABLED = struct
           flag,
           d ) =
       begin match member' (eqEVar x_) k_ with
-      | Some label -> begin
-          if flag then
+      | Some label ->
+          begin if flag then
             collectSub (gss_, gl_, s, k_, I.Decl (dupVars_, Av (x_, d)), flag, d)
           else collectSub (gss_, gl_, s, k_, dupVars_, flag, d)
-        end
+          end
       | None ->
           let label =
             begin if flag then Body else TypeLabel
@@ -344,11 +346,11 @@ end) : ABSTRACTTABLED = struct
           flag,
           d ) =
       begin match member (eqEVar x_) k_ with
-      | Some label -> begin
-          if flag then
+      | Some label ->
+          begin if flag then
             collectSub (gss_, gl_, s, k_, I.Decl (dupVars_, Av (x_, d)), flag, d)
           else collectSub (gss_, gl_, s, k_, dupVars_, flag, d)
-        end
+          end
       | None ->
           let label =
             begin if flag then Body else TypeLabel
@@ -372,11 +374,11 @@ end) : ABSTRACTTABLED = struct
           flag,
           d ) =
       begin match member' (eqEVar x_) k_ with
-      | Some label -> begin
-          if flag then
+      | Some label ->
+          begin if flag then
             collectSub (gss_, gl_, s, k_, I.Decl (dupVars_, Av (x_, d)), flag, d)
           else collectSub (gss_, gl_, s, k_, dupVars_, flag, d)
-        end
+          end
       | None ->
           let label =
             begin if flag then Body else TypeLabel
@@ -412,10 +414,11 @@ end) : ABSTRACTTABLED = struct
           d ) =
       begin if !TableParam.strengthen then
         collectEVarStr (gss_, gl_, (x_, s), k_, dupVars_, flag, d)
-      else begin
-        if isId s then collectEVarFap (gss_, gl_, (x_, s), k_, dupVars_, flag, d)
+      else
+        begin if isId s then
+          collectEVarFap (gss_, gl_, (x_, s), k_, dupVars_, flag, d)
         else collectEVarNFap (gss_, gl_, (x_, s), k_, dupVars_, flag, d)
-      end
+        end
       end
 
     and collectDec (gss_, (I.Dec (_, v_), s), (k_, dupVars_), d, flag) =
@@ -544,14 +547,14 @@ end) : ABSTRACTTABLED = struct
           total,
           depth,
           ((I.EVar (_, gx_, vx_, _) as x_), s),
-          eqn ) -> begin
-          if isId (I.comp (ss, s)) then
+          eqn ) ->
+          begin if isId (I.comp (ss, s)) then
             abstractEVarFap
               (flag, gs_, posEA, vars_, gl_, total, depth, (x_, s), eqn)
           else
             abstractEVarNFap
               (flag, gs_, posEA, vars_, gl_, total, depth, (x_, s), eqn)
-        end
+          end
 
     and abstractExp (flag, gs_, posEA, vars_, gl_, total, depth, us_, eqn) =
       abstractExpW
@@ -568,9 +571,9 @@ end) : ABSTRACTTABLED = struct
           (x_, s),
           eqn ) =
       begin match member (eqEVar x_) vars_ with
-      | Some (label, i) -> begin
-          if flag then begin
-            match label with
+      | Some (label, i) ->
+          begin if flag then
+            begin match label with
             | Body ->
                 let bv_ = I.BVar (apos + depth) in
                 let bv'_ = I.BVar (i + depth) in
@@ -609,7 +612,7 @@ end) : ABSTRACTTABLED = struct
                       eqn )
                 in
                 (posEA', vars''_, I.Root (I.BVar (i + depth), s_), eqn1)
-          end
+            end
           else
             let posEA', vars'_, s_, eqn1 =
               abstractSub
@@ -625,7 +628,7 @@ end) : ABSTRACTTABLED = struct
                   eqn )
             in
             (posEA', vars'_, I.Root (I.BVar (i + depth), s_), eqn1)
-        end
+          end
       | None ->
           let label =
             begin if flag then Body else TypeLabel
@@ -660,8 +663,8 @@ end) : ABSTRACTTABLED = struct
           (x_, s),
           eqn ) =
       begin match member (eqEVar x_) vars_ with
-      | Some (label, i) -> begin
-          if flag then
+      | Some (label, i) ->
+          begin if flag then
             let bv_ = I.BVar (apos + depth) in
             let bv'_ = I.BVar (i + depth) in
             let bv1_ = I.BVar (apos + depth) in
@@ -698,9 +701,9 @@ end) : ABSTRACTTABLED = struct
                   eqn )
             in
             (posEA', vars'_, I.Root (I.BVar (i + depth), s_), eqn1)
-        end
-      | None -> begin
-          if flag then
+          end
+      | None ->
+          begin if flag then
             let label =
               begin if flag then Body else TypeLabel
               end
@@ -741,12 +744,12 @@ end) : ABSTRACTTABLED = struct
                   eqn )
             in
             (posEA', vars'_, I.Root (I.BVar (epos + depth), s_), eqn1)
-        end
+          end
       end
 
     and abstractSub = function
-      | flag, gs_, posEA, vars_, gl_, total, depth, I.Shift k, s_, eqn -> begin
-          if k < depth then
+      | flag, gs_, posEA, vars_, gl_, total, depth, I.Shift k, s_, eqn ->
+          begin if k < depth then
             abstractSub
               ( flag,
                 gs_,
@@ -759,7 +762,7 @@ end) : ABSTRACTTABLED = struct
                 s_,
                 eqn )
           else (posEA, vars_, s_, eqn)
-        end
+          end
       | flag, gs_, posEA, vars_, gl_, total, depth, I.Dot (I.Idx k, s), s_, eqn
         ->
           abstractSub
@@ -817,10 +820,10 @@ end) : ABSTRACTTABLED = struct
           (posEA'', vars''_, I.App (u'_, s'_), eqn'')
 
     and abstractSub' = function
-      | flag, gs_, epos, vars_, total, I.Shift k -> begin
-          if k < 0 then raise (Error "Substitution out of range\n")
+      | flag, gs_, epos, vars_, total, I.Shift k ->
+          begin if k < 0 then raise (Error "Substitution out of range\n")
           else (epos, vars_, I.Shift (k + total))
-        end
+          end
       | flag, gs_, epos, vars_, total, I.Dot (I.Idx k, s) ->
           let epos', vars'_, s' =
             abstractSub' (flag, gs_, epos, vars_, total, s)

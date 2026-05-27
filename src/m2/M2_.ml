@@ -16,7 +16,6 @@ open Strategy
 open Prover
 open Mpi
 open Skolem
-
 module MetaSyn = Metasyn.Make_MetaSyn (Whnf)
 
 module MetaAbstract_ = MetaAbstract.MetaAbstract (struct

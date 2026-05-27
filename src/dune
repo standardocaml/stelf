@@ -2,6 +2,7 @@
  (name stelf)
  (public_name stelf)
  (libraries
+  display
   compile
   compress
   cover
@@ -27,7 +28,6 @@
   paths
   print
   prover
-  
   debug
   solvers
   stream

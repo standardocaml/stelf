@@ -80,14 +80,14 @@ end) : THMSYN with module Names = ThmSyn__0.Names' = struct
     let rec theoremDecToConDec ((name, ThDecl (gBs_, g_, mg_, i)), r) =
       let rec theoremToConDec' = function
         | I.Null, v_ -> v_
-        | I.Decl (g_, d_), v_ -> begin
-            if Abstract.closedDec (g_, (d_, I.id)) then
+        | I.Decl (g_, d_), v_ ->
+            begin if Abstract.closedDec (g_, (d_, I.id)) then
               theoremToConDec'
                 ( g_,
                   Abstract.piDepend ((Whnf.normalizeDec (d_, I.id), I.Maybe), v_)
                 )
             else error (r, "Free variables in theorem declaration")
-          end
+            end
       in
       ( gBs_,
         I.ConDec

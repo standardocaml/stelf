@@ -26,6 +26,7 @@
   Tomeganames_intf
   Tomegaprint_intf)
  (libraries
+  display
   global
   intsyn
   worldcheck

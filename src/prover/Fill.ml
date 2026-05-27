@@ -146,11 +146,11 @@ end) : FILL with module State = Fill__0.State' = struct
             )
 
     let rec menu = function
-      | FillWithBVar ((I.EVar (_, g_, _, _) as x_), n) -> begin
-          match I.ctxLookup (Names.ctxName g_, n) with
+      | FillWithBVar ((I.EVar (_, g_, _, _) as x_), n) ->
+          begin match I.ctxLookup (Names.ctxName g_, n) with
           | I.Dec (Some x, _) ->
               (("Fill " ^ Names.evarName (g_, x_)) ^ " with variable ") ^ x
-        end
+          end
       | FillWithConst ((I.EVar (_, g_, _, _) as x_), c) ->
           (("Fill " ^ Names.evarName (g_, x_)) ^ " with constant ")
           ^ IntSyn.conDecName (IntSyn.sgnLookup c)

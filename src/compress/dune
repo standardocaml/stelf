@@ -3,19 +3,8 @@
 (library
  (name compress)
  (public_name stelf.compress)
- (modules
-  Syntax
-  Strict
-  Sgn
-  Reductio
-  Compress_
-  Rep
-  Compress_intf
-  Sgn_intf)
- (libraries
-  global
-  intsyn
-  basis)
+ (modules Syntax Strict Sgn Reductio Compress_ Rep Compress_intf Sgn_intf)
+ (libraries display global intsyn basis)
  (flags
   (:standard
    -w

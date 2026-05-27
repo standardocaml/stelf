@@ -4,8 +4,9 @@ open Basis
 
 (* Global parameters *)
 
-(** Author: Frank Pfenning *)
 include Global_intf
+(** Author: Frank Pfenning *)
+
 (* in seconds *)
 (* signature GLOBAL *)
 

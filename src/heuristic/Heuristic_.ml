@@ -6,8 +6,9 @@ open Basis
 
 (* Heuristics : Version 1.3 *)
 
-(** Author: Carsten Schuermann *)
 include Heuristic_intf
+(** Author: Carsten Schuermann *)
+
 (* signature HEURISTIC *)
 
 (* # 1 "src/heuristic/Heuristic_.fun.ml" *)
@@ -34,8 +35,8 @@ module Heuristic : HEURISTIC = struct
 
     let compare = function
       | ( { sd = k1; ind = None; c = c1; m = m1; r = r1; p = p1 },
-          { sd = k2; ind = None; c = c2; m = m2; r = r2; p = p2 } ) -> begin
-          match
+          { sd = k2; ind = None; c = c2; m = m2; r = r2; p = p2 } ) ->
+          begin match
             ( int_compare (c1 * m2, c2 * m1),
               int_compare (k2, k1),
               int_compare (r1, r2),
@@ -45,25 +46,24 @@ module Heuristic : HEURISTIC = struct
           | Equal, Equal, result, _ -> result
           | Equal, result, _, _ -> result
           | result, _, _, _ -> result
-        end
+          end
       | ( { sd = _k1; ind = None; c = c1; m = m1; r = _r1; p = _p1 },
           { sd = _k2; ind = Some _i2; c = c2; m = m2; r = _r2; p = _p2 } ) ->
-        begin
-          match int_compare (c1 * m2, c2 * m1) with
+          begin match int_compare (c1 * m2, c2 * m1) with
           | Less -> Less
           | Equal -> Greater
           | Greater -> Greater
-        end
+          end
       | ( { sd = _k1; ind = Some _i1; c = c1; m = m1; r = _r1; p = _p1 },
-          { sd = _k2; ind = None; c = c2; m = m2; r = _r2; p = _p2 } ) -> begin
-          match int_compare (c1 * m2, c2 * m1) with
+          { sd = _k2; ind = None; c = c2; m = m2; r = _r2; p = _p2 } ) ->
+          begin match int_compare (c1 * m2, c2 * m1) with
           | Less -> Less
           | Equal -> Less
           | Greater -> Greater
-        end
+          end
       | ( { sd = k1; ind = Some i1; c = c1; m = m1; r = r1; p = p1 },
-          { sd = k2; ind = Some i2; c = c2; m = m2; r = r2; p = p2 } ) -> begin
-          match
+          { sd = k2; ind = Some i2; c = c2; m = m2; r = r2; p = p2 } ) ->
+          begin match
             ( int_compare (c1 * m2, c2 * m1),
               int_compare (k2, k1),
               int_compare (r1, r2),
@@ -75,7 +75,7 @@ module Heuristic : HEURISTIC = struct
           | Equal, Equal, result, _, _ -> result
           | Equal, result, _, _, _ -> result
           | result, _, _, _, _ -> result
-        end
+          end
 
     let rec_to_string = function 0 -> "non-rec" | 1 -> "rec"
 

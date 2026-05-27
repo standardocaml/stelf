@@ -244,19 +244,19 @@ end) : MPI with module MetaSyn = Mpi__0.MetaSyn' = struct
     let rec init (k, nL) =
       let rec cids = function
         | [] -> []
-        | name :: nL -> begin
-            match Names.stringToQid name with
+        | name :: nL ->
+            begin match Names.stringToQid name with
             | None -> raise (Error ("Malformed qualified identifier " ^ name))
-            | Some qid -> begin
-                match Names.constLookup qid with
+            | Some qid ->
+                begin match Names.constLookup qid with
                 | None ->
                     raise
                       (Error
                          (("Type family " ^ Names.qidToString qid)
                          ^ " not defined"))
                 | Some cid -> cid :: cids nL
-              end
-          end
+                end
+            end
       in
       try
         begin

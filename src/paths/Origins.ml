@@ -13,7 +13,8 @@ open! Basis
 
 (* Origins of Declarations *)
 (* Author: Frank Pfenning *)
-module MakeOrigins (Global : GLOBAL) (Table : TABLE with type key = string) : ORIGINS = struct
+module MakeOrigins (Global : GLOBAL) (Table : TABLE with type key = string) :
+  ORIGINS = struct
   (*! structure IntSyn = IntSyn' !*)
   (*! structure Paths = Paths' !*)
   open! struct
@@ -49,7 +50,5 @@ end
 (* # 1 "src/paths/Origins.sml.ml" *)
 open! Basis
 open! TableInstances
-
 module Origins = MakeOrigins (Global) (StringHashTable)
-
 include Origins

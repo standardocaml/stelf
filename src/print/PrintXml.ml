@@ -15,10 +15,8 @@ module MakePrintXML
     (Abstract : ABSTRACT)
     (Constraints : CONSTRAINTS)
     (Names : NAMES)
-    (Formatter_param : FORMATTER) :
-  PRINT_XML =
-struct
-(*
+    (Formatter_param : FORMATTER) : PRINT_XML = struct
+  (*
   (* Printing *)
   (* Author: Frank Pfenning *)
   (* Modified: Jeff Polakow *)
@@ -80,8 +78,8 @@ struct
     let rec fmtExpW = function
       | g_, (I.Uni l_, s) ->
           sexp [ str_ "<Uni>"; F.break; fmtUni l_; str_ "</Uni>" ]
-      | g_, (I.Pi (((I.Dec (_, v1_) as d_), p_), v2_), s) -> begin
-          match p_ with
+      | g_, (I.Pi (((I.Dec (_, v1_) as d_), p_), v2_), s) ->
+          begin match p_ with
           | I.Maybe ->
               let d'_ = Names.decLUName (g_, d_) in
               let g'_ = I.Decl (g_, d'_) in
@@ -105,9 +103,9 @@ struct
                   fmtExp (g'_, (v2_, I.dot1 s));
                   str_ "</Arrow>";
                 ]
-        end
-      | g_, (I.Root (h_, s_), s) -> begin
-          match fmtSpine (g_, (s_, s)) with
+          end
+      | g_, (I.Root (h_, s_), s) ->
+          begin match fmtSpine (g_, (s_, s)) with
           | None -> fmtCon (g_, h_)
           | Some fmts ->
               F.hVbox
@@ -118,7 +116,7 @@ struct
                   sexp fmts;
                   str_ "</App>";
                 ]
-        end
+          end
       | g_, (I.Lam (d_, u_), s) ->
           let d'_ = Names.decLUName (g_, d_) in
           let g'_ = I.Decl (g_, d'_) in
@@ -138,11 +136,11 @@ struct
     and fmtSpine = function
       | g_, (I.Nil, _) -> None
       | g_, (I.SClo (s_, s'), s) -> fmtSpine (g_, (s_, I.comp (s', s)))
-      | g_, (I.App (u_, s_), s) -> begin
-          match fmtSpine (g_, (s_, s)) with
+      | g_, (I.App (u_, s_), s) ->
+          begin match fmtSpine (g_, (s_, s)) with
           | None -> Some [ fmtExp (g_, (u_, s)) ]
           | Some fmts -> Some ([ fmtExp (g_, (u_, s)); F.break ] @ fmts)
-        end
+          end
 
     and fmtDec = function
       | g_, (I.Dec (None, v_), s) ->

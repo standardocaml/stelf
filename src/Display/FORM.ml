@@ -1,6 +1,10 @@
+(* TODO: Thinks that will be added eventually 
+Groups (sections, list, etc)
+Math markup 
+Boxes*)
+module type COLORS = sig
+  type t
 
-module type COLORS = sig 
-  type t 
   val black : t
   val red : t
   val green : t
@@ -9,20 +13,24 @@ module type COLORS = sig
   val magenta : t
   val cyan : t
   val white : t
+  val orange : t
 end
-module type FORM = sig 
-  type t 
-  type style 
+
+module type FORM = sig
+  type t
+  type style
   type 'a scribe = 'a -> t
-  module Style : sig 
+
+  module Style : sig
     val bold : style
     val italic : style
     val underline : style
+
     module Fore : COLORS with type t := style
     module Back : COLORS with type t := style
   end
-  
-  val (++) : t -> t -> t
+
+  val ( ++ ) : t -> t -> t
   val style : style -> t -> t
   val styles : style list -> t -> t
   val empty : t
@@ -31,13 +39,15 @@ module type FORM = sig
   val int : int -> t
   val char : char -> t
   val bool : bool -> t
-  val sp : ?n:int -> unit -> t
-  val cut : unit -> t
+  val non_breaking_space : ?n:int -> unit -> t
+  val space : ?n:int -> unit -> t
   val shown : ('a -> string) -> 'a -> t
   val inside : t * t -> t -> t
   val nl : ?n:int -> unit -> t
   val each : ?sep:t -> ('a -> t) -> 'a list -> t
-
+  val hbox : t list -> t
+  val vbox : t list -> t
+  val hvbox : t list -> t
   val markup : t -> LTerm_text.t
   val fmt : t Fmt.t
-end  
+end

@@ -5,6 +5,7 @@ open Metasyn
 (* Strategy *)
 (* Author: Carsten Schuermann *)
 include Strategy_intf
+
 (* open cases -> remaining cases * solved cases *)
 (* signature STRATEGY *)
 
@@ -33,7 +34,8 @@ module StrategyFRS (StrategyFRS__0 : sig
   module Qed : Qed_intf.QED with module MetaSyn = MetaSyn'
   module MetaPrint : MetaPrint_intf.METAPRINT with module MetaSyn = MetaSyn'
   module Timers : Timers_intf.TIMERS
-end) : Strategy_intf.STRATEGY with module MetaSyn = StrategyFRS__0.MetaSyn' = struct
+end) : Strategy_intf.STRATEGY with module MetaSyn = StrategyFRS__0.MetaSyn' =
+struct
   open StrategyFRS__0
   module MetaSyn = MetaSyn'
 
@@ -46,33 +48,33 @@ end) : Strategy_intf.STRATEGY with module MetaSyn = StrategyFRS__0.MetaSyn' = st
 
     let rec printFinish (M.State (name, _, _)) =
       begin if !Global.chatter > 5 then print (("[Finished: " ^ name) ^ "]\n")
-      else begin
-        if !Global.chatter > 4 then print (("[" ^ name) ^ "]\n")
-        else begin
-          if !Global.chatter > 3 then print (("[" ^ name) ^ "]") else ()
+      else
+        begin if !Global.chatter > 4 then print (("[" ^ name) ^ "]\n")
+        else
+          begin if !Global.chatter > 3 then print (("[" ^ name) ^ "]") else ()
+          end
         end
-      end
       end
 
     let rec printFilling () =
       begin if !Global.chatter > 5 then print "[Filling ... "
-      else begin
-        if !Global.chatter > 4 then print "F" else ()
-      end
+      else
+        begin if !Global.chatter > 4 then print "F" else ()
+        end
       end
 
     let rec printRecursion () =
       begin if !Global.chatter > 5 then print "[Recursion ..."
-      else begin
-        if !Global.chatter > 4 then print "R" else ()
-      end
+      else
+        begin if !Global.chatter > 4 then print "R" else ()
+        end
       end
 
     let rec printSplitting () =
       begin if !Global.chatter > 5 then print "[Splitting ..."
-      else begin
-        if !Global.chatter > 4 then print "S" else ()
-      end
+      else
+        begin if !Global.chatter > 4 then print "S" else ()
+        end
       end
 
     let rec printCloseBracket () =
@@ -203,7 +205,8 @@ module StrategyRFS (StrategyRFS__1 : sig
   module Qed : Qed_intf.QED with module MetaSyn = MetaSyn'
   module MetaPrint : MetaPrint_intf.METAPRINT with module MetaSyn = MetaSyn'
   module Timers : Timers_intf.TIMERS
-end) : Strategy_intf.STRATEGY with module MetaSyn = StrategyRFS__1.MetaSyn' = struct
+end) : Strategy_intf.STRATEGY with module MetaSyn = StrategyRFS__1.MetaSyn' =
+struct
   open StrategyRFS__1
   module MetaSyn = MetaSyn'
 
@@ -216,33 +219,33 @@ end) : Strategy_intf.STRATEGY with module MetaSyn = StrategyRFS__1.MetaSyn' = st
 
     let rec printFinish (M.State (name, _, _)) =
       begin if !Global.chatter > 5 then print (("[Finished: " ^ name) ^ "]\n")
-      else begin
-        if !Global.chatter > 4 then print (("[" ^ name) ^ "]\n")
-        else begin
-          if !Global.chatter > 3 then print (("[" ^ name) ^ "]") else ()
+      else
+        begin if !Global.chatter > 4 then print (("[" ^ name) ^ "]\n")
+        else
+          begin if !Global.chatter > 3 then print (("[" ^ name) ^ "]") else ()
+          end
         end
-      end
       end
 
     let rec printFilling () =
       begin if !Global.chatter > 5 then print "[Filling ... "
-      else begin
-        if !Global.chatter > 4 then print "F" else ()
-      end
+      else
+        begin if !Global.chatter > 4 then print "F" else ()
+        end
       end
 
     let rec printRecursion () =
       begin if !Global.chatter > 5 then print "[Recursion ..."
-      else begin
-        if !Global.chatter > 4 then print "R" else ()
-      end
+      else
+        begin if !Global.chatter > 4 then print "R" else ()
+        end
       end
 
     let rec printSplitting () =
       begin if !Global.chatter > 5 then print "[Splitting ..."
-      else begin
-        if !Global.chatter > 4 then print "S" else ()
-      end
+      else
+        begin if !Global.chatter > 4 then print "S" else ()
+        end
       end
 
     let rec printCloseBracket () =
@@ -283,8 +286,8 @@ end) : Strategy_intf.STRATEGY with module MetaSyn = StrategyRFS__1.MetaSyn' = st
 
     and fill = function
       | [], os -> os
-      | s_ :: givenStates, ((openStates, solvedStates) as os) -> begin
-          match Timers.time Timers.filling Filling.expand s_ with
+      | s_ :: givenStates, ((openStates, solvedStates) as os) ->
+          begin match Timers.time Timers.filling Filling.expand s_ with
           | _, fillingOp -> (
               try
                 let _ = printFilling () in
@@ -299,12 +302,12 @@ end) : Strategy_intf.STRATEGY with module MetaSyn = StrategyRFS__1.MetaSyn' = st
                 else fill (s'_ :: givenStates, os)
                 end
               with Filling.Error _ -> split (s_ :: givenStates, os))
-        end
+          end
 
     and recurse = function
       | [], os -> os
-      | s_ :: givenStates, ((openStates, solvedStates) as os) -> begin
-          match Timers.time Timers.recursion Recursion.expandEager s_ with
+      | s_ :: givenStates, ((openStates, solvedStates) as os) ->
+          begin match Timers.time Timers.recursion Recursion.expandEager s_ with
           | [] -> fill (s_ :: givenStates, os)
           | recursionOp :: _ -> (
               let _ = printRecursion () in
@@ -314,7 +317,7 @@ end) : Strategy_intf.STRATEGY with module MetaSyn = StrategyRFS__1.MetaSyn' = st
               let _ = printCloseBracket () in
               try recurse (s'_ :: givenStates, (openStates, solvedStates))
               with Recursion.Error _ -> fill (s_ :: givenStates, os))
-        end
+          end
 
     let rec run givenStates =
       let _ = printInit () in
@@ -364,7 +367,8 @@ module Strategy (Strategy__2 : sig
   module MetaSyn' : Metasyn.METASYN
   module StrategyFRS : Strategy_intf.STRATEGY with module MetaSyn = MetaSyn'
   module StrategyRFS : Strategy_intf.STRATEGY with module MetaSyn = MetaSyn'
-end) : Strategy_intf.STRATEGY with module MetaSyn = Strategy__2.MetaSyn' = struct
+end) : Strategy_intf.STRATEGY with module MetaSyn = Strategy__2.MetaSyn' =
+struct
   open Strategy__2
   module MetaSyn = MetaSyn'
 

@@ -3,16 +3,8 @@
 (library
  (name paths)
  (public_name stelf.paths)
- (modules
-  Paths_intf
-  Paths_
-  Origins_intf
-  Origins)
- (libraries
-  intsyn
-  global
-  table
-  basis)
+ (modules Paths_intf Paths_ Origins_intf Origins)
+ (libraries display intsyn global table basis)
  (flags
   (:standard
    -w

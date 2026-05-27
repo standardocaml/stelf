@@ -15,8 +15,7 @@ module MakeConverter
     (Subordinate : Subordinate.Subordinate_.SUBORDINATE)
     (TypeCheck : Typecheck_.TYPECHECK)
     (Redundant : Redundant_intf.REDUNDANT)
-    (TomegaAbstract : TomegaAbstract_intf.TOMEGAABSTRACT) :
-  CONVERTER
+    (TomegaAbstract : TomegaAbstract_intf.TOMEGAABSTRACT) : CONVERTER
 (*
   (* Converter from relational representation to a functional
    representation of proof terms *)

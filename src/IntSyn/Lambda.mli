@@ -14,7 +14,7 @@ module Whnf : WHNF
 open! Conv
 module Conv : CONV
 open! Constraints
-module Constraints : CONSTRAINTS 
+module Constraints : CONSTRAINTS
 open! Unify
 module Unify : UNIFY
 open! Match

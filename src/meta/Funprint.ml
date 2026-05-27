@@ -45,8 +45,8 @@ end) : Funprint_intf.FUNPRINT = struct
             fmts @ [ Fmt.string ","; Fmt.break_; fmt ] )
 
     let rec formatFor' = function
-      | g_, (F.All (ld_, f_), s) -> begin
-          match ld_ with
+      | g_, (F.All (ld_, f_), s) ->
+          begin match ld_ with
           | F.Prim d_ ->
               let d'_ = Names.decName (g_, d_) in
               [
@@ -60,7 +60,7 @@ end) : Funprint_intf.FUNPRINT = struct
               let g''_, s'', fmts = formatCtxBlock (g_, (g'_, s)) in
               [ Fmt.string "{"; Fmt.hbox fmts; Fmt.string "}"; Fmt.break_ ]
               @ formatFor' (g''_, (f_, s''))
-        end
+          end
       | g_, (F.Ex (d_, f_), s) ->
           let d'_ = Names.decName (g_, d_) in
           [

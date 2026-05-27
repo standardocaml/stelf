@@ -16,8 +16,6 @@ open Strategy
 open Prover
 open Mpi
 open Skolem
-
 module Skolem : Skolem_intf.SKOLEM
 module IndexSkolem : Index_intf.INDEX
-
 module M2Prover : Prover_intf.PROVER

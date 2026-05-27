@@ -5,6 +5,7 @@ module Tomega = Lambda_.Tomega
 (* Naming *)
 (* Author: Carsten Schuermann *)
 include Tomeganames_intf
+
 (* # 1 "src/tomega/Tomeganames.fun.ml" *)
 open! Basis
 

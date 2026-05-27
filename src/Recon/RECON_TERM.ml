@@ -5,6 +5,7 @@ module type RECON_TERM = sig
   module Ast = M.Ast
   module Paths = M.Paths
   module Syntax = M.Syntax
+
   exception Error of string
 
   val resetErrors : string -> unit
@@ -15,18 +16,18 @@ module type RECON_TERM = sig
   type traceMode = Progressive | Omniscient
 
   val trace : bool ref
-  val traceMode : traceMode ref 
+  val traceMode : traceMode ref
 
   (* Reconstruction jobs *)
-  type job 
+  type job
 
   val jnothing : job
   val jand : job * job -> job
   val jwithctx : Cst.decl Ast.ctx * job -> job
-  val jterm : Cst.term -> job 
+  val jterm : Cst.term -> job
   val jclass : Cst.term -> job
   val jof : Cst.term * Cst.term -> job
-  val jof' : Cst.term * Ast.exp -> job 
+  val jof' : Cst.term * Ast.exp -> job
 
   type job_ =
     | JNothing
@@ -34,8 +35,7 @@ module type RECON_TERM = sig
     | JWithCtx of Ast.dec Ast.ctx * job_
     | JTerm of (Ast.exp * Paths.occExp) * Ast.exp * Ast.uni
     | JClass of (Ast.exp * Paths.occExp) * Ast.uni
-    | JOf of
-        (Ast.exp * Paths.occExp) * (Ast.exp * Paths.occExp) * Ast.uni
+    | JOf of (Ast.exp * Paths.occExp) * (Ast.exp * Paths.occExp) * Ast.uni
 
   val recon : job -> job_
   val reconQuery : job -> job_

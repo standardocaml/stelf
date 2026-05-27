@@ -51,9 +51,13 @@ module Recursion (Recursion__0 : sig
   module Lemma : Lemma_intf.LEMMA with module MetaSyn = MetaSyn'
   module Filling : Filling_intf.FILLING with module MetaSyn = MetaSyn'
   module MetaPrint : MetaPrint_intf.METAPRINT with module MetaSyn = MetaSyn'
-  module MetaAbstract : MetaAbstract_intf.METAABSTRACT with module MetaSyn = MetaSyn'
+
+  module MetaAbstract :
+    MetaAbstract_intf.METAABSTRACT with module MetaSyn = MetaSyn'
+
   module Formatter : FORMATTER
-end) : Recursion_intf.RECURSION with module MetaSyn = Recursion__0.MetaSyn' = struct
+end) : Recursion_intf.RECURSION with module MetaSyn = Recursion__0.MetaSyn' =
+struct
   open Recursion__0
   module MetaSyn = MetaSyn'
 
@@ -156,12 +160,11 @@ end) : Recursion_intf.RECURSION with module MetaSyn = Recursion__0.MetaSyn' = st
           ltSpine
             (g_, k, (us_, vs_), ((s'_, s'), (I.constType c, I.id)), sc, ops)
       | g_, k, (us_, vs_), ((I.Root (I.BVar n, s'_), s'), vs'_), sc, ops ->
-        begin
-          if n <= k then
+          begin if n <= k then
             let (I.Dec (_, v'_)) = I.ctxDec (g_, n) in
             ltSpine (g_, k, (us_, vs_), ((s'_, s'), (v'_, I.id)), sc, ops)
           else ops
-        end
+          end
       | g_, _, _, ((I.EVar _, _), _), _, ops -> ops
       | ( g_,
           k,
@@ -169,8 +172,8 @@ end) : Recursion_intf.RECURSION with module MetaSyn = Recursion__0.MetaSyn' = st
           ( (I.Lam ((I.Dec (_, v1'_) as d_), u'_), s1'),
             (I.Pi ((I.Dec (_, v2'_), _), v'_), s2') ),
           sc,
-          ops ) -> begin
-          if Subordinate.equiv (I.targetFam v_, I.targetFam v1'_) then
+          ops ) ->
+          begin if Subordinate.equiv (I.targetFam v_, I.targetFam v1'_) then
             let x_ = I.newEVar (g_, I.EClo (v1'_, s1')) in
             let sc' ops' = set_parameter (g_, x_, k, sc, ops') in
             lt
@@ -180,8 +183,8 @@ end) : Recursion_intf.RECURSION with module MetaSyn = Recursion__0.MetaSyn' = st
                 ((u'_, I.Dot (I.Exp x_, s1')), (v'_, I.Dot (I.Exp x_, s2'))),
                 sc',
                 ops )
-          else begin
-            if Subordinate.below (I.targetFam v1'_, I.targetFam v_) then
+          else
+            begin if Subordinate.below (I.targetFam v1'_, I.targetFam v_) then
               let x_ = I.newEVar (g_, I.EClo (v1'_, s1')) in
               lt
                 ( g_,
@@ -191,8 +194,8 @@ end) : Recursion_intf.RECURSION with module MetaSyn = Recursion__0.MetaSyn' = st
                   sc,
                   ops )
             else ops
+            end
           end
-        end
 
     and ltSpine (g_, k, (us_, vs_), (ss'_, vs'_), sc, ops) =
       ltSpineW (g_, k, (us_, vs_), (ss'_, Whnf.whnf vs'_), sc, ops)
@@ -237,8 +240,8 @@ end) : Recursion_intf.RECURSION with module MetaSyn = Recursion__0.MetaSyn' = st
           ( (I.Lam ((I.Dec (_, v1'_) as d_), u'_), s1'),
             (I.Pi ((I.Dec (_, v2'_), _), v'_), s2') ),
           sc,
-          ops ) -> begin
-          if Subordinate.equiv (I.targetFam v_, I.targetFam v1'_) then
+          ops ) ->
+          begin if Subordinate.equiv (I.targetFam v_, I.targetFam v1'_) then
             let x_ = I.newEVar (g_, I.EClo (v1'_, s1')) in
             let sc' ops' = set_parameter (g_, x_, k, sc, ops') in
             le
@@ -248,8 +251,8 @@ end) : Recursion_intf.RECURSION with module MetaSyn = Recursion__0.MetaSyn' = st
                 ((u'_, I.Dot (I.Exp x_, s1')), (v'_, I.Dot (I.Exp x_, s2'))),
                 sc',
                 ops )
-          else begin
-            if Subordinate.below (I.targetFam v1'_, I.targetFam v_) then
+          else
+            begin if Subordinate.below (I.targetFam v1'_, I.targetFam v_) then
               let x_ = I.newEVar (g_, I.EClo (v1'_, s1')) in
               le
                 ( g_,
@@ -259,8 +262,8 @@ end) : Recursion_intf.RECURSION with module MetaSyn = Recursion__0.MetaSyn' = st
                   sc,
                   ops )
             else ops
+            end
           end
-        end
       | g_, k, (us_, vs_), (us'_, vs'_), sc, ops ->
           lt (g_, k, (us_, vs_), (us'_, vs'_), sc, ops)
 
@@ -313,11 +316,12 @@ end) : Recursion_intf.RECURSION with module MetaSyn = Recursion__0.MetaSyn' = st
               ops )
 
     and ordeq = function
-      | g_, O.Arg (us_, vs_), O.Arg (us'_, vs'_), sc, ops -> begin
-          if Unify.unifiable (g_, vs_, vs'_) && Unify.unifiable (g_, us_, us'_)
+      | g_, O.Arg (us_, vs_), O.Arg (us'_, vs'_), sc, ops ->
+          begin if
+            Unify.unifiable (g_, vs_, vs'_) && Unify.unifiable (g_, us_, us'_)
           then sc ops
           else ops
-        end
+          end
       | g_, O.Lex l_, O.Lex l'_, sc, ops -> ordeqs (g_, l_, l'_, sc, ops)
       | g_, O.Simul l_, O.Simul l'_, sc, ops -> ordeqs (g_, l_, l'_, sc, ops)
 
@@ -424,7 +428,8 @@ end) : Recursion_intf.RECURSION with module MetaSyn = Recursion__0.MetaSyn' = st
           inputConvSpine (mS, ((s1_, I.comp (s1', s1)), vs1_), (ss2_, vs2_))
       | mS, (ss1_, vs1_), ((I.SClo (s2_, s2'), s2), vs2_) ->
           inputConvSpine (mS, (ss1_, vs1_), ((s2_, I.comp (s2', s2)), vs2_))
-      | ( Modes.Modesyn.ModeSyn.Mapp (Modes.Modesyn.ModeSyn.Marg (Modes.Modesyn.ModeSyn.Minus, _), mS),
+      | ( Modes.Modesyn.ModeSyn.Mapp
+            (Modes.Modesyn.ModeSyn.Marg (Modes.Modesyn.ModeSyn.Minus, _), mS),
           ((I.App (u1_, s1_), s1), (I.Pi ((I.Dec (_, v1_), _), w1_), t1)),
           ((I.App (u2_, s2_), s2), (I.Pi ((I.Dec (_, v2_), _), w2_), t2)) ) ->
           Conv.conv ((v1_, t1), (v2_, t2))
@@ -432,7 +437,8 @@ end) : Recursion_intf.RECURSION with module MetaSyn = Recursion__0.MetaSyn' = st
                ( mS,
                  ((s1_, s1), (w1_, I.Dot (I.Exp (I.EClo (u1_, s1)), t1))),
                  ((s2_, s2), (w2_, I.Dot (I.Exp (I.EClo (u1_, s1)), t2))) )
-      | ( Modes.Modesyn.ModeSyn.Mapp (Modes.Modesyn.ModeSyn.Marg (Modes.Modesyn.ModeSyn.Plus, _), mS),
+      | ( Modes.Modesyn.ModeSyn.Mapp
+            (Modes.Modesyn.ModeSyn.Marg (Modes.Modesyn.ModeSyn.Plus, _), mS),
           ((I.App (u1_, s1_), s1), (I.Pi ((I.Dec (_, v1_), _), w1_), t1)),
           ((I.App (u2_, s2_), s2), (I.Pi ((I.Dec (_, v2_), _), w2_), t2)) ) ->
           inputConvSpine

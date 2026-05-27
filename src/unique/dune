@@ -3,10 +3,9 @@
 (library
  (name unique)
  (public_name stelf.unique)
- (modules
-  Unique_
-  Unique_intf)
+ (modules Unique_ Unique_intf)
  (libraries
+  display
   global
   intsyn
   names

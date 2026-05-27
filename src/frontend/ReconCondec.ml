@@ -4,6 +4,7 @@ open! Basis
 (* External Syntax for signature entries *)
 (* Author: Frank Pfenning *)
 include ReconCondec_intf
+
 (* id : tm = tm | _ : tm = tm *)
 (* signature EXTCONDEC *)
 (* signature RECON_CONDEC *)
@@ -99,19 +100,20 @@ end) : RECON_CONDEC = struct
         in
         let ocd = Paths.dec (i, oc) in
         let _ =
-          begin if !Global.chatter >= 3 then
-            Msg.message
-              (Timers.time Timers.printing Print.conDecToString cd ^ "\n")
-          else ()
-          end
+          Display.display'
+            (Display.Info.msg
+               ~level:(Display.Info.from_chatter 3)
+               (Display.Info.Form.string
+                  (Timers.time Timers.printing Print.conDecToString cd ^ "\n")))
         in
         let _ =
-          begin if !Global.doubleCheck then begin
-            try Timers.time Timers.checking TypeCheck.check (v'_, IntSyn.Uni l_)
+          begin if !Global.doubleCheck then
+            begin try
+              Timers.time Timers.checking TypeCheck.check (v'_, IntSyn.Uni l_)
             with TypeCheck.Error msg ->
               Printf.eprintf "DOUBLE-CHECK FAIL on ConDec %s: %s\n%!" name msg;
               raise (TypeCheck.Error msg)
-          end
+            end
           else ()
           end
         in
@@ -158,11 +160,11 @@ end) : RECON_CONDEC = struct
           end
         in
         let _ =
-          begin if !Global.chatter >= 3 then
-            Msg.message
-              (Timers.time Timers.printing Print.conDecToString cd ^ "\n")
-          else ()
-          end
+          Display.display'
+            (Display.Info.msg
+               ~level:(Display.Info.from_chatter 3)
+               (Display.Info.Form.string
+                  (Timers.time Timers.printing Print.conDecToString cd ^ "\n")))
         in
         let _ =
           begin if !Global.doubleCheck then begin
@@ -259,11 +261,11 @@ end) : RECON_CONDEC = struct
           IntSyn.BlockDec (name, None, gsome'_, ctxToList (gblock'_, []))
         in
         let _ =
-          begin if !Global.chatter >= 3 then
-            Msg.message
-              (Timers.time Timers.printing Print.conDecToString bd ^ "\n")
-          else ()
-          end
+          Display.display'
+            (Display.Info.msg
+               ~level:(Display.Info.from_chatter 3)
+               (Display.Info.Form.string
+                  (Timers.time Timers.printing Print.conDecToString bd ^ "\n")))
         in
         (Some bd, None)
         (* closed nf *)
@@ -272,8 +274,8 @@ end) : RECON_CONDEC = struct
         let w''_ =
           List.map
             (function
-              | qid -> begin
-                  match Names.constLookup qid with
+              | qid ->
+                  begin match Names.constLookup qid with
                   | None ->
                       raise
                         (Names.Error
@@ -281,16 +283,16 @@ end) : RECON_CONDEC = struct
                             ^ Names.qidToString (valOf (Names.constUndef qid)))
                            ^ "."))
                   | Some cid -> cid
-                end)
+                  end)
             w'_
         in
         let bd = IntSyn.BlockDef (name, None, w''_) in
         let _ =
-          begin if !Global.chatter >= 3 then
-            Msg.message
-              (Timers.time Timers.printing Print.conDecToString bd ^ "\n")
-          else ()
-          end
+          Display.display'
+            (Display.Info.msg
+               ~level:(Display.Info.from_chatter 3)
+               (Display.Info.Form.string
+                  (Timers.time Timers.printing Print.conDecToString bd ^ "\n")))
         in
         (Some bd, None)
 

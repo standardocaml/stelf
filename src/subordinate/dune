@@ -3,17 +3,8 @@
 (library
  (name subordinate)
  (public_name stelf.subordinate)
- (modules
-  Intset
-  Subordinate_
-  Intset_intf
-  Subordinate_intf)
- (libraries
-  global
-  table
-  intsyn
-  names
-  basis)
+ (modules Intset Subordinate_ Intset_intf Subordinate_intf)
+ (libraries display global table intsyn names basis)
  (flags
   (:standard
    -w

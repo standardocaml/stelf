@@ -14,10 +14,8 @@ module MakePrintTwega
     (Abstract : ABSTRACT)
     (Constraints : CONSTRAINTS)
     (Names : NAMES)
-    (Formatter_param : FORMATTER) :
-  PRINT_TWEGA =
-struct
-(*
+    (Formatter_param : FORMATTER) : PRINT_TWEGA = struct
+  (*
   (* Printing *)
   (* Author: Frank Pfenning *)
   (* Modified: Jeff Polakow *)
@@ -67,8 +65,8 @@ struct
 
     let rec fmtExpW = function
       | g_, (I.Uni l_, s) -> sexp [ str_ "tw~uni"; F.break; fmtUni l_ ]
-      | g_, (I.Pi (((I.Dec (_, v1_) as d_), p_), v2_), s) -> begin
-          match p_ with
+      | g_, (I.Pi (((I.Dec (_, v1_) as d_), p_), v2_), s) ->
+          begin match p_ with
           | I.Maybe ->
               let d'_ = Names.decLUName (g_, d_) in
               let g'_ = I.Decl (g_, d'_) in
@@ -94,7 +92,7 @@ struct
                   F.break;
                   fmtExp (g'_, (v2_, I.dot1 s));
                 ]
-        end
+          end
       | g_, (I.Root (h_, s_), s) ->
           sexp
             [

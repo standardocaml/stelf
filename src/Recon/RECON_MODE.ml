@@ -4,10 +4,8 @@ module type RECON_MODE = sig
   module Ast = M.Ast
   module Paths = M.Paths
   module Modes = Modes.Modesyn.ModeSyn
+
   exception Error of string
 
-  val modeToMode :
-    Cst.modeDec -> (Ast.cid * Modes.modeSpine) * Paths.region
+  val modeToMode : Cst.modeDec -> (Ast.cid * Modes.modeSpine) * Paths.region
 end
-
- 

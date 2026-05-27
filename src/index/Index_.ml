@@ -4,8 +4,9 @@ open! Basis
 (* Indexing *)
 (* Author: Carsten Schuermann *)
 
-(** Modified: Frank Pfenning *)
 include Index_intf
+(** Modified: Frank Pfenning *)
+
 (* signature INDEX *)
 
 (* # 1 "src/index/Index_.fun.ml" *)
@@ -42,9 +43,9 @@ module MakeIndex (Global : GLOBAL) (Queue : QUEUE) : INDEX = struct
     let rec remove (a, cid) =
       begin match Queue.deleteEnd (Array.sub (indexArray, a)) with
       | None -> ()
-      | Some ((I.Const cid' as c), queue') -> begin
-          if cid = cid' then Array.update (indexArray, a, queue') else ()
-        end
+      | Some ((I.Const cid' as c), queue') ->
+          begin if cid = cid' then Array.update (indexArray, a, queue') else ()
+          end
       end
 
     let rec uninstall cid =
@@ -118,7 +119,6 @@ end
 
 (* # 1 "src/index/Index_.sml.ml" *)
 open! Basis
-
 module Index = MakeIndex (Global) (Queue)
 include Index
 (*! structure IntSyn' = IntSyn !*)

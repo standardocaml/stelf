@@ -3,17 +3,8 @@
 (library
  (name typecheck)
  (public_name stelf.typecheck)
- (modules
-  Typecheck_
-  Strict
-  Strict_intf
-  Typecheck_intf)
- (libraries
-  intsyn
-  print
-  paths
-  names
-  basis)
+ (modules Typecheck_ Strict Strict_intf Typecheck_intf)
+ (libraries display intsyn print paths names basis)
  (flags
   (:standard
    -w

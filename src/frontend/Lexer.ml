@@ -1,9 +1,9 @@
 (* # 1 "src/frontend/Lexer.sig.ml" *)
 open! Basis
 
-(** Lexer implementation.
-  Author: Frank Pfenning. *)
 include Lexer_intf
+(** Lexer implementation. Author: Frank Pfenning. *)
+
 (* signature LEXER *)
 
 (* # 1 "src/frontend/Lexer.fun.ml" *)
@@ -243,28 +243,28 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
       | '\'', i -> lexID (Lower, P.Reg (i - 1, i))
       | '\004', i -> (Eof, P.Reg (i - 1, i - 1))
       | '"', i -> lexString (P.Reg (i - 1, i))
-      | c, i -> begin
-          if Char.isSpace c then lexInitial (char i, i + 1)
-          else begin
-            if Char.isUpper c then lexID (Upper, P.Reg (i - 1, i))
-            else begin
-              if Char.isDigit c then lexID (Lower, P.Reg (i - 1, i))
-              else begin
-                if Char.isLower c then lexID (Lower, P.Reg (i - 1, i))
-                else begin
-                  if isSym c then lexID (Lower, P.Reg (i - 1, i))
-                  else begin
-                    if isUTF8 c then lexID (Lower, P.Reg (i - 1, i))
+      | c, i ->
+          begin if Char.isSpace c then lexInitial (char i, i + 1)
+          else
+            begin if Char.isUpper c then lexID (Upper, P.Reg (i - 1, i))
+            else
+              begin if Char.isDigit c then lexID (Lower, P.Reg (i - 1, i))
+              else
+                begin if Char.isLower c then lexID (Lower, P.Reg (i - 1, i))
+                else
+                  begin if isSym c then lexID (Lower, P.Reg (i - 1, i))
+                  else
+                    begin if isUTF8 c then lexID (Lower, P.Reg (i - 1, i))
                     else
                       error
                         ( P.Reg (i - 1, i),
                           "Illegal character " ^ Char.toString c )
+                    end
                   end
                 end
               end
             end
           end
-        end
     (* lexQUID (i-1,i) *)
     and lexID (idCase, P.Reg (i, j)) =
       let rec lexID' j =
@@ -276,10 +276,10 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
     and lexQUID (P.Reg (i, j)) =
       begin if Char.isSpace (char j) then
         error (P.Reg (i, j + 1), "Whitespace in quoted identifier")
-      else begin
-        if isQuote (char j) then qidToToken (P.Reg (i, j))
+      else
+        begin if isQuote (char j) then qidToToken (P.Reg (i, j))
         else lexQUID (P.Reg (i, j + 1))
-      end
+        end
       end
     (* recover by adding implicit quote? *)
     (* qidToToken (i, j) *)
@@ -287,16 +287,17 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
       | '.', i -> (Eof, P.Reg (i - 2, i))
       | '{', i -> lexPercentBrace (char i, i + 1)
       | '%', i -> lexComment ('%', i)
-      | c, i -> begin
-          if isIdChar c then lexPragmaKey (lexID (Quoted, P.Reg (i - 1, i)))
-          else begin
-            if Char.isSpace c then lexComment (c, i)
+      | c, i ->
+          begin if isIdChar c then
+            lexPragmaKey (lexID (Quoted, P.Reg (i - 1, i)))
+          else
+            begin if Char.isSpace c then lexComment (c, i)
             else
               error
                 ( P.Reg (i - 1, i),
                   "Comment character `%' not followed by white space" )
+            end
           end
-        end
     and lexPragmaKey = function
       | Id (_, "infix"), r -> (Infix, r)
       | Id (_, "prefix"), r -> (Prefix, r)
@@ -404,11 +405,11 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
     and lexContinueQualId j =
       Stream.delay (function () -> lexContinueQualId' j)
     and lexContinueQualId' j =
-      begin if char j = '.' then begin
-        if isIdChar (char (j + 1)) then
+      begin if char j = '.' then
+        begin if isIdChar (char (j + 1)) then
           Stream.Cons ((Pathsep, P.Reg (j, j + 1)), lexContinue (j + 1))
         else Stream.Cons ((Dot, P.Reg (j, j + 1)), lexContinue (j + 1))
-      end
+        end
       else lexContinue' j
       end
     in
@@ -462,10 +463,12 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
     begin match TextIO.inputLine instream with Some s -> s | None -> ""
     end
 
-  (** [lexStream instream] returns an infinite token stream terminated by [Eof]. *)
+  (** [lexStream instream] returns an infinite token stream terminated by [Eof].
+  *)
   let rec lexStream instream = lex (function i -> inputLine97 instream)
 
-  (** [lexTerminal (prompt0, prompt1)] lexes from standard input using the given prompts. *)
+  (** [lexTerminal (prompt0, prompt1)] lexes from standard input using the given
+      prompts. *)
   let rec lexTerminal (prompt0, prompt1) =
     lex (function
       | 0 -> begin
@@ -555,6 +558,7 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
 
   (* stringToNat(s) = n converts string s to a natural number *)
   (* raises NotDigit(c) if s contains character c which is not a digit *)
+
   (** Convert a decimal string to an integer. *)
   let rec stringToNat s =
     let l = String.size s in
@@ -568,6 +572,7 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
   (* isUpper (s) = true, if s is a string starting with an uppercase
      letter or underscore (_).
   *)
+
   (** True when a string starts with an uppercase letter or underscore. *)
   let rec isUpper = function
     | "" -> false

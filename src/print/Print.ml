@@ -5,7 +5,6 @@ include Traverse
 include PrintTwega
 include PrintXml
 include PrintOmdoc
-
 module Symbol = Symbol
 module Print_ = Print_
 module ClausePrint = ClausePrint

@@ -24,31 +24,31 @@ module MakeIndexSkolem (Global : GLOBAL) (Queue : QUEUE) : Index_.INDEX = struct
 
     let rec install arg__1 arg__2 =
       begin match (arg__1, arg__2) with
-      | fromCS, (I.Const c as h_) -> begin
-          match (fromCS, I.sgnLookup c) with
+      | fromCS, (I.Const c as h_) ->
+          begin match (fromCS, I.sgnLookup c) with
           | _, I.ConDec (_, _, _, _, a_, I.Type) ->
               update (cidFromHead (I.targetHead a_), h_)
           | I.Clause, I.ConDef (_, _, _, _, a_, I.Type, _) ->
               update (cidFromHead (I.targetHead a_), I.Def c)
           | _ -> ()
-        end
-      | fromCS, (I.Skonst c as h_) -> begin
-          match I.sgnLookup c with
+          end
+      | fromCS, (I.Skonst c as h_) ->
+          begin match I.sgnLookup c with
           | I.SkoDec (_, _, _, a_, I.Type) ->
               update (cidFromHead (I.targetHead a_), h_)
           | _ -> ()
-        end
+          end
       end
 
     let rec remove (a, cid) =
       begin match Queue.deleteEnd (Array.sub (indexArray, a)) with
       | None -> ()
-      | Some (I.Const cid', queue') -> begin
-          if cid = cid' then Array.update (indexArray, a, queue') else ()
-        end
-      | Some (I.Skonst cid', queue') -> begin
-          if cid = cid' then Array.update (indexArray, a, queue') else ()
-        end
+      | Some (I.Const cid', queue') ->
+          begin if cid = cid' then Array.update (indexArray, a, queue') else ()
+          end
+      | Some (I.Skonst cid', queue') ->
+          begin if cid = cid' then Array.update (indexArray, a, queue') else ()
+          end
       end
 
     let rec uninstall cid =

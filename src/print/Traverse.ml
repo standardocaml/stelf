@@ -4,6 +4,7 @@ open! Basis
 (* Generic Traversal Intended for Language-Specific Printing *)
 (* Author: Frank Pfenning *)
 include Traverse_intf
+
 (* val famdec : string * kind -> condec *)
 (* val objdef : string * obj * tp -> condec *)
 (* val famdef : string * tp * kind -> condec *)
@@ -100,8 +101,7 @@ end) : TRAVERSE = struct
       | i, g_, (I.SClo (s_, s'), s), vt_ ->
           fromSpine (i, g_, (s_, I.comp (s', s)), vt_)
       | i, g_, (I.App (u_, s_), s), (I.Pi ((I.Dec (_, v1_), _), v2_), t) ->
-        begin
-          if i > 0 then
+          begin if i > 0 then
             fromSpine
               ( i - 1,
                 g_,
@@ -115,7 +115,7 @@ end) : TRAVERSE = struct
                     g_,
                     (s_, s),
                     Whnf.whnf (v2_, I.Dot (I.Exp (I.EClo (u_, s)), t)) ) )
-        end
+          end
 
     and fromDec (g_, (I.Dec (Some x, v_), s)) = T.dec (x, fromTp (g_, (v_, s)))
 

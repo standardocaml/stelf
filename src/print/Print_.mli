@@ -6,8 +6,7 @@ module MakePrint
     (Constraints : CONSTRAINTS)
     (Names : NAMES)
     (Formatter_param : FORMATTER)
-    (Symbol : Symbol.SYMBOL) :
-  PRINT
+    (Symbol : Symbol.SYMBOL) : PRINT
 (*
   (* Printing *)
   (* Author: Frank Pfenning *)

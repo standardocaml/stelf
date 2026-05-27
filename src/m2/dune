@@ -36,6 +36,7 @@
   Splitting_intf
   Strategy_intf)
  (libraries
+  display
   stream
   global
   intsyn

@@ -53,6 +53,7 @@
   Uniquesearch_intf
   Weaken_intf)
  (libraries
+  display
   global
   trail
   table

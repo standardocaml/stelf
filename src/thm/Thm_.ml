@@ -6,8 +6,9 @@ open Thmprint
 (* Theorem Declarations *)
 (* Author: Carsten Schuermann *)
 
-(** Modified: Brigitte Pientka, Frank Pfenning *)
 include Thm_intf
+(** Modified: Brigitte Pientka, Frank Pfenning *)
+
 (* signature THM *)
 
 (* # 1 "src/thm/Thm_.fun.ml" *)
@@ -22,9 +23,7 @@ module Make_Thm
     (TabledSyn : Tabledsyn.TABLEDSYN)
     (ModeTable : Modetable.MODETABLE)
     (Order : ORDER)
-    (ThmPrint : Thmprint.THMPRINT) :
-  THM with module ThmSyn = ThmSyn' =
-struct
+    (ThmPrint : Thmprint.THMPRINT) : THM with module ThmSyn = ThmSyn' = struct
   module ThmSyn = ThmSyn'
 
   (*! structure Paths = Paths' !*)
@@ -52,11 +51,11 @@ struct
         | I.Pi (_, v_), Some x :: p_, a_ -> begin
             List.app
               (function
-                | x' -> begin
-                    if x = x' then
+                | x' ->
+                    begin if x = x' then
                       error (r, ("Variable " ^ x) ^ " used more than once")
                     else ()
-                  end)
+                    end)
               a_;
             unique' (v_, p_, x :: a_)
           end
@@ -99,29 +98,29 @@ struct
       let rec exists' = function
         | x, [], _ -> false
         | x, None :: l_, M.Mapp (_, mS) -> exists' (x, l_, mS)
-        | x, Some y :: l_, M.Mapp (M.Marg (mode, _), mS) -> begin
-            if x = y then begin
-              match mode with
+        | x, Some y :: l_, M.Mapp (M.Marg (mode, _), mS) ->
+            begin if x = y then
+              begin match mode with
               | M.Plus -> true
               | _ ->
                   error
                     ( r,
                       ((("Expected " ^ x) ^ " to have ") ^ M.modeToString M.Plus)
                       ^ " mode" )
-            end
+              end
             else exists' (x, l_, mS)
-          end
+            end
       in
       let rec skip = function
         | 0, x, p_, mS -> exists' (x, p_, mS)
         | k, x, p_, M.Mapp (_, mS) -> skip (k - 1, x, p_, mS)
       in
       let rec delete = function
-        | x, ((a, p_) as aP) :: c_ -> begin
-            if skip (I.constImp a, x, p_, valOf (ModeTable.modeLookup a)) then
-              c_
+        | x, ((a, p_) as aP) :: c_ ->
+            begin if skip (I.constImp a, x, p_, valOf (ModeTable.modeLookup a))
+            then c_
             else aP :: delete (x, c_)
-          end
+            end
         | x, [] -> error (r, ("Variable " ^ x) ^ " does not occur as argument")
       in
       let rec wfCallpats' = function
@@ -172,9 +171,9 @@ struct
     let rec argPos = function
       | x, [], n -> None
       | x, None :: l_, n -> argPos (x, l_, n + 1)
-      | x, Some x' :: l_, n -> begin
-          if x = x' then Some n else argPos (x, l_, n + 1)
-        end
+      | x, Some x' :: l_, n ->
+          begin if x = x' then Some n else argPos (x, l_, n + 1)
+          end
 
     let rec locate (x :: vars, params, imp) =
       begin match argPos (x, params, imp + 1) with
@@ -283,9 +282,9 @@ struct
         | x, Some y :: l_ -> x = y || exists' (x, l_)
       in
       let rec delete = function
-        | x, ((a, p_) as aP) :: c_ -> begin
-            if exists' (x, p_) then c_ else aP :: delete (x, c_)
-          end
+        | x, ((a, p_) as aP) :: c_ ->
+            begin if exists' (x, p_) then c_ else aP :: delete (x, c_)
+            end
         | x, [] -> error (r, ("Variable " ^ x) ^ " does not occur as argument")
       in
       let rec wfCallpats' = function
@@ -569,10 +568,4 @@ module ThmPrint = ThmPrint (struct
 end)
 
 module Thm =
-  Make_Thm
-    (Global)
-    (ThmSyn)
-    (Tabled.TabledSyn)
-    (ModeTable)
-    (Order)
-    (ThmPrint)
+  Make_Thm (Global) (ThmSyn) (Tabled.TabledSyn) (ModeTable) (Order) (ThmPrint)

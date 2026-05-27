@@ -36,12 +36,16 @@ end) : TOMEGATYPECHECK = struct
     module TA = TomegaTypeCheck__0.TomegaAbstract
 
     let rec chatter chlev f =
-      begin if !Global.chatter >= chlev then print (f ()) else ()
-      end
+      Display.display'
+        (Display.Info.msg
+           ~level:(Display.Info.from_chatter chlev)
+           (Display.Info.Form.string (f ())))
 
     let rec normalizeHead = function
       | T.Const lemma, t -> T.Const lemma
-      | T.Var k, t -> begin match T.varSub (k, t) with T.Idx k' -> T.Var k' end
+      | T.Var k, t ->
+          begin match T.varSub (k, t) with T.Idx k' -> T.Var k'
+          end
 
     let rec inferSpine (psi_, s_, ft_) = inferSpineW (psi_, s_, T.whnfFor ft_)
 
@@ -93,9 +97,9 @@ end) : TOMEGATYPECHECK = struct
           let f2_ = inferPrg (psi_, p2_) in
           T.And (f1_, f2_)
       | psi_, Unit -> T.True
-      | psi_, T.Var k -> begin
-          match T.ctxDec (psi_, k) with T.PDec (_, f'_, _, _) -> f'_
-        end
+      | psi_, T.Var k ->
+          begin match T.ctxDec (psi_, k) with T.PDec (_, f'_, _, _) -> f'_
+          end
       | psi_, T.Const c -> inferLemma c
       | psi_, T.Redex (p_, s_) ->
           let f1_ = inferPrg (psi_, p_) in
@@ -117,10 +121,10 @@ end) : TOMEGATYPECHECK = struct
           ()
       | psi_, (T.Const lemma, (f_, t)) ->
           convFor (psi_, (inferLemma lemma, T.id), (f_, t))
-      | psi_, (T.Var k, (f_, t)) -> begin
-          match T.ctxDec (psi_, k) with
+      | psi_, (T.Var k, (f_, t)) ->
+          begin match T.ctxDec (psi_, k) with
           | T.PDec (_, f'_, _, _) -> convFor (psi_, (f'_, T.id), (f_, t))
-        end
+          end
       | ( psi_,
           ( T.Lam ((T.PDec (x, f1_, _, _) as d_), p_),
             (T.All ((T.PDec (x', f1'_, _, _), _), f2_), t) ) ) ->
@@ -330,17 +334,17 @@ end) : TOMEGATYPECHECK = struct
       | _ -> raise (Error "Typecheck error")
 
     and convSub = function
-      | g_, T.Shift k1, T.Shift k2, g'_ -> begin
-          if k1 = k2 then () else raise (Error "Sub not equivalent")
-        end
+      | g_, T.Shift k1, T.Shift k2, g'_ ->
+          begin if k1 = k2 then () else raise (Error "Sub not equivalent")
+          end
       | g_, T.Shift k, (T.Dot _ as s2), g'_ ->
           convSub (g_, T.Dot (T.Idx (k + 1), T.Shift (k + 1)), s2, g'_)
       | g_, (T.Dot _ as s1), T.Shift k, g'_ ->
           convSub (g_, s1, T.Dot (T.Idx (k + 1), T.Shift (k + 1)), g'_)
-      | g_, T.Dot (T.Idx k1, s1), T.Dot (T.Idx k2, s2), I.Decl (g'_, _) -> begin
-          if k1 = k2 then convSub (g_, s1, s2, g'_)
+      | g_, T.Dot (T.Idx k1, s1), T.Dot (T.Idx k2, s2), I.Decl (g'_, _) ->
+          begin if k1 = k2 then convSub (g_, s1, s2, g'_)
           else raise (Error "Sub not equivalent")
-        end
+          end
       | ( g_,
           T.Dot (T.Exp m1_, s1),
           T.Dot (T.Exp m2_, s2),
@@ -443,10 +447,10 @@ end) : TOMEGATYPECHECK = struct
 
     and checkSub = function
       | I.Null, T.Shift 0, I.Null -> ()
-      | I.Decl (g_, d_), T.Shift k, I.Null -> begin
-          if k > 0 then checkSub (g_, T.Shift (k - 1), I.Null)
+      | I.Decl (g_, d_), T.Shift k, I.Null ->
+          begin if k > 0 then checkSub (g_, T.Shift (k - 1), I.Null)
           else raise (Error "Sub is not well typed!")
-        end
+          end
       | g_, T.Shift k, g'_ ->
           checkSub (g_, T.Dot (T.Idx (k + 1), T.Shift (k + 1)), g'_)
       | g_, T.Dot (T.Idx k, s'), I.Decl (g'_, T.UDec (I.Dec (_, a_))) ->
@@ -459,10 +463,10 @@ end) : TOMEGATYPECHECK = struct
           let _ = checkSub (g_, s', g'_) in
           let (T.UDec (I.BDec (l1, (_, s1)))) = T.ctxDec (g_, k) in
           begin if l <> l1 then raise (Error "Sub isn't well typed!")
-          else begin
-            if Conv.convSub (I.comp (s, T.coerceSub s'), s1) then ()
+          else
+            begin if Conv.convSub (I.comp (s, T.coerceSub s'), s1) then ()
             else raise (Error "Sub isn't well typed!")
-          end
+            end
           end
       | g_, T.Dot (T.Idx k, s), I.Decl (g'_, T.PDec (_, f'_, _, _)) ->
           let _ = checkSub (g_, s, g'_) in
@@ -490,10 +494,10 @@ end) : TOMEGATYPECHECK = struct
       | psi_, (I.Bidx v, (c2, s2)) ->
           let (T.UDec (I.BDec (l1, (c1, s1)))) = T.ctxDec (psi_, v) in
           begin if c1 <> c2 then raise (Error "Sub isn't well typed!")
-          else begin
-            if Conv.convSub (s2, s1) then ()
+          else
+            begin if Conv.convSub (s2, s1) then ()
             else raise (Error "Sub isn't well typed!")
-          end
+            end
           end
       | psi_, (I.Inst ul_, (c2, s2)) ->
           let g_, l_ = I.constBlock c2 in
@@ -519,11 +523,11 @@ end) : TOMEGATYPECHECK = struct
         end
       | Unit -> ()
       | T.Rec _ -> ()
-      | T.Const lemma -> begin
-          match T.lemmaLookup lemma with
+      | T.Const lemma ->
+          begin match T.lemmaLookup lemma with
           | T.ForDec _ -> raise (Error "Lemma isn't a value")
           | T.ValDec (_, p_, _) -> isValue p_
-        end
+          end
       | _ -> raise (Error "P isn't Value!")
 
     let rec check (psi_, (p_, f_)) = checkPrg (psi_, (p_, (f_, T.id)))

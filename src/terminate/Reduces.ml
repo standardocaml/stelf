@@ -191,8 +191,8 @@ end) : REDUCES = struct
           let _ =
             begin match o_ with
             | None -> ()
-            | Some o_ -> begin
-                if !Global.chatter > 5 then
+            | Some o_ ->
+                begin if !Global.chatter > 5 then
                   print
                     (((("Reduction predicate for "
                        ^ N.qidToString (N.constQid a))
@@ -200,7 +200,7 @@ end) : REDUCES = struct
                      ^ orderToString (g_, o_))
                     ^ "\n")
                 else ()
-              end
+                end
             end
           in
           o_
@@ -257,12 +257,12 @@ end) : REDUCES = struct
           occ ) ->
           let rec lookup = function
             | R.Empty, f -> R.Empty
-            | (R.Le (a, a's') as a's), f -> begin
-                if f a then a's else lookup (a's', f)
-              end
-            | (R.Lt (a, a's') as a's), f -> begin
-                if f a then a's else lookup (a's', f)
-              end
+            | (R.Le (a, a's') as a's), f ->
+                begin if f a then a's else lookup (a's', f)
+                end
+            | (R.Lt (a, a's') as a's), f ->
+                begin if f a then a's else lookup (a's', f)
+                end
           in
           let p_ : (I.eclo * I.eclo) R.order = selectOcc (a, (s_, s), occ) in
           let p'_ : (I.eclo * I.eclo) R.order = select (a', (s'_, s')) in

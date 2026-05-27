@@ -288,13 +288,13 @@ end) : WORLDSYN = struct
           Trace.success ();
           raise Success
         end
-      | b, (g_, ((I.Dec (_, v1_) as d1_) :: l2_ as l_)) -> begin
-          if Subordinate.belowEq (I.targetFam v1_, b) then begin
+      | b, (g_, ((I.Dec (_, v1_) as d1_) :: l2_ as l_)) ->
+          begin if Subordinate.belowEq (I.targetFam v1_, b) then begin
             Trace.unmatched (g_, l_);
             ()
           end
           else init b (decUName (g_, d1_), l2_)
-        end
+          end
       end
 
     let rec accR = function
@@ -303,31 +303,31 @@ end) : WORLDSYN = struct
           let t = createEVarSub (g_, someDecs) in
           let _ = Trace.matchBlock (gl_, Seq (piDecs, t)) in
           let k' = function
-            | gl'_ -> begin
-                if noConstraints (g_, t) then k gl'_
+            | gl'_ ->
+                begin if noConstraints (g_, t) then k gl'_
                 else begin
                   Trace.constraintsRemain ();
                   ()
                 end
-              end
+                end
           in
           accR (gl_, Seq (piDecs, t), b, k')
       | ( (g_, ((I.Dec (_, v1_) as d_) :: l2_ as l_)),
           (Seq ((I.Dec (_, v1'_) :: l2'_ as b'_), t) as l'_),
           b,
-          k ) -> begin
-          if Unify.unifiable (g_, (v1_, I.id), (v1'_, t)) then
+          k ) ->
+          begin if Unify.unifiable (g_, (v1_, I.id), (v1'_, t)) then
             accR ((decUName (g_, d_), l2_), Seq (l2'_, I.dot1 t), b, k)
-          else begin
-            if Subordinate.belowEq (I.targetFam v1_, b) then begin
+          else
+            begin if Subordinate.belowEq (I.targetFam v1_, b) then begin
               Trace.mismatch (g_, (v1_, I.id), (v1'_, t));
               ()
             end
             else
               accR
                 ((decUName (g_, d_), l2_), Seq (b'_, I.comp (t, I.shift)), b, k)
+            end
           end
-        end
       | gl_, Seq ([], t), b, k -> k gl_
       | ((g_, []) as gl_), (Seq (l'_, t) as r_), b, k -> begin
           Trace.missing (g_, r_);

@@ -54,8 +54,8 @@ end) : SKOLEM = struct
         | n -> I.App (I.Root (I.BVar n, I.Nil), spine (n - 1))
       in
       let rec installSkolem' = function
-        | d, (I.Pi ((d_, dp_), v_), mS), s, k -> begin
-            match mS with
+        | d, (I.Pi ((d_, dp_), v_), mS), s, k ->
+            begin match mS with
             | M.Mapp (M.Marg (M.Plus, _), mS') ->
                 installSkolem'
                   ( d + 1,
@@ -80,14 +80,15 @@ end) : SKOLEM = struct
                 in
                 let s_ = spine d in
                 let _ =
-                  begin if !Global.chatter >= 3 then
-                    TextIO.print (Print.conDecToString sd_ ^ "\n")
-                  else ()
-                  end
+                  Display.display'
+                    (Display.Info.msg
+                       ~level:(Display.Info.from_chatter 3)
+                       (Display.Info.Form.string
+                          (Print.conDecToString sd_ ^ "\n")))
                 in
                 installSkolem'
                   (d, (v_, mS'), I.Dot (I.Exp (I.Root (h_, s_)), s), k)
-          end
+            end
         | _, (I.Uni _, M.Mnil), _, _ -> ()
       in
       installSkolem' (0, (v_, mS), I.id, function v_ -> v_)

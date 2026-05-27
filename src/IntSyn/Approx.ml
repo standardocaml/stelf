@@ -5,6 +5,7 @@ open Intsyn_
 (* Approximate language for term reconstruction *)
 (* Author: Kevin Watkins *)
 include Approx_intf
+
 (* # 1 "src/lambda/Approx.fun.ml" *)
 open! Whnf
 open! Basis
@@ -93,9 +94,9 @@ module MakeApprox (Whnf : WHNF) : APPROX = struct
   (* whnfUni (l) = l'
        where l = l' and l' is in whnf *)
   let rec whnfUni = function
-    | Next l_ -> begin
-        match whnfUni l_ with Level i -> Level (i + 1) | l'_ -> Next l'_
-      end
+    | Next l_ ->
+        begin match whnfUni l_ with Level i -> Level (i + 1) | l'_ -> Next l'_
+        end
     | LVar { contents = Some l_ } -> whnfUni l_
     | l_ -> l_
 
@@ -298,9 +299,9 @@ module MakeApprox (Whnf : WHNF) : APPROX = struct
        otherwise raises Unify *)
   let rec occurUniW = function
     | r, Next l_ -> occurUniW (r, l_)
-    | r, LVar r' -> begin
-        if r == r' then raise (Unify "Level circularity") else ()
-      end
+    | r, LVar r' ->
+        begin if r == r' then raise (Unify "Level circularity") else ()
+        end
     | r, _ -> ()
 
   let rec occurUni (r, l_) = occurUniW (r, whnfUni l_)
@@ -310,21 +311,21 @@ module MakeApprox (Whnf : WHNF) : APPROX = struct
        effect: applies I
        otherwise raises Unify *)
   let rec matchUniW = function
-    | Level i1, Level i2 -> begin
-        if i1 = i2 then () else raise (Unify "Level clash")
-      end
-    | Level i1, Next l2_ -> begin
-        if i1 > 1 then matchUniW (Level (i1 - 1), l2_)
+    | Level i1, Level i2 ->
+        begin if i1 = i2 then () else raise (Unify "Level clash")
+        end
+    | Level i1, Next l2_ ->
+        begin if i1 > 1 then matchUniW (Level (i1 - 1), l2_)
         else raise (Unify "Level clash")
-      end
-    | Next l1_, Level i2 -> begin
-        if i2 > 1 then matchUniW (l1_, Level (i2 - 1))
+        end
+    | Next l1_, Level i2 ->
+        begin if i2 > 1 then matchUniW (l1_, Level (i2 - 1))
         else raise (Unify "Level clash")
-      end
+        end
     | Next l1_, Next l2_ -> matchUniW (l1_, l2_)
-    | LVar r1, (LVar r2 as l2_) -> begin
-        if r1 == r2 then () else r1 := Some l2_
-      end
+    | LVar r1, (LVar r2 as l2_) ->
+        begin if r1 == r2 then () else r1 := Some l2_
+        end
     | LVar r1, l2_ -> begin
         occurUniW (r1, l2_);
         r1 := Some l2_
@@ -342,9 +343,10 @@ module MakeApprox (Whnf : WHNF) : APPROX = struct
   let rec occurW = function
     | r, _ when !r == None -> false
     | r, Arrow (v1_, v2_) -> begin occur' (r, v1_) || occur' (r, v2_) end
-    | r, CVar r' -> begin
-        if r == r' then raise (Unify "Type/kind variable occurrence") else false
-      end
+    | r, CVar r' ->
+        begin if r == r' then raise (Unify "Type/kind variable occurrence")
+        else false
+        end
     | r, _ -> false
 
   and occur' (r, u_) = occurW (r, whnf u_)
@@ -357,22 +359,23 @@ module MakeApprox (Whnf : WHNF) : APPROX = struct
        otherwise raises Unify *)
   let rec matchW = function
     | Uni l1_, Uni l2_ -> matchUni (l1_, l2_)
-    | (Const h1_ as v1_), (Const h2_ as v2_) -> begin
-        match (h1_, h2_) with
-        | I.Const c1, I.Const c2 -> begin
-            if c1 = c2 then () else raise (Unify "Type/kind constant clash")
-          end
-        | I.Def d1, I.Def d2 -> begin
-            if d1 = d2 then () else match_ (constDefApx d1, constDefApx d2)
-          end
+    | (Const h1_ as v1_), (Const h2_ as v2_) ->
+        begin match (h1_, h2_) with
+        | I.Const c1, I.Const c2 ->
+            begin if c1 = c2 then ()
+            else raise (Unify "Type/kind constant clash")
+            end
+        | I.Def d1, I.Def d2 ->
+            begin if d1 = d2 then () else match_ (constDefApx d1, constDefApx d2)
+            end
         | I.Def d1, _ -> match_ (constDefApx d1, v2_)
         | _, I.Def d2 -> match_ (v1_, constDefApx d2)
-        | I.NSDef d1, I.NSDef d2 -> begin
-            if d1 = d2 then () else match_ (constDefApx d1, constDefApx d2)
-          end
+        | I.NSDef d1, I.NSDef d2 ->
+            begin if d1 = d2 then () else match_ (constDefApx d1, constDefApx d2)
+            end
         | I.NSDef d1, _ -> match_ (constDefApx d1, v2_)
         | _, I.NSDef d2 -> match_ (v1_, constDefApx d2)
-      end
+        end
     | Arrow (v1_, v2_), Arrow (v3_, v4_) -> begin
         (try match_ (v1_, v3_)
          with e ->
@@ -386,9 +389,9 @@ module MakeApprox (Whnf : WHNF) : APPROX = struct
     | Const (I.Def d1), (Arrow _ as v2_) -> match_ (constDefApx d1, v2_)
     | (Arrow _ as v1_), Const (I.NSDef d2) -> match_ (v1_, constDefApx d2)
     | Const (I.NSDef d1), (Arrow _ as v2_) -> match_ (constDefApx d1, v2_)
-    | CVar r1, (CVar r2 as u2_) -> begin
-        if r1 == r2 then () else r1 := Some u2_
-      end
+    | CVar r1, (CVar r2 as u2_) ->
+        begin if r1 == r2 then () else r1 := Some u2_
+        end
     | CVar r1, u2_ -> begin
         ignore @@ occurW (r1, u2_);
         r1 := Some u2_

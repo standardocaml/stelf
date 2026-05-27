@@ -10,6 +10,7 @@ open Basis
 (* Author: Frank Pfenning *)
 (* BASIC_STREAM defines the visible ""core"" of streams *)
 include Stream_intf
+
 module BasicStream : BASIC_STREAM = struct
   type 'a stream = Stream of (unit -> 'a front)
   and 'a front = Empty | Cons of 'a * 'a stream
@@ -86,9 +87,9 @@ module MakeStream (BasicStream : BASIC_STREAM) : STREAM = struct
   and filter' arg__3 arg__4 =
     begin match (arg__3, arg__4) with
     | _p, Empty -> Empty
-    | p, Cons (x, s) -> begin
-        if p x then Cons (x, filter p s) else filter' p (expose s)
-      end
+    | p, Cons (x, s) ->
+        begin if p x then Cons (x, filter p s) else filter' p (expose s)
+        end
     end
 
   let rec exists p s = exists' p (expose s)

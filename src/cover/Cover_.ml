@@ -3,8 +3,9 @@ open! Basis
 
 (* Coverage Checking *)
 
-(** Author: Frank Pfenning *)
 include Cover_intf
+(** Author: Frank Pfenning *)
+
 (* signature COVER *)
 
 (* # 1 "src/cover/Cover_.fun.ml" *)
@@ -27,9 +28,7 @@ module MakeCover
     (Names : NAMES)
     (Print : PRINT)
     (TypeCheck : TYPECHECK)
-    (Timers : Timers.TIMERS) :
-  COVER =
-struct
+    (Timers : Timers.TIMERS) : COVER = struct
   module Subordinate = Subordinate
 
   exception Error of string
@@ -85,8 +84,10 @@ struct
     | M.Mapp (M.Marg (M.Star, x), ms') -> Skip (outCoverInst ms')
 
   let rec chatter chlev f =
-    begin if !Global.chatter >= chlev then print (f ()) else ()
-    end
+    Display.display'
+      (Display.Info.msg
+         ~level:(Display.Info.from_chatter chlev)
+         (Display.Info.Form.string (f ())))
 
   let pluralize = function 1, s -> s | n, s -> s ^ "s"
   let rec abbrevCSpine (s_, ci) = s_
@@ -218,7 +219,9 @@ struct
         && matchEqns es
 
   let rec resolveCands = function
-    | Eqns es -> begin if matchEqns (List.rev es) then Eqns [] else Fail end
+    | Eqns es ->
+        begin if matchEqns (List.rev es) then Eqns [] else Fail
+        end
     | Cands ks -> Cands ks
     | Fail -> Fail
 
@@ -252,36 +255,36 @@ struct
         d,
         ((I.Root (h1_, s1_), s1) as us1_),
         ((I.Root (h2_, s2_), s2) as us2_),
-        cands ) -> begin
-        match (h1_, h2_) with
-        | I.BVar k1, I.BVar k2 -> begin
-            if k1 = k2 then matchSpine (g_, d, (s1_, s1), (s2_, s2), cands)
-            else begin
-              if k1 > d then failAdd (k1 - d, cands)
+        cands ) ->
+        begin match (h1_, h2_) with
+        | I.BVar k1, I.BVar k2 ->
+            begin if k1 = k2 then matchSpine (g_, d, (s1_, s1), (s2_, s2), cands)
+            else
+              begin if k1 > d then failAdd (k1 - d, cands)
               else fail "local variable / variable clash"
+              end
             end
-          end
-        | I.Const c1, I.Const c2 -> begin
-            if c1 = c2 then matchSpine (g_, d, (s1_, s1), (s2_, s2), cands)
+        | I.Const c1, I.Const c2 ->
+            begin if c1 = c2 then matchSpine (g_, d, (s1_, s1), (s2_, s2), cands)
             else fail "constant / constant clash"
-          end
-        | I.Def d1, I.Def d2 -> begin
-            if d1 = d2 then matchSpine (g_, d, (s1_, s1), (s2_, s2), cands)
+            end
+        | I.Def d1, I.Def d2 ->
+            begin if d1 = d2 then matchSpine (g_, d, (s1_, s1), (s2_, s2), cands)
             else
               matchExpW (g_, d, Whnf.expandDef us1_, Whnf.expandDef us2_, cands)
-          end
+            end
         | I.Def d1, _ -> matchExpW (g_, d, Whnf.expandDef us1_, us2_, cands)
         | _, I.Def d2 -> matchExpW (g_, d, us1_, Whnf.expandDef us2_, cands)
-        | I.BVar k1, I.Const _ -> begin
-            if k1 > d then failAdd (k1 - d, cands)
+        | I.BVar k1, I.Const _ ->
+            begin if k1 > d then failAdd (k1 - d, cands)
             else fail "local variable / constant clash"
-          end
+            end
         | I.Const _, I.BVar _ -> fail "constant / local variable clash"
-        | I.Proj (I.Bidx k1, i1), I.Proj (I.Bidx k2, i2) -> begin
-            if k1 = k2 && i1 = i2 then
+        | I.Proj (I.Bidx k1, i1), I.Proj (I.Bidx k2, i2) ->
+            begin if k1 = k2 && i1 = i2 then
               matchSpine (g_, d, (s1_, s1), (s2_, s2), cands)
             else fail "block index / block index clash"
-          end
+            end
         | I.Proj (I.Bidx k1, i1), I.Proj (I.LVar (r2, I.Shift k2, (l2, t2)), i2)
           ->
             let (I.BDec (bOpt, (l1, t1))) = I.ctxDec (g_, k1) in
@@ -294,14 +297,14 @@ struct
               let _ = Unify.instantiateLVar (r2, I.Bidx (k1 - k2)) in
               matchSpine (g_, d, (s1_, s1), (s2_, s2), cands2)
             end
-        | I.BVar k1, I.Proj _ -> begin
-            if k1 > d then failAdd (k1 - d, cands)
+        | I.BVar k1, I.Proj _ ->
+            begin if k1 > d then failAdd (k1 - d, cands)
             else fail "local variable / block projection clash"
-          end
+            end
         | I.Const _, I.Proj _ -> fail "constant / block projection clash"
         | I.Proj _, I.Const _ -> fail "block projection / constant clash"
         | I.Proj _, I.BVar _ -> fail "block projection / local variable clash"
-      end
+        end
     | g_, d, (I.Lam (d1_, u1_), s1), (I.Lam (d2_, u2_), s2), cands ->
         matchExp
           ( I.Decl (g_, I.decSub (d1_, s1)),
@@ -352,14 +355,14 @@ struct
     | g_, d, I.Dot (ft1_, s1), I.Dot (ft2_, s2), cands ->
         let cands1 =
           begin match (ft1_, ft2_) with
-          | I.Idx n1, I.Idx n2 -> begin
-              if n1 = n2 then cands
-              else begin
-                if n1 > d then failAdd (n1 - d, cands)
+          | I.Idx n1, I.Idx n2 ->
+              begin if n1 = n2 then cands
+              else
+                begin if n1 > d then failAdd (n1 - d, cands)
                 else
                   fail "local variable / local variable clash in block instance"
+                end
               end
-            end
           | I.Exp u1_, I.Exp u2_ ->
               matchExp (g_, d, (u1_, I.id), (u2_, I.id), cands)
           | I.Exp u1_, I.Idx n2 ->
@@ -381,10 +384,11 @@ struct
         (I.Root (I.Const c1, s1_), s1),
         (I.Root (I.Const c2, s2_), s2),
         ci,
-        cands ) -> begin
-        if c1 = c2 then matchTopSpine (g_, d, (s1_, s1), (s2_, s2), ci, cands)
+        cands ) ->
+        begin if c1 = c2 then
+          matchTopSpine (g_, d, (s1_, s1), (s2_, s2), ci, cands)
         else fail "type family clash"
-      end
+        end
     | g_, d, (I.Pi ((d1_, _), v1_), s1), (I.Pi ((d2_, _), v2_), s2), ci, cands
       ->
         matchTopW
@@ -419,8 +423,7 @@ struct
     | g_, ps', [], ci, klist -> klist
     | g_, ps', v_ :: ccs', ci, klist ->
         let cands =
-          CsManager.trail (function () ->
-              matchClause (g_, ps', (v_, I.id), ci))
+          CsManager.trail (function () -> matchClause (g_, ps', (v_, I.id), ci))
         in
         matchSig' (g_, ps', ccs', ci, addKs (cands, klist))
 
@@ -493,12 +496,12 @@ struct
 
   let rec insert = function
     | k, [] -> [ (k, 1) ]
-    | k, ((k', n') :: ksn' as ksn) -> begin
-        match Int.compare (k, k') with
+    | k, ((k', n') :: ksn' as ksn) ->
+        begin match Int.compare (k, k') with
         | Less -> (k, 1) :: ksn
         | Equal -> (k', n' + 1) :: ksn'
         | Greater -> (k', n') :: insert (k, ksn')
-      end
+        end
 
   let rec join = function
     | [], ksn -> ksn
@@ -630,9 +633,10 @@ struct
   let rec lowerSplitW = function
     | (I.EVar (_, g_, v_, _) as x_), w_, sc ->
         let sc' = function
-          | u_ -> begin
-              if Unify.unifiable (g_, (x_, I.id), (u_, I.id)) then sc () else ()
-            end
+          | u_ ->
+              begin if Unify.unifiable (g_, (x_, I.id), (u_, I.id)) then sc ()
+              else ()
+              end
         in
         let _ = paramCases (g_, (v_, I.id), I.ctxLength g_, sc') in
         let _ = worldCases (g_, (v_, I.id), w_, sc') in
@@ -823,11 +827,11 @@ struct
 
   let rec eqInp = function
     | I.Null, k, a, ss_, ms -> []
-    | I.Decl (g'_, I.Dec (_, I.Root (I.Const a', s'_))), k, a, ss_, ms -> begin
-        if a = a' && eqInpSpine (ms, (s'_, I.Shift k), ss_) then
+    | I.Decl (g'_, I.Dec (_, I.Root (I.Const a', s'_))), k, a, ss_, ms ->
+        begin if a = a' && eqInpSpine (ms, (s'_, I.Shift k), ss_) then
           k :: eqInp (g'_, k + 1, a, ss_, ms)
         else eqInp (g'_, k + 1, a, ss_, ms)
-      end
+        end
     | I.Decl (g'_, I.Dec (_, I.Pi _)), k, a, ss_, ms ->
         eqInp (g'_, k + 1, a, ss_, ms)
     | I.Decl (g'_, I.NDec _), k, a, ss_, ms -> eqInp (g'_, k + 1, a, ss_, ms)
@@ -836,15 +840,15 @@ struct
 
   let rec contractionCands = function
     | I.Null, k -> []
-    | I.Decl (g'_, I.Dec (_, I.Root (I.Const a, s_))), k -> begin
-        match UniqueTable.modeLookup a with
+    | I.Decl (g'_, I.Dec (_, I.Root (I.Const a, s_))), k ->
+        begin match UniqueTable.modeLookup a with
         | None -> contractionCands (g'_, k + 1)
-        | Some ms -> begin
-            match eqInp (g'_, k + 1, a, (s_, I.Shift k), ms) with
+        | Some ms ->
+            begin match eqInp (g'_, k + 1, a, (s_, I.Shift k), ms) with
             | [] -> contractionCands (g'_, k + 1)
             | ns -> (k :: ns) :: contractionCands (g'_, k + 1)
-          end
-      end
+            end
+        end
     | I.Decl (g'_, I.Dec (_, I.Pi _)), k -> contractionCands (g'_, k + 1)
     | I.Decl (g'_, I.NDec _), k -> contractionCands (g'_, k + 1)
     | I.Decl (g'_, I.BDec (_, (b, t))), k -> contractionCands (g'_, k + 1)
@@ -937,9 +941,10 @@ struct
 
   and findMin' = function
     | (k0, n0), [] -> (k0, n0)
-    | (k0, n0), (k', n') :: kns -> begin
-        if n' < n0 then findMin' ((k', n'), kns) else findMin' ((k0, n0), kns)
-      end
+    | (k0, n0), (k', n') :: kns ->
+        begin if n' < n0 then findMin' ((k', n'), kns)
+        else findMin' ((k0, n0), kns)
+        end
 
   let rec cover (v_, p, ((w_, ci) as wci), ccs, lab, missing) =
     begin
@@ -968,11 +973,11 @@ struct
             "No strong candidates---calculating weak candidates\n");
         splitWeak (v_, p, finitary (v_, p, w_, ci), wci, ccs, lab, missing)
       end
-    | v_, p, Some ((k, _) :: ksn), ((w_, ci) as wci), ccs, lab, missing -> begin
-        match splitVar (v_, p, k, wci) with
+    | v_, p, Some ((k, _) :: ksn), ((w_, ci) as wci), ccs, lab, missing ->
+        begin match splitVar (v_, p, k, wci) with
         | Some cases -> covers (cases, wci, ccs, lab, missing)
         | None -> split (v_, p, Some ksn, wci, ccs, lab, missing)
-      end
+        end
 
   and splitWeak = function
     | v_, p, [], wci, ccs, lab, missing -> begin (v_, p) :: missing end
@@ -2416,13 +2421,7 @@ end
 open! Basis
 
 module Cover =
-  MakeCover
-    (Global)
-    (Whnf)
-    (Conv)
-    (Abstract)
-    (UnifyTrail)
-    (Constraints)
+  MakeCover (Global) (Whnf) (Conv) (Abstract) (UnifyTrail) (Constraints)
     (ModeTable)
     (UniqueTable)
     (Index)

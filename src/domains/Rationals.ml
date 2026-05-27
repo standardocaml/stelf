@@ -35,13 +35,13 @@ module Rationals (Integers : INTEGERS) :
       | Fract (s, n, d) ->
           let rec gcd (m, n) =
             begin if m = I.fromInt 0 then n
-            else begin
-              if n = I.fromInt 0 then m
-              else begin
-                if I.( > ) m n then gcd (I.mod_ (m, n), n)
+            else
+              begin if n = I.fromInt 0 then m
+              else
+                begin if I.( > ) m n then gcd (I.mod_ (m, n), n)
                 else gcd (m, I.mod_ (n, m))
+                end
               end
-            end
             end
           in
           let g = gcd (n, d) in
@@ -97,39 +97,39 @@ module Rationals (Integers : INTEGERS) :
 
     let fromString str =
       let check_numerator = function
-        | c :: chars' as chars -> begin
-            if c = '~' then List.all Char.isDigit chars'
+        | c :: chars' as chars ->
+            begin if c = '~' then List.all Char.isDigit chars'
             else List.all Char.isDigit chars
-          end
+            end
         | [] -> false
       in
       let check_denominator chars = List.all Char.isDigit chars in
       let fields = String.fields (function c -> c = '/') str in
       begin if List.length fields = 1 then
         let numerator = List.nth (fields, 0) in
-        begin if check_numerator (String.explode numerator) then begin
-          match I.fromString numerator with
+        begin if check_numerator (String.explode numerator) then
+          begin match I.fromString numerator with
           | Some n -> Some (Fract (I.sign n, I.abs n, I.fromInt 1))
           | _ -> None
-        end
+          end
         else None
         end
-      else begin
-        if List.length fields = 2 then
+      else
+        begin if List.length fields = 2 then
           let numerator = List.nth (fields, 0) in
           let denominator = List.nth (fields, 1) in
           begin if
             check_numerator (String.explode numerator)
             && check_denominator (String.explode denominator)
-          then begin
-            match (I.fromString numerator, I.fromString denominator) with
+          then
+            begin match (I.fromString numerator, I.fromString denominator) with
             | Some n, Some d -> Some (normalize (Fract (I.sign n, I.abs n, d)))
             | _ -> None
-          end
+            end
           else None
           end
         else None
-      end
+        end
       end
 
     let toString (Fract (s, n, d)) =

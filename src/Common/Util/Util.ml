@@ -1,2 +1,1 @@
-include Eq 
-  
+include Eq

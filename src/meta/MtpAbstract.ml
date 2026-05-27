@@ -68,11 +68,11 @@ end) : MtpAbstract_intf.MTPABSTRACT = struct
 
     let rec checkEmpty = function
       | [] -> ()
-      | cnstrL -> begin
-          match C.simplify cnstrL with
+      | cnstrL ->
+          begin match C.simplify cnstrL with
           | [] -> ()
           | _ -> raise (Error "Typing ambiguous -- unresolved constraints")
-        end
+          end
 
     let rec eqEVar arg__1 arg__2 =
       begin match (arg__1, arg__2) with
@@ -103,7 +103,9 @@ end) : MtpAbstract_intf.MTPABSTRACT = struct
           ( or ) (occursInDec (k, d_), occursInExp (k + 1, v_))
 
     and occursInHead = function
-      | k, I.BVar k', dp_ -> begin if k = k' then I.Maybe else dp_ end
+      | k, I.BVar k', dp_ ->
+          begin if k = k' then I.Maybe else dp_
+          end
       | k, I.Const _, dp_ -> dp_
       | k, I.Def _, dp_ -> dp_
       | k, I.Skonst _, I.No -> I.No
@@ -162,8 +164,8 @@ end) : MtpAbstract_intf.MTPABSTRACT = struct
               I.Decl (g_, I.decSub (d_, s)),
               (u_, I.dot1 s),
               collectDec (tag_, d, g_, (d_, s), k_) )
-      | tag_, d, g_, ((I.EVar (r, gdX_, v_, cnstrs) as x_), s), k_ -> begin
-          if exists (eqEVar x_) k_ then collectSub (tag_, d, g_, s, k_)
+      | tag_, d, g_, ((I.EVar (r, gdX_, v_, cnstrs) as x_), s), k_ ->
+          begin if exists (eqEVar x_) k_ then collectSub (tag_, d, g_, s, k_)
           else
             let gp_, gx_ = restore (I.ctxLength gdX_ - d, gdX_) in
             let _ = checkEmpty !cnstrs in
@@ -183,7 +185,7 @@ end) : MtpAbstract_intf.MTPABSTRACT = struct
                 I.Decl
                   ( collectExp (tag_, d, gp_, (v'_, I.id), k_),
                     Ev (r', v'_, tag_, d) ) )
-        end
+          end
       | tag_, d, g_, (I.FgnExp (csid_, csfe), s), k_ ->
           I.FgnExpStd.fold (csid_, csfe)
             (function u_, k'_ -> collectExp (tag_, d, g_, (u_, s), k'_))
@@ -211,10 +213,9 @@ end) : MtpAbstract_intf.MTPABSTRACT = struct
 
     let rec abstractEVar = function
       | I.Decl (k'_, Ev (r', _, _, d)), depth, (I.EVar (r, _, _, _) as x_) ->
-        begin
-          if r == r' then (I.BVar (depth + 1), d)
+          begin if r == r' then (I.BVar (depth + 1), d)
           else abstractEVar (k'_, depth + 1, x_)
-        end
+          end
       | I.Decl (k'_, Bv _), depth, x_ -> abstractEVar (k'_, depth + 1, x_)
 
     let rec lookupBV (k_, i) =
@@ -231,12 +232,12 @@ end) : MtpAbstract_intf.MTPABSTRACT = struct
           piDepend
             ( (abstractDec (k_, depth, (d_, s)), p_),
               abstractExp (k_, depth + 1, (v_, I.dot1 s)) )
-      | k_, depth, (I.Root ((I.BVar k as h_), s_), s) -> begin
-          if k > depth then
+      | k_, depth, (I.Root ((I.BVar k as h_), s_), s) ->
+          begin if k > depth then
             let k' = lookupBV (k_, k - depth) in
             I.Root (I.BVar (k' + depth), abstractSpine (k_, depth, (s_, s)))
           else I.Root (h_, abstractSpine (k_, depth, (s_, s)))
-        end
+          end
       | k_, depth, (I.Root (h_, s_), s) ->
           I.Root (h_, abstractSpine (k_, depth, (s_, s)))
       | k_, depth, (I.Lam (d_, u_), s) ->
@@ -253,12 +254,12 @@ end) : MtpAbstract_intf.MTPABSTRACT = struct
     and abstractExp (k_, depth, us_) = abstractExpW (k_, depth, Whnf.whnf us_)
 
     and abstractSub = function
-      | n, k_, depth, I.Shift k, s_ -> begin
-          if n > 0 then
+      | n, k_, depth, I.Shift k, s_ ->
+          begin if n > 0 then
             abstractSub
               (n, k_, depth, I.Dot (I.Idx (k + 1), I.Shift (k + 1)), s_)
           else s_
-        end
+          end
       | n, k_, depth, I.Dot (I.Idx k, s), s_ ->
           let h_ =
             begin if k > depth then

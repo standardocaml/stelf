@@ -1,6 +1,6 @@
-module type RECON_MODULE = sig 
-module M : S.S
-  module Cst = M.Cst 
+module type RECON_MODULE = sig
+  module M : S.S
+  module Cst = M.Cst
   module Ast = M.Ast
   module Paths = M.Paths
   module ModSyn : Modules.Modsyn.MODSYN

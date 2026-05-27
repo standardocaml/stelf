@@ -27,6 +27,7 @@ include Tomega
 module Whnf_ = Whnf
 module Conv_ = Conv
 module Whnf = Whnf_.Whnf ()
+
 module Conv = Conv_.Conv (struct
   module Whnf = Whnf
 end)
@@ -53,9 +54,7 @@ structure Tomega : TOMEGA =
 	   structure Conv = Conv)
 *)
 module Constraints = Constraints.MakeConstraints (Conv)
-
 module UnifyNoTrail = Unify.MakeUnify (Whnf) (Notrail.NoTrail)
-
 module UnifyTrail = Unify.MakeUnify (Whnf) (Trail)
 
 (* structure Normalize : NORMALIZE =  
@@ -64,7 +63,5 @@ module UnifyTrail = Unify.MakeUnify (Whnf) (Trail)
              structure Whnf = Whnf)
  *)
 module Match = Match.MakeMatch (Whnf) (UnifyTrail) (Trail)
-
 module Abstract = Abstract.MakeAbstract (Whnf) (UnifyNoTrail) (Constraints)
-
 module Approx = Approx.MakeApprox (Whnf)
