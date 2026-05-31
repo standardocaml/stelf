@@ -103,6 +103,7 @@ struct
         chatterOneNewline ();
         begin
           Msg.message (((!errorFileName ^ ":") ^ Paths.wrap (r, msg)) ^ "\n");
+          Display.warning (Display.Form.string msg);
           begin if exceeds (!errorCount, !errorThreshold) then die r else ()
           end
         end
@@ -298,54 +299,44 @@ struct
      Uses View observers because Cst.term/decl are abstract in the CST signature. *)
   let rec cst_term_to_term (t : Cst.term) : term =
     let module V = Cst.View in
-    let loc_r () =
-      let loc = match V.term_loc t with Some l -> l | None -> Cst.ghost in
-      loc_to_region loc
+    let ghost_r = loc_to_region Cst.ghost in
+    let rec fold_pi decls body = match decls with
+      | [] -> body
+      | d :: rest -> Pi_ (cst_decl_to_dec d, fold_pi rest body)
     in
-    match V.term_arrow t with
-    | Some (a, b) -> Arrow_ (cst_term_to_term a, cst_term_to_term b)
-    | None -> (
-        match V.term_pi t with
-        | Some (d, b) -> Pi_ (cst_decl_to_dec d, cst_term_to_term b)
-        | None -> (
-            match V.term_lam t with
-            | Some (d, b) -> Lam_ (cst_decl_to_dec d, cst_term_to_term b)
-            | None -> (
-                match V.term_app t with
-                | Some (a, b) -> App_ (cst_term_to_term a, cst_term_to_term b)
-                | None -> (
-                    match V.term_has_type t with
-                    | Some (a, b) ->
-                        Hastype_ (cst_term_to_term a, cst_term_to_term b)
-                    | None -> (
-                        match V.term_lcid t with
-                        | Some (ns, n) -> Lcid_ (ns, n, loc_r ())
-                        | None -> (
-                            match V.term_ucid t with
-                            | Some (ns, n) -> Ucid_ (ns, n, loc_r ())
-                            | None -> (
-                                match V.term_quid t with
-                                | Some (ns, n) -> Quid_ (ns, n, loc_r ())
-                                | None -> (
-                                    match V.term_scon t with
-                                    | Some s -> Scon_ (s, loc_r ())
-                                    | None -> (
-                                        match V.term_evar t with
-                                        | Some s -> Evar_ (s, loc_r ())
-                                        | None -> (
-                                            match V.term_fvar t with
-                                            | Some s -> Fvar_ (s, loc_r ())
-                                            | None ->
-                                                if V.term_typ t then
-                                                  Typ_ (loc_r ())
-                                                else Omitted_ (loc_r ())))))))))
-            ))
+    let rec fold_lam decls body = match decls with
+      | [] -> body
+      | d :: rest -> Lam_ (cst_decl_to_dec d, fold_lam rest body)
+    in
+    let rec fold_app head args = match args with
+      | [] -> head
+      | a :: rest -> fold_app (App_ (head, cst_term_to_term a)) rest
+    in
+    match V.Term.view t with
+    | V.Term.Arrow (_, a, b)     -> Arrow_ (cst_term_to_term a, cst_term_to_term b)
+    | V.Term.BackArrow (_, b, a) -> Arrow_ (cst_term_to_term a, cst_term_to_term b)
+    | V.Term.Pi (_, decls, body) -> fold_pi decls (cst_term_to_term body)
+    | V.Term.Lam (_, decls, body) -> fold_lam decls (cst_term_to_term body)
+    | V.Term.App (_, head, args) -> fold_app (cst_term_to_term head) args
+    | V.Term.HasType (_, a, b)   -> Hastype_ (cst_term_to_term a, cst_term_to_term b)
+    | V.Term.Lowercase (_, (ns, n)) -> Lcid_ (ns, n, ghost_r)
+    | V.Term.Uppercase (_, (ns, n)) -> Ucid_ (ns, n, ghost_r)
+    | V.Term.Qualified (_, (ns, n)) -> Quid_ (ns, n, ghost_r)
+    | V.Term.Text (_, s)     -> Scon_ (s, ghost_r)
+    | V.Term.ExistVar (_, s) -> Evar_ (s, ghost_r)
+    | V.Term.FreeVar (_, s)  -> Fvar_ (s, ghost_r)
+    | V.Term.Typ _           -> Typ_ ghost_r
+    | _                      -> Omitted_ ghost_r
 
   and cst_decl_to_dec (d : Cst.decl) : dec =
-    let names, tm, loc = Cst.View.decl_fields d in
+    let (names, tm) = match Cst.View.Decl.view d with
+      | Cst.View.Decl.Decl1 (_, names, tm, _) -> (names, tm)
+      | Cst.View.Decl.Decl0 (_, names, tm)    -> (names, tm)
+      | _ -> assert false
+    in
     (* Cst.decl allows a list of names; internal dec has one name option. *)
     let name_opt = match names with [] -> None | n :: _ -> n in
-    Dec_ (name_opt, cst_term_to_term tm, loc_to_region loc)
+    Dec_ (name_opt, cst_term_to_term tm, loc_to_region Cst.ghost)
 
   let rec jwithctx (g, j) =
     let rec cvt = function

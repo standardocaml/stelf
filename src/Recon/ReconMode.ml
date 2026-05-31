@@ -13,10 +13,17 @@ module Make_ReconMode (M : S.S) : RECON_MODE with module M = M = struct
   module Modes = Modes.Modesyn.ModeSyn
 
   exception Error of string
-
-  let modeToMode md =
-    begin match Cst.View.mode_short md with
-    | Some ((ns, id), _spine) ->
+  let raise' m = 
+    Display.(error ~src:Info.Recon (string "Error processing mode declaration: " ++ string m)); 
+    raise (Error m)
+  let modeToMode md = try
+    begin match Cst.View.Mode.Dec.view md with
+    | Cst.View.Mode.Dec.ModeDec (_, spine, root) ->
+        let sym = match Cst.View.Mode.Term.view root with
+          | Cst.View.Mode.Term.ModeTerm (_, sym, _) -> sym
+          | _ -> raise' ( "Mode declaration root is not a constant")
+        in
+        let (ns, id) = sym in
         let qid = Qid (ns, id) in
         begin match constLookup qid with
         | None ->
@@ -26,50 +33,31 @@ module Make_ReconMode (M : S.S) : RECON_MODE with module M = M = struct
                  ^ qidToString (valOf (constUndef qid))
                  ^ " in mode declaration"))
         | Some cid ->
-            let mS = ModeDec.shortToFull (cid, Modes.Mnil, ghost_region) in
-            let r = Paths.Reg (0, 0) in
-            ((cid, mS), r)
-        end
-    | None ->
-        begin match Cst.View.mode_full md with
-        | None -> raise (Error "Invalid mode declaration")
-        | Some (modes, root_tm) ->
-            let rec head tm =
-              match Cst.View.term_app tm with
-              | Some (f, _) -> head f
-              | None -> tm
-            in
-            begin match Cst.View.term_quid (head root_tm) with
-            | None -> raise (Error "Mode declaration root is not a constant")
-            | Some (ns, id) ->
-                let qid = Qid (ns, id) in
-                begin match constLookup qid with
-                | None ->
-                    raise
-                      (Error
-                         ("Undeclared identifier "
-                         ^ qidToString (valOf (constUndef qid))
-                         ^ " in mode declaration"))
-                | Some cid ->
-                    let convert_mode m =
-                      match Cst.View.mode_view m with
-                      | `Plus -> Modes.Plus
-                      | `Star -> Modes.Star
-                      | `Minus -> Modes.Minus
-                      | `Minus1 -> Modes.Minus1
-                    in
-                    let rec build_spine = function
-                      | [] -> Modes.Mnil
-                      | (m, name_opt) :: rest ->
-                          Modes.Mapp
-                            ( Modes.Marg (convert_mode m, name_opt),
-                              build_spine rest )
-                    in
-                    let mS = build_spine modes in
-                    ModeDec.checkFull (cid, mS, ghost_region);
-                    ((cid, mS), Paths.Reg (0, 0))
-                end
+            if spine = [] then begin
+              let mS = ModeDec.shortToFull (cid, Modes.Mnil, ghost_region) in
+              ((cid, mS), Paths.Reg (0, 0))
+            end else begin
+              let convert_mode m =
+                match Cst.View.Mode.view m with
+                | Cst.View.Mode.Plus _ -> Modes.Plus
+                | Cst.View.Mode.Star _ -> Modes.Star
+                | Cst.View.Mode.Minus _ -> Modes.Minus
+                | Cst.View.Mode.Minus1 _ -> Modes.Minus1
+                | _ -> assert false
+              in
+              let rec build_spine = function
+                | [] -> Modes.Mnil
+                | (m, name_opt) :: rest ->
+                    Modes.Mapp
+                      ( Modes.Marg (convert_mode m, name_opt),
+                        build_spine rest )
+              in
+              let mS = build_spine spine in
+              ModeDec.checkFull (cid, mS, ghost_region);
+              ((cid, mS), Paths.Reg (0, 0))
             end
         end
+    | _ -> raise' ( "Invalid mode declaration")
     end
-end
+  with Error m -> Display.(message ~kind:Warning ~level:Verbose (string "Error processing mode declaration: " ++ string m)); raise' ( m)
+  end

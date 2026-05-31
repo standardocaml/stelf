@@ -9,4 +9,4 @@ let run_server () : int = Twelf_server.server ("stelf", [])
 let () = if run_server () = 0 then exit 0 else exit 1
 *)
 
-let () = Pal.run ()    
+let () = Pal.Pal.run ()

@@ -1,1 +1,2 @@
 include Eq
+include Magic

@@ -30,6 +30,7 @@ module type FORM = sig
     module Back : COLORS with type t := style
   end
 
+  val ( +++ ) : t -> t -> t
   val ( ++ ) : t -> t -> t
   val style : style -> t -> t
   val styles : style list -> t -> t
@@ -49,5 +50,7 @@ module type FORM = sig
   val vbox : t list -> t
   val hvbox : t list -> t
   val markup : t -> LTerm_text.t
+  val shown_many : ?sep:t -> ('a -> string) -> 'a list -> t
+  val optional : ?def:t -> ('a -> t) -> 'a option -> t
   val fmt : t Fmt.t
 end

@@ -1,3 +1,4 @@
+
 open Base
 (**
    The concrete syntax tree (CST) interface (in Twelf, it bore the name [ExtSyn]. 
@@ -19,6 +20,7 @@ open Base
 module type CST = sig
   module Paths : Paths.Paths_intf.PATHS
   (** Module of paths and regions, which we allow to be shared *)
+
 
   type query
   (** Query payload. *)
@@ -74,7 +76,7 @@ module type CST = sig
   type block_item
   (** One item in a %block world declaration. *)
 
-  type cmd
+  type cmd [@@deriving show { with_path = false }, eq]
   (** Top-level command node. *)
 
   type loc
@@ -100,7 +102,8 @@ module type CST = sig
 
   (** {3 Term Syntax} *)
   module Term : sig
-    type nonrec t = term
+    type t = term
+
 
     val lowercase : ?fc:loc -> symbol -> term
     (** Lowercase identifier (does not start with [_]). *)
@@ -164,9 +167,9 @@ module type CST = sig
 
   (** Binder declaration constructors. *)
   module Decl : sig
-    type nonrec t = decl
+    type t = decl
 
-    val decl1 : ?fc:loc -> string option list -> Term.t -> decl
+    val decl1 : ?fc:loc -> string option list -> term -> decl
     (** [decl1 names typ] creates a declaration that binds [names] with type
         [typ].
 
@@ -179,25 +182,25 @@ module type CST = sig
 
   (** Top-level declaration constructors. *)
   module ConDec : sig
-    type nonrec t = conDec
+    type t = conDec
 
-    val constant_decl : ?fc:loc -> Decl.t -> t
+    val constant_decl : ?fc:loc -> decl -> t
     (** Lift a local declaration into a top-level [%term] declaration. *)
 
-    val block_decl : ?fc:loc -> string -> Decl.t list -> Decl.t list -> t
+    val block_decl : ?fc:loc -> string -> decl list -> decl list -> t
     (** Block declaration.
 
         [%block B X Y] declares block [B] with declaration groups [X] and [Y].
     *)
 
     val block_def : ?fc:loc -> string -> symbol list -> t
-    val constant_def : ?fc:loc -> string -> Term.t -> Term.t option -> t
+    val constant_def : ?fc:loc -> string -> term -> term option -> t
   end
 
   (** Mode syntax constructors. *)
   module Mode : sig
     type mode
-    type term = modeTerm
+    type nonrec modeTerm = modeTerm
 
     val plus : ?fc:loc -> unit -> mode
     (** Positive mode marker. *)
@@ -215,31 +218,31 @@ module type CST = sig
 
     (** Short mode syntax. *)
     module Short : sig
-      type term = modeTerm
-      type spine = modeSpine
+      type nonrec modeTerm = modeTerm
+      type nonrec modeSpine = modeSpine
 
-      val mode_nil : ?fc:loc -> unit -> spine
+      val mode_nil : ?fc:loc -> unit -> modeSpine
       (** Empty mode spine. *)
 
-      val mode_app : ?fc:loc -> mode * string option -> spine -> spine
+      val mode_app : ?fc:loc -> mode * string option -> modeSpine -> modeSpine
       (** Extend a mode spine with one argument mode. *)
 
-      val mode_root : ?fc:loc -> symbol -> spine -> term
+      val mode_root : ?fc:loc -> symbol -> modeSpine -> modeTerm
       (** Build a short mode root from a symbol and spine. *)
 
-      val to_modeDec : ?fc:loc -> term -> modeDec
+      val to_modeDec : ?fc:loc -> modeTerm -> modeDec
       (** Convert a short mode term into a mode declaration. *)
     end
 
     (** Full mode syntax. *)
     module Full : sig
-      val mode_root : ?fc:loc -> Term.t -> term
+      val mode_root : ?fc:loc -> term -> modeTerm
       (** Root mode term from a regular term. *)
 
-      val mode_pi : ?fc:loc -> mode -> Decl.t -> term -> term
+      val mode_pi : ?fc:loc -> mode -> decl -> modeTerm -> modeTerm
       (** Pi-mode binder. *)
 
-      val to_modeDec : ?fc:loc -> term -> modeDec
+      val to_modeDec : ?fc:loc -> modeTerm -> modeDec
       (** Convert a full mode term into a mode declaration. *)
     end
   end
@@ -252,7 +255,7 @@ module type CST = sig
 
     type inst
 
-    val con_inst : ?fc:loc -> symbol * loc -> Term.t -> inst
+    val con_inst : ?fc:loc -> symbol * loc -> term -> inst
     val str_inst : ?fc:loc -> symbol * loc -> strexp -> inst
 
     type sigexp
@@ -274,18 +277,18 @@ module type CST = sig
   module Query : sig
     type query
 
-    val query : ?fc:loc -> string option -> Term.t -> query
+    val query : ?fc:loc -> string option -> term -> query
     (** Query declaration. *)
 
     type define
     (** Define declaration. *)
 
-    val define : ?fc:loc -> string option -> Term.t -> Term.t option -> define
+    val define : ?fc:loc -> string option -> term -> term option -> define
     (** Define declaration with optional right-hand side. *)
 
     type solve
 
-    val solve : ?fc:loc -> string option -> Term.t -> solve
+    val solve : ?fc:loc -> string option -> term -> solve
     (** Solve declaration. *)
   end
 
@@ -334,8 +337,8 @@ module type CST = sig
     val unique : ?fc:loc -> term -> cmd
     (** [%unique expr] — assert expr has at most one inhabitant. *)
 
-    val mode : ?fc:loc -> string -> modeDec -> cmd
-    (** [%mode id hyps] — declare input/output polarity. *)
+    val mode : ?fc:loc -> modeDec -> cmd
+    (** [%mode hyps] — declare input/output polarity. *)
 
     val define : ?fc:loc -> Query.define -> cmd
     (** [%define id expr] — transparent definition. *)
@@ -402,8 +405,21 @@ module type CST = sig
       val set : ?fc:loc -> string -> string -> cmd
       val version : ?fc:loc -> unit -> cmd
     end
-  end
 
+    val total : ?fc:loc -> string list list -> term list -> cmd
+    (** [%total hyps modes] — declare a totality check. *)
+    
+    val terminates : ?fc:loc -> string list list -> term list -> cmd
+    (** [%terminates hyps modes] — declare a termination check. *)
+    
+    val covers : ?fc:loc -> modeDec -> cmd
+    (** [%covers hyps modes] — declare a coverage check. *)
+    
+    val name : ?fc:loc -> string -> cmd
+    (** [%name id] — declare a name for the next definition. *)
+    
+  end
+ 
   module Thm : sig
     (*! structure Paths : PATHS  !*)
     type order
@@ -474,68 +490,25 @@ module type CST = sig
 
   val pp_term : Stdlib.Format.formatter -> term -> unit
   (** Pretty-print a term to a formatter. *)
-
-  (** Read-only deconstructors for opaque CST values. *)
-  module View : sig
-    val term_loc : term -> loc option
-    val term_lcid : term -> symbol option
-    val term_ucid : term -> symbol option
-    val term_quid : term -> symbol option
-    val term_scon : term -> string option
-    val term_evar : term -> string option
-    val term_fvar : term -> string option
-    val term_typ : term -> bool
-    val term_omitted : term -> bool
-    val term_arrow : term -> (term * term) option
-    val term_pi : term -> (decl * term) option
-    val term_lam : term -> (decl * term) option
-    val term_app : term -> (term * term) option
-    val term_has_type : term -> (term * term) option
-    val decl_fields : decl -> string option list * term * loc
-    val condec_constant_decl : conDec -> decl option
-    val condec_constant_def : conDec -> (string * term * term option) option
-    val condec_block_decl : conDec -> (string * decl list * decl list) option
-    val condec_block_def : conDec -> (string * symbol list) option
-    val query_fields : query -> string option * term
-    val define_fields : define -> string option * term * term option
-    val solve_fields : solve -> string option * term
-    val mode_view : mode -> [ `Plus | `Star | `Minus | `Minus1 ]
-    val mode_short : modeDec -> (symbol * (mode * string option) list) option
-    val mode_full : modeDec -> ((mode * string option) list * term) option
-    val struct_strexp_symbol : strexp -> symbol option
-    val struct_inst_con : inst -> (symbol * loc * term) option
-    val struct_inst_str : inst -> (symbol * loc * strexp) option
-    val struct_sigexp_id : sigexp -> string option
-    val struct_sigexp_where : sigexp -> (sigexp * inst list) option
-    val struct_sigdef_fields : sigdef -> string option * sigexp
-    val struct_structdecl_decl : structDec -> (string option * sigexp) option
-    val struct_structdecl_def : structDec -> (string option * strexp) option
-    val thm_order_varg : Thm.order -> (loc * string list) option
-    val thm_order_lex : Thm.order -> (loc * Thm.order list) option
-    val thm_order_simul : Thm.order -> (loc * Thm.order list) option
-    val thm_callpats : Thm.callpats -> (string * string option list * loc) list
-    val thm_tdecl : Thm.tdecl -> Thm.order * Thm.callpats
-    val thm_predicate : Thm.predicate -> string * loc
-
-    val thm_rdecl :
-      Thm.rdecl -> Thm.predicate * Thm.order * Thm.order * Thm.callpats
-
-    val thm_tableddecl : Thm.tableddecl -> string * loc
-    val thm_keepTabledecl : Thm.keepTabledecl -> string * loc
-    val thm_prove : Thm.prove -> int * Thm.tdecl
-    val thm_establish : Thm.establish -> int * Thm.tdecl
-    val thm_assert : Thm.assert_ -> Thm.callpats
-    val thm_theorem_top : Thm.theorem -> bool
-    val thm_theorem_exists : Thm.theorem -> (Thm.decs * Thm.theorem) option
-    val thm_theorem_forall : Thm.theorem -> (Thm.decs * Thm.theorem) option
-    val thm_theorem_forallStar : Thm.theorem -> (Thm.decs * Thm.theorem) option
-
-    val thm_theorem_forallG :
-      Thm.theorem -> ((Thm.decs * Thm.decs) list * Thm.theorem) option
-
-    val thm_decs_nil : Thm.decs
-    val thm_decs_list : Thm.decs -> decl list
-    val thm_theoremdec : Thm.theoremdec -> string * Thm.theorem
-    val thm_wdecl : Thm.wdecl -> (string list * string) list * Thm.callpats
-  end
+  module View : LENS.VIEW
+    with type Term.t = term
+    and type Decl.t = decl
+    and type ConDec.t = conDec
+    and type Mode.t = mode
+    and type Mode.Term.t = modeTerm
+    and type Mode.Dec.t = modeDec
+    and type Struct.StrExp.t = strexp
+    and type Struct.Inst.t = inst
+    and type Struct.SigExp.t = sigexp
+    and type Struct.SigDef.t = sigdef
+    and type Struct.StructDec.t = structDec 
+    and type Query.t = query
+    and type Solve.t = solve
+    and type Define.t = define
+    and type Fixity.t = fixity
+    and type Cmd.t = cmd
+          
+  
+ 
 end
+   

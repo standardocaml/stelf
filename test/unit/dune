@@ -1,6 +1,0 @@
-(library
- (name unit)
- (wrapped false)
- (libraries stelf global lexing parsing alcotest basis)
- (flags
-  (:standard -open Basis)))

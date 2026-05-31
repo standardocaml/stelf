@@ -14,6 +14,7 @@ module Parser : PARSER = struct
 
   let token s = (string s <* whitespace) *> return ()
   let keyword s = token @@ "%" ^ s
+  let keywords ss = choice (List.map keyword ss)
 
   let ident =
     take_till (function

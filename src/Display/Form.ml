@@ -21,11 +21,11 @@ module Form : FORM = struct
   type style = t -> t
   type 'a scribe = 'a -> t
 
-  let ( ++ ) x y = Concat [ x; y ]
+  let ( +++ ) x y = Concat [ x; y ]
   let empty = Empty
 
   let concat ?(sep = empty) xs =
-    List.fold_left (fun acc x -> acc ++ sep ++ x) empty xs
+    List.fold_left (fun acc x -> acc +++ sep +++ x) empty xs
 
   let string s = Exact s
   let int n = string (string_of_int n)
@@ -34,7 +34,8 @@ module Form : FORM = struct
   let cut () = string "\n"
   let shown f x = string (f x)
   let shown_exact f x = string (f x)
-  let inside (open_, close) x = open_ ++ x ++ close
+  let shown_many ?(sep = empty) f xs = concat ~sep (List.map (shown f) xs)
+  let inside (open_, close) x = open_ +++ x +++ close
   let nl ?(n = 1) () = string (String.make n '\n')
   let each ?(sep = empty) f xs = concat ~sep (List.map f xs)
   let space ?(n = 1) () = Space n
@@ -42,7 +43,11 @@ module Form : FORM = struct
   let hbox xs = Boxed (HBox, xs)
   let vbox xs = Boxed (VBox, xs)
   let hvbox xs = Boxed (HVBox, xs)
+  let optional ?def f = function
+    | None -> (match def with Some d -> d | None -> empty)
+    | Some x -> f x
 
+  let (++) x y = x +++ space () +++ y
   module Style = struct
     let bold x = Bold x
     let italic x = Italic x
@@ -87,14 +92,44 @@ module Form : FORM = struct
       | Fg (c, x) -> LTerm_text.([ B_fg c ] @ aux x @ [ E_fg ])
       | Bg (c, x) -> LTerm_text.([ B_bg c ] @ aux x @ [ E_bg ])
       | Bold x -> LTerm_text.([ B_bold true ] @ aux x @ [ E_bold ])
-      | Italic x -> assert false
+      | Italic x -> aux x (* Italic not supported by LTerm_text on all platforms; render plain *)
       | Underline x ->
           LTerm_text.([ B_underline true ] @ aux x @ [ E_underline ])
-      | Marked (carats, x) -> assert false (* TODO *)
-      | Boxed (box, xs) -> assert false (* TODO *)
+      | Marked (carats, x) -> aux carats @ aux x
+      | Boxed (box, xs) -> (
+          match box with
+          | HBox -> List.concat (List.map aux xs)
+          | VBox ->
+              let rec intersperse sep = function
+                | [] -> []
+                | [ y ] -> aux y
+                | y :: ys -> aux y @ (LTerm_text.S "\n" :: intersperse sep ys)
+              in
+              intersperse (LTerm_text.S "\n") xs
+          | HVBox ->
+              let rec intersperse_space = function
+                | [] -> []
+                | [ y ] -> aux y
+                | y :: ys -> aux y @ (LTerm_text.S " " :: intersperse_space ys)
+              in
+              intersperse_space xs)
     in
     aux x
 
   let markup x = LTerm_text.eval (markup' x)
-  let fmt _ppf _x = assert false
+  let rec to_plain : t -> string = function
+    | Space n | NonbreakingSpace n -> String.make n ' '
+    | Cut n -> String.make n '\n'
+    | Exact s -> s
+    | Empty -> ""
+    | Concat xs -> String.concat "" (List.map to_plain xs)
+    | Fg (_, x) | Bg (_, x) | Bold x | Italic x | Underline x -> to_plain x
+    | Marked (_carats, x) -> to_plain x
+    | Boxed (box, xs) -> (
+        match box with
+        | HBox -> String.concat "" (List.map to_plain xs)
+        | VBox -> String.concat "\n" (List.map to_plain xs)
+        | HVBox -> String.concat " " (List.map to_plain xs))
+
+  let fmt ppf x = Format.pp_print_string ppf (to_plain x)
 end

@@ -62,159 +62,218 @@ module Make_Modern
     <?> "application"
 
   and parse_expr1 () : Cst.Term.t t =
-    parse_id () <|> inside "(" ")" (parse_expr ()) <?> "small expression"
+    begin
+      parse_id () <|> inside "(" ")" (parse_expr ())
+    end
+    <?> "small expression"
 
   and parse_expr () : Cst.Term.t t =
-    fix (fun self ->
-        let expr1 = parse_id () <|> inside "(" ")" self in
-        (keyword "the"
-        *>
-        let* ty = expr1 in
-        let+ body = self in
-        Cst.Term.has_type body ty)
-        <|>
-        let* atoms = many expr1 in
-        (let+ trail = parse_expr_trail () in
-         match atoms with
-         | [] -> trail
-         | head :: rest -> Cst.Term.app head (rest @ [ trail ]))
-        <|>
-        match atoms with
-        | [] -> fail "expected expression"
-        | head :: rest -> return (Cst.Term.app head rest))
+    begin
+      fix (fun self ->
+          let expr1 = parse_id () <|> inside "(" ")" self in
+          (keyword "the" *> commit
+          *>
+          let* ty = expr1 in
+          let+ body = self in
+          Cst.Term.has_type body ty)
+          <|>
+          let* atoms = many expr1 in
+          (let+ trail = parse_expr_trail () in
+           match atoms with
+           | [] -> trail
+           | head :: rest -> Cst.Term.app head (rest @ [ trail ]))
+          <|>
+          match atoms with
+          | [] -> fail "expected expression"
+          | head :: rest -> return (Cst.Term.app head rest))
+    end
     <?> "expression"
 
-  and parse_var () : string t = ident1
+  and parse_var () : string t =
+    begin
+      ident1
+    end
+    <?> "variable"
 
   and parse_qualified () : Cst.symbol t =
-    let rec split = function
-      | [] -> failwith "Expected qualified name"
-      | [ p ] -> ([], p)
-      | p :: q ->
-          let q0, q1 = split q in
-          (List.append [ p ] q0, q1)
-    in
-    keyword "val"
-    *> inside "(" ")"
-         (let* ns = many1 ident in
-          return @@ split ns)
+    begin
+      let rec split = function
+        | [] -> failwith "Expected qualified name"
+        | [ p ] -> ([], p)
+        | p :: q ->
+            let q0, q1 = split q in
+            (List.append [ p ] q0, q1)
+      in
+      keyword "val"
+      *> inside "(" ")"
+           (let* ns = many1 ident in
+            return @@ split ns)
+    end
+    <?> "qualified name"
 
   and parse_text () : string t =
-    string "\"" *> take_till (fun c -> c = '"') <* string "\"" <* whitespace
+    begin
+      string "%\"" *> take_till (fun c -> c = '%') <* string "%\"" <* whitespace
+    end
+    <?> "string literal"
 
   and parse_decl () : Cst.Decl.t t =
-    (let* names = inside "(" ")" (many1 (parse_arg ())) in
-     let+ typ = option (Cst.Term.omitted ~fc:Cst.ghost) (parse_expr ()) in
-     Cst.Decl.decl1 names typ)
-    <|> (let* name = parse_arg () in
-         let+ typ = option (Cst.Term.omitted ~fc:Cst.ghost) (parse_expr ()) in
-         Cst.Decl.decl1 [ name ] typ)
+    begin
+      (let* names = inside "(" ")" (many1 (parse_arg ())) in
+       let+ typ = option (Cst.Term.omitted ~fc:Cst.ghost) (parse_expr ()) in
+       Cst.Decl.decl1 names typ)
+      <|> let* name = parse_arg () in
+          let+ typ = option (Cst.Term.omitted ~fc:Cst.ghost) (parse_expr ()) in
+          Cst.Decl.decl1 [ name ] typ
+    end
     <?> "declaration"
 
   and parse_mode () : Cst.Mode.mode t =
-    keyword "output1" *> return (Cst.Mode.minus1 ())
-    <|> keyword "output" *> return (Cst.Mode.minus ())
-    <|> keyword "input" *> return (Cst.Mode.plus ())
-    <|> keyword "other" *> return (Cst.Mode.star ())
+    begin
+      keyword "out1" *> return (Cst.Mode.minus1 ())
+      <|> keyword "out" *> return (Cst.Mode.minus ())
+      <|> keyword "in" *> return (Cst.Mode.plus ())
+      <|> keyword "star" *> return (Cst.Mode.star ())
+    end
     <?> "mode"
 
   and parse_mode_dec () : Cst.Mode.modedec t =
-    let rec go () =
-      (let* m, d =
-         inside "{" "}"
-           (let* m = parse_mode () in
-            let+ d = parse_decl () in
-            (m, d))
-       in
-       let+ body = go () in
-       Cst.Mode.Full.mode_pi m d body)
-      <|>
-      let+ root = parse_expr () in
-      Cst.Mode.Full.mode_root root
-    in
-    let+ mt = go () in
-    Cst.Mode.Full.to_modeDec mt
+    begin
+      let* arg =
+        many
+        @@ inside "{" "}"
+             (let* m = parse_mode () and* d = parse_decl () in
+              return (m, d))
+      and* body = parse_expr () in
+      let rec go body = function
+        | [] -> Cst.Mode.Full.mode_root body
+        | (m, d) :: rest -> Cst.Mode.Full.mode_pi m d (go body rest)
+      in
+      return @@ Cst.Mode.Full.to_modeDec (go body arg)
+    end
+    <?> "mode declaration"
 
   and parse_inst () : Cst.Struct.inst t =
-    let* name, s, e = with_fc ident1 in
-    let loc = mk_loc s e in
-    let sym = ([], name) in
-    token "="
-    *>
-    let+ tm = parse_expr () in
-    Cst.Struct.con_inst (sym, loc) tm
+    begin
+      let* name, s, e = with_fc ident1 in
+      let loc = mk_loc s e in
+      let sym = ([], name) in
+      token "="
+      *>
+      let+ tm = parse_expr () in
+      Cst.Struct.con_inst (sym, loc) tm
+    end
+    <?> "instance declaration"
 
   and parse_sigexp () : Cst.Struct.sigexp t =
-    let* base =
-      keyword "the" *> return (Cst.Struct.thesig ~fc:Cst.ghost)
-      <|> let+ name = ident1 in
-          Cst.Struct.sig_id name
-    in
-    let+ wheres = many (keyword "where" *> parse_inst ()) in
-    match wheres with [] -> base | _ -> Cst.Struct.where_sig base wheres
+    begin
+      let* base =
+        keyword "the" *> commit *> return (Cst.Struct.thesig ~fc:Cst.ghost)
+        <|> let+ name = ident1 in
+            Cst.Struct.sig_id name
+      in
+      let+ wheres = many (keyword "where" *> commit *> parse_inst ()) in
+      match wheres with [] -> base | _ -> Cst.Struct.where_sig base wheres
+    end
 
   and parse_sigdef () : Cst.Struct.sigdef t =
-    let+ se = parse_sigexp () in
-    Cst.Struct.sig_def None se
+    begin
+      let+ se = parse_sigexp () in
+      Cst.Struct.sig_def None se
+    end
+    <?> "signature definition"
 
   and parse_struct_dec () : Cst.Struct.structdec t =
-    let* name = ident1 in
-    (token ":"
-    *> let+ se = parse_sigexp () in
-       Cst.Struct.struct_decl (Some name) se)
-    <|> token "="
-        *>
-        let+ sym = parse_qualified () in
-        Cst.Struct.struct_def (Some name) (Cst.Struct.str_exp sym)
+    begin
+      let* name = ident1 in
+      (token ":"
+      *> let+ se = parse_sigexp () in
+         Cst.Struct.struct_decl (Some name) se)
+      <|> token "="
+          *>
+          let+ sym = parse_qualified () in
+          Cst.Struct.struct_def (Some name) (Cst.Struct.str_exp sym)
+    end
+    <?> "structure declaration"
 
   and parse_fixity () : int t =
-    let+ s = take_while1 (fun c -> c >= '0' && c <= '9') <* whitespace in
-    int_of_string s
+    begin
+      let+ s = take_while1 (fun c -> c >= '0' && c <= '9') <* whitespace in
+      int_of_string s
+    end
+    <?> "fixity level"
 
   and parse_query () :
       (int option * int option * int option * Cst.Query.query) t =
-    let* n = parse_bound () in
-    let* b = parse_bound () in
-    let* d = parse_bound () in
-    let+ tm = parse_expr () in
-    (n, b, d, Cst.Query.query None tm)
+    begin
+      let* n = parse_bound () in
+      let* b = parse_bound () in
+      let* d = parse_bound () in
+      let+ tm = parse_expr () in
+      (n, b, d, Cst.Query.query None tm)
+    end
+    <?> "query"
 
   and parse_define () : Cst.Query.define t =
-    let* id = parse_var () in
-    let+ tm = parse_expr () in
-    Cst.Query.define (Some id) tm None
+    begin
+      let* id = parse_var () in
+      let* tm = parse_expr1 () in
+      let+ ty = Parser.option None @@ ((fun s -> Some s) <$> parse_expr ()) in
+      Cst.Query.define (Some id) tm ty
+    end
+    <?> "definition"
 
   and parse_solve () : Cst.Query.solve t =
-    let+ term = parse_expr () in
-    Cst.Query.solve None term
+    begin
+      let+ term = parse_expr () in
+      Cst.Query.solve None term
+    end
+    <?> "solve command"
 
   and parse_bound () : int option t =
-    token "_" *> return None
-    <|> let+ s = take_while1 (fun c -> c >= '0' && c <= '9') <* whitespace in
-        Some (int_of_string s)
+    begin
+      token "_" *> return None
+      <|> let+ s = take_while1 (fun c -> c >= '0' && c <= '9') <* whitespace in
+          Some (int_of_string s)
+    end
+    <?> "bound"
 
   and parse_id_list () : string list t =
-    inside "(" ")" (many (parse_var ()))
-    <|> let+ id = parse_var () in
-        [ id ]
+    begin
+      inside "(" ")" (many (parse_var ()))
+      <|> let+ id = parse_var () in
+          [ id ]
+    end
+    <?> "identifier list"
 
   and parse_block_item () : Cst.block_item t =
-    inside "{" "}"
-      (let+ d = parse_decl () in
-       Cst.BlockItem.some d)
-    <|> inside "[" "]"
-          (let+ d = parse_decl () in
-           Cst.BlockItem.pi d)
+    begin
+      inside "{" "}"
+        (let+ d = parse_decl () in
+         Cst.BlockItem.some d)
+      <|> inside "[" "]"
+            (let+ d = parse_decl () in
+             Cst.BlockItem.pi d)
+    end
+    <?> "block item"
 
   and parse_fixity_kw () : Cst.fixity t =
-    keyword "left" *> return Cst.Fixity.left
-    <|> keyword "right" *> return Cst.Fixity.right
-    <|> keyword "prefix" *> return Cst.Fixity.prefix
-    <|> keyword "postfix" *> return Cst.Fixity.postfix
-    <|> keyword "middle" *> return Cst.Fixity.middle
-    <|> keyword "none" *> return Cst.Fixity.none
+    begin
+      keyword "left" *> commit *> return Cst.Fixity.left
+      <|> keyword "right" *> commit *> return Cst.Fixity.right
+      <|> keyword "prefix" *> commit *> return Cst.Fixity.prefix
+      <|> keyword "postfix" *> commit *> return Cst.Fixity.postfix
+      <|> keyword "middle" *> commit *> return Cst.Fixity.middle
+      <|> keyword "none" *> commit *> return Cst.Fixity.none
+    end
+    <?> "fixity keyword"
 
-  and parse_params () : string list t = inside "(" ")" (many (parse_var ()))
+  and parse_params () : string list t =
+    begin
+      inside "(" ")" (many (parse_var ()))
+    end
+    <?> "parameters"
+
   and parse_group : 'a. 'a t -> 'a list t = fun p -> many p
   and parse_parens : 'a. 'a t -> 'a t = fun p -> inside "(" ")" p
   and parse_braced : 'a. 'a t -> 'a t = fun p -> inside "{" "}" p
@@ -242,3 +301,4 @@ module Modern : MODERN.MODERN =
 module Cmd = Cmd
 module CMD = CMD
 module MODERN = MODERN
+module Debug_Cmd = Cmd.Make_Cmd (Modern)

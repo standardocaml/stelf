@@ -1,1 +1,0 @@
-= A Prologue, in Prolog

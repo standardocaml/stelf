@@ -10,6 +10,9 @@ type src =
   | Meta
   | Pal
   | Default
+  | Recon
+  | Prove
+  | Total
 
 type kind = Debug | Info | Warning | Error | Response
 

@@ -6,6 +6,7 @@ module type PARSER = sig
   val whitespace : unit t
   val ident : string t
   val keyword : string -> unit t
+  val keywords : string list -> unit t
   val token : string -> unit t
   val given : bool -> 'a t -> 'a t
   val ( let| ) : 'a t -> ('a -> 'b t) -> 'b t

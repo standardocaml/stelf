@@ -22,7 +22,8 @@ module Make_ReconModule
   type structDec =
     | StructDec of string option * ModSyn.module_ * whereclause list
     | StructDef of string option * Ast.mid
-
+  (* OLD *)
+  (*
   let strexpToStrexp se =
     match Cst.View.struct_strexp_symbol se with
     | None -> raise (Error "strexpToStrexp: unrecognised strexp")
@@ -36,65 +37,74 @@ module Make_ReconModule
                  ^ ModSyn.Names.qidToString
                      (valOf (ModSyn.Names.structUndef qid))))
         | Some mid -> mid)
+  *)
+  (* NEW *)
+  let strexpToStrexp se = 
+    match Cst.View.Struct.StrExp.view se with 
+    | Cst.View.Struct.StrExp.StrExp (loc, (ids, id)) -> (
+        let qid = ModSyn.Names.Qid (ids, id) in
+        match ModSyn.Names.structLookup qid with
+        | None ->
+            raise
+              (Error
+                 ("Undeclared structure "
+                 ^ ModSyn.Names.qidToString
+                     (valOf (ModSyn.Names.structUndef qid))))
+        | Some mid -> mid)
 
   let rec sigexpToSigexp (se, module_opt) =
-    match Cst.View.struct_sigexp_id se with
-    | Some id -> (
+    match Cst.View.Struct.SigExp.view se with
+    | Cst.View.Struct.SigExp.SigId (_, id) -> (
         match ModSyn.lookupSigDef id with
         | None -> raise (Error ("Undefined signature " ^ id))
         | Some module_ -> (module_, []))
-    | None -> (
-        match Cst.View.struct_sigexp_where se with
-        | Some (inner_se, insts) ->
-            let module_, wherecls = sigexpToSigexp (inner_se, module_opt) in
-            let wherecl ns =
-              let rec go = function
-                | [] -> []
-                | inst :: rest -> (
-                    let eqns = go rest in
-                    match Cst.View.struct_inst_con inst with
-                    | Some ((ids, id), loc, tm) -> (
-                        let r = Cst.loc_to_region loc in
-                        let qid = ModSyn.Names.Qid (ids, id) in
-                        match ModSyn.Names.constLookupIn (ns, qid) with
-                        | None ->
-                            error
-                              ( r,
-                                "Undeclared identifier "
-                                ^ ModSyn.Names.qidToString
-                                    (valOf
-                                       (ModSyn.Names.constUndefIn (ns, qid))) )
-                        | Some cid -> (cid, External tm, r) :: eqns)
-                    | None -> (
-                        match Cst.View.struct_inst_str inst with
-                        | Some ((ids, id), loc, strexp) ->
-                            let r1 = Cst.loc_to_region loc in
-                            let qid = ModSyn.Names.Qid (ids, id) in
-                            let mid1 =
-                              match ModSyn.Names.structLookupIn (ns, qid) with
-                              | None ->
-                                  error
-                                    ( r1,
-                                      "Undeclared structure "
-                                      ^ ModSyn.Names.qidToString
-                                          (valOf
-                                             (ModSyn.Names.structUndefIn
-                                                (ns, qid))) )
-                              | Some mid1 -> mid1
-                            in
-                            let mid2 = strexpToStrexp strexp in
-                            let rEqns = ref eqns in
-                            addStructEqn (rEqns, r1, r1, [], mid1, mid2);
-                            !rEqns
-                        | None -> eqns))
-              in
-              go insts
-            in
-            (module_, wherecls @ [ wherecl ])
-        | None -> (
-            match module_opt with
-            | Some module_ -> (module_, [])
-            | None -> raise (Error "sigexpToSigexp: unrecognised sigexp")))
+    | Cst.View.Struct.SigExp.WhereSig (_, inner_se, insts) ->
+        let module_, wherecls = sigexpToSigexp (inner_se, module_opt) in
+        let wherecl ns =
+          let rec go = function
+            | [] -> []
+            | inst :: rest ->
+                let eqns = go rest in
+                (match Cst.View.Struct.Inst.view inst with
+                | Cst.View.Struct.Inst.ConInst (_, (ids, id), _, tm) ->
+                    let r = Cst.loc_to_region Cst.ghost in
+                    let qid = ModSyn.Names.Qid (ids, id) in
+                    (match ModSyn.Names.constLookupIn (ns, qid) with
+                    | None ->
+                        error
+                          ( r,
+                            "Undeclared identifier "
+                            ^ ModSyn.Names.qidToString
+                                (valOf
+                                   (ModSyn.Names.constUndefIn (ns, qid))) )
+                    | Some cid -> (cid, External tm, r) :: eqns)
+                | Cst.View.Struct.Inst.StrInst (_, (ids, id), _, strexp) ->
+                    let r1 = Cst.loc_to_region Cst.ghost in
+                    let qid = ModSyn.Names.Qid (ids, id) in
+                    let mid1 =
+                      match ModSyn.Names.structLookupIn (ns, qid) with
+                      | None ->
+                          error
+                            ( r1,
+                              "Undeclared structure " 
+                              ^ ModSyn.Names.qidToString
+                                  (valOf
+                                     (ModSyn.Names.structUndefIn (ns, qid))) )
+                      | Some mid1 -> mid1
+                    in
+                    let mid2 = strexpToStrexp strexp in
+                    let rEqns = ref eqns in
+                    addStructEqn (rEqns, r1, r1, [], mid1, mid2);
+                    !rEqns
+                | _ -> assert false)
+          in
+          go insts
+        in
+        (module_, wherecls @ [ wherecl ])
+    | _ -> (
+        match module_opt with
+        | Some module_ -> (module_, [])
+        | None -> raise (Error "sigexpToSigexp: unrecognised sigexp"))
 
   and addStructEqn (rEqns, r1, r2, ids, mid1, mid2) =
     let ns1 = ModSyn.Names.getComponents mid1 in
@@ -123,21 +133,22 @@ module Make_ReconModule
     ModSyn.Names.appStructs doStruct ns1
 
   let sigdefToSigdef (sd, module_opt) =
-    let name_opt, sigexp = Cst.View.struct_sigdef_fields sd in
+    let (name_opt, sigexp) = match Cst.View.Struct.SigDef.view sd with
+      | Cst.View.Struct.SigDef.SigDef (_, name_opt, sigexp) -> (name_opt, sigexp)
+      | _ -> assert false
+    in
     let module_, wherecls = sigexpToSigexp (sigexp, module_opt) in
     (name_opt, module_, wherecls)
 
   let structdecToStructDec (sd, module_opt) =
-    match Cst.View.struct_structdecl_decl sd with
-    | Some (name_opt, sigexp) ->
+    match Cst.View.Struct.StructDec.view sd with
+    | Cst.View.Struct.StructDec.StructDecl (_, name_opt, sigexp) ->
         let module_, wherecls = sigexpToSigexp (sigexp, module_opt) in
         StructDec (name_opt, module_, wherecls)
-    | None -> (
-        match Cst.View.struct_structdecl_def sd with
-        | Some (name_opt, strexp) ->
-            let mid = strexpToStrexp strexp in
-            StructDef (name_opt, mid)
-        | None -> raise (Error "structdecToStructDec: unrecognised structDec"))
+    | Cst.View.Struct.StructDec.StructDef (_, name_opt, strexp) ->
+        let mid = strexpToStrexp strexp in
+        StructDef (name_opt, mid)
+    | _ -> raise (Error "structdecToStructDec: unrecognised structDec")
 
   type eqnTable = (inst_ * Paths.region) list ref IntTree.table
 

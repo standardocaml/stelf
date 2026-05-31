@@ -8,26 +8,26 @@ module type RECON_THM = sig
   exception Error of string
 
   val tdeclTotDecl :
-    Cst.Thm.tdecl -> ThmSyn.tDecl * (Paths.region * Paths.region list)
+    Cst.View.Thm.TDecl.t -> ThmSyn.tDecl * (Paths.region * Paths.region list)
 
   val rdeclTorDecl :
-    Cst.Thm.rdecl -> ThmSyn.rDecl * (Paths.region * Paths.region list)
+    Cst.View.Thm.RDecl.t -> ThmSyn.rDecl * (Paths.region * Paths.region list)
 
   val tableddeclTotabledDecl :
-    Cst.Thm.tableddecl -> ThmSyn.tabledDecl * Paths.region
+    Cst.View.Thm.TabledDecl.t -> ThmSyn.tabledDecl * Paths.region
 
   val keepTabledeclToktDecl :
-    Cst.Thm.keepTabledecl -> ThmSyn.keepTableDecl * Paths.region
+    Cst.View.Thm.KeepTableDecl.t -> ThmSyn.keepTableDecl * Paths.region
 
-  val theoremToTheorem : Cst.Thm.theorem -> ThmSyn.thDecl
-  val theoremDecToTheoremDec : Cst.Thm.theoremdec -> string * ThmSyn.thDecl
+  val theoremToTheorem : Cst.View.Thm.Thm.t -> ThmSyn.thDecl
+  val theoremDecToTheoremDec : Cst.View.Thm.ThmDec.t -> string * ThmSyn.thDecl
 
   val proveToProve :
-    Cst.Thm.prove -> ThmSyn.pDecl * (Paths.region * Paths.region list)
+    Cst.View.Thm.Prove.t -> ThmSyn.pDecl * (Paths.region * Paths.region list)
 
   val establishToEstablish :
-    Cst.Thm.establish -> ThmSyn.pDecl * (Paths.region * Paths.region list)
+    Cst.View.Thm.Establish.t -> ThmSyn.pDecl * (Paths.region * Paths.region list)
 
-  val assertToAssert : Cst.Thm.assert_ -> ThmSyn.callpats * Paths.region list
-  val wdeclTowDecl : Cst.Thm.wdecl -> ThmSyn.wDecl * Paths.region list
+  val assertToAssert : Cst.View.Thm.Assert.t -> ThmSyn.callpats * Paths.region list
+  val wdeclTowDecl : Cst.View.Thm.WDecl.t -> ThmSyn.wDecl * Paths.region list
 end
