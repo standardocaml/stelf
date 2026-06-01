@@ -2,6 +2,7 @@
  (name stelf)
  (public_name stelf)
  (libraries
+  display
   compile
   compress
   cover
@@ -12,9 +13,9 @@
   global
   heuristic
   index
-  int_inf
-  ; inverse 
-  lambda
+  intInf
+  ; inverse
+  intsyn
   m2
   meta
   modes
@@ -27,7 +28,6 @@
   paths
   print
   prover
-  server
   debug
   solvers
   stream

@@ -4,20 +4,31 @@
  (name prover)
  (public_name stelf.prover)
  (modules
-  state
-  psearch
-  data
-  fill
-  split
-  fixedpoint
-  introduce
-  elim
-  interactive
-  pweaken
-  prover_)
+  State
+  Psearch
+  Data
+  Fill
+  Split
+  Fixedpoint
+  Introduce
+  Elim
+  Interactive
+  Pweaken
+  Prover_
+  Data_intf
+  Elim_intf
+  Fill_intf
+  Fixedpoint_intf
+  Interactive_intf
+  Introduce_intf
+  Psearch_intf
+  Pweaken_intf
+  Split_intf
+  State_intf)
  (libraries
+  display
   tomega_lib
-  lambda
+  intsyn
   global
   names
   print
@@ -45,9 +56,9 @@
    -open
    Tomega_lib.Tomega_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Global
    -open
@@ -79,7 +90,7 @@
    -open
    Subordinate
    -open
-   Subordinate.Subordinate_
+   Subordinate
    -open
    Solvers
    -open
@@ -101,7 +112,7 @@
    -open
    Formatter
    -open
-   Formatter.Formatter_
+   Formatter__Formatter_
    -open
    Timing
    -open

@@ -3,8 +3,18 @@
 (library
  (name style)
  (public_name stelf.style)
- (modules style_)
- (libraries global table lambda formatter print names paths index basis)
+ (modules Style_ Style_intf)
+ (libraries
+  display
+  global
+  table
+  intsyn
+  formatter
+  print
+  names
+  paths
+  index
+  basis)
  (flags
   (:standard
    -w
@@ -20,13 +30,13 @@
    -open
    Table.Table_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Formatter
    -open
-   Formatter.Formatter_
+   Formatter__Formatter_
    -open
    Print
    -open

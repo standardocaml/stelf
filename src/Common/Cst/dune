@@ -1,0 +1,6 @@
+(library
+ (name cst)
+ (public_name stelf.cst)
+ (libraries display util lwt fmt paths base)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq)))

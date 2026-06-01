@@ -4,23 +4,33 @@
  (name opsem)
  (public_name stelf.opsem)
  (modules
-  table_param
-  abstract_tabled
-  memo_table
-  subtree_inst
-  sw_subtree
-  tabled_machine
-  absmachine
-  absmachine_sbt
-  ptrecon
-  trace
-  tmachine
-  swmachine
-  opsem_)
+  TableParam
+  AbstractTabled
+  MemoTable
+  SubtreeInst
+  SwSubtree
+  TabledMachine
+  Absmachine
+  AbsmachineSbt
+  Ptrecon
+  Trace
+  Tmachine
+  Swmachine
+  Opsem_
+  Absmachine_intf
+  AbsmachineSbt_intf
+  AbstractTabled_intf
+  MemoTable_intf
+  Ptrecon_intf
+  SwSubtree_intf
+  TableParam_intf
+  TabledMachine_intf
+  Trace_intf)
  (libraries
+  display
   global
   table
-  lambda
+  intsyn
   names
   print
   formatter
@@ -46,9 +56,9 @@
    -open
    Table.Table_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Names
    -open
@@ -60,7 +70,7 @@
    -open
    Formatter
    -open
-   Formatter.Formatter_
+   Formatter__Formatter_
    -open
    Index
    -open
@@ -76,7 +86,7 @@
    -open
    Subordinate
    -open
-   Subordinate.Subordinate_
+   Subordinate
    -open
    Compile
    -open

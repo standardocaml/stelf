@@ -3,8 +3,29 @@
 (library
  (name modes)
  (public_name stelf.modes)
- (modules modesyn modetable modedec modecheck modeprint modes_)
- (libraries global table lambda formatter print names paths index basis)
+ (modules
+  Modesyn
+  Modetable
+  Modedec
+  Modecheck
+  Modeprint
+  Modes_
+  Modecheck_intf
+  Modedec_intf
+  Modeprint_intf
+  Modesyn_intf
+  Modetable_intf)
+ (libraries
+  display
+  global
+  table
+  intsyn
+  formatter
+  print
+  names
+  paths
+  index
+  basis)
  (flags
   (:standard
    -w
@@ -20,13 +41,13 @@
    -open
    Table.Table_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Formatter
    -open
-   Formatter.Formatter_
+   Formatter__Formatter_
    -open
    Print
    -open

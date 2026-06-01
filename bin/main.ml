@@ -1,3 +1,4 @@
+(*
 (** Entry point for the STELF server executable. *)
 
 module Twelf_server = Server.Server_.Server
@@ -6,3 +7,6 @@ module Twelf_server = Server.Server_.Server
 let run_server () : int = Twelf_server.server ("stelf", [])
 
 let () = if run_server () = 0 then exit 0 else exit 1
+*)
+
+let () = Pal.Pal.run ()

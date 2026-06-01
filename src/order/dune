@@ -3,8 +3,8 @@
 (library
  (name order)
  (public_name stelf.order)
- (modules order_)
- (libraries table lambda basis)
+ (modules Order_ Order_intf)
+ (libraries display table intsyn basis)
  (flags
   (:standard
    -w
@@ -16,9 +16,9 @@
    -open
    Table.Table_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_))
+   Intsyn.Lambda_))
  (wrapped true)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq ppx_deriving.ord)))

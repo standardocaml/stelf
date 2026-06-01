@@ -1,0 +1,4 @@
+(library
+ (name parsing)
+ (public_name stelf.parsing)
+ (libraries display lexing tag angstrom))

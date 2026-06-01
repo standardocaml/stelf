@@ -4,20 +4,31 @@
  (name tomega_lib)
  (public_name stelf.tomega)
  (modules
-  opsem
-  converter
-  tomega_typecheck
-  tomegaprint
-  tomeganames
-  tomega_unify
-  normalize
-  coverage
-  redundant
-  tomega_abstract
-  tomega_)
+  Opsem
+  Converter
+  TomegaTypecheck
+  Tomegaprint
+  Tomeganames
+  TomegaUnify
+  Normalize
+  Coverage
+  Redundant
+  TomegaAbstract
+  Tomega_
+  Converter_intf
+  Coverage_intf
+  Normalize_intf
+  Opsem_intf
+  Redundant_intf
+  TomegaAbstract_intf
+  TomegaTypecheck_intf
+  TomegaUnify_intf
+  Tomeganames_intf
+  Tomegaprint_intf)
  (libraries
+  display
   global
-  lambda
+  intsyn
   worldcheck
   cover
   formatter
@@ -40,9 +51,9 @@
    -open
    Global.Global_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Worldcheck
    -open
@@ -54,7 +65,7 @@
    -open
    Formatter
    -open
-   Formatter.Formatter_
+   Formatter__Formatter_
    -open
    Names
    -open
@@ -70,7 +81,7 @@
    -open
    Subordinate
    -open
-   Subordinate.Subordinate_
+   Subordinate
    -open
    Meta
    -open

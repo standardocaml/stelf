@@ -1,6 +1,0 @@
-(library
- (name regression_cases)
- (wrapped false)
- (libraries stelf alcotest basis)
- (flags
-  (:standard -open Basis)))

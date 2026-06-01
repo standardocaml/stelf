@@ -3,8 +3,8 @@
 (library
  (name paths)
  (public_name stelf.paths)
- (modules origins paths_)
- (libraries lambda global table basis)
+ (modules Paths_intf Paths_ Origins_intf Origins)
+ (libraries display intsyn global table basis)
  (flags
   (:standard
    -w
@@ -12,9 +12,9 @@
    -open
    Basis
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Global
    -open

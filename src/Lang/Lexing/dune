@@ -1,0 +1,6 @@
+(library
+ (name lexing)
+ (public_name stelf.lexing)
+ (libraries display tag containers fpath)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq ppx_deriving.ord)))

@@ -3,8 +3,8 @@
 (library
  (name typecheck)
  (public_name stelf.typecheck)
- (modules typecheck_ strict)
- (libraries lambda print paths names basis)
+ (modules Typecheck_ Strict Strict_intf Typecheck_intf)
+ (libraries display intsyn print paths names basis)
  (flags
   (:standard
    -w
@@ -12,9 +12,9 @@
    -open
    Basis
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Print
    -open

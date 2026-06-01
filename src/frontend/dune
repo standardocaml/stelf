@@ -4,37 +4,58 @@
  (name frontend)
  (public_name stelf.frontend)
  (modules
-  unknownexn
-  unknownexn_smlnj
-  lexer
-  parsing
-  recon_term
-  recon_condec
-  recon_query
-  recon_mode
-  recon_thm
-  recon_module
-  parse_term
-  parse_condec
-  parse_query
-  parse_fixity
-  parse_mode
-  parse_thm
-  parse_module
-  parser
-  solve
-  fquery
-  buildid
-  version
-  twelf_
-  frontend_)
+  Unknownexn
+  UnknownexnSmlnj
+  Lexer
+  Parsing
+  ReconTerm
+  ReconCondec
+  ReconQuery
+  ReconMode
+  ReconThm
+  ReconModule
+  ParseTerm
+  ParseCondec
+  ParseQuery
+  ParseFixity
+  ParseMode
+  ParseThm
+  ParseModule
+  Parser
+  Solve
+  Fquery
+  Buildid
+  Version
+  Twelf_
+  Frontend_
+  Fquery_intf
+  Lexer_intf
+  ParseCondec_intf
+  ParseFixity_intf
+  ParseMode_intf
+  ParseModule_intf
+  ParseQuery_intf
+  ParseTerm_intf
+  ParseThm_intf
+  Parser_intf
+  Parsing_intf
+  ReconCondec_intf
+  ReconMode_intf
+  ReconModule_intf
+  ReconQuery_intf
+  ReconTerm_intf
+  ReconThm_intf
+  Twelf_intf
+  Solve_intf
+  Unknownexn_intf)
  (libraries
+  display
   timing
   stream
   debug
   global
   table
-  lambda
+  intsyn
   names
   paths
   print
@@ -86,9 +107,9 @@
    -open
    Tabling
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Names
    -open
@@ -140,7 +161,7 @@
    -open
    Subordinate
    -open
-   Subordinate.Subordinate_
+   Subordinate
    -open
    Modules
    -open

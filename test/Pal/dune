@@ -1,0 +1,3 @@
+(test
+ (name PalTest)
+ (libraries pal alcotest display))

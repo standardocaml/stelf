@@ -3,8 +3,8 @@
 (library
  (name thm)
  (public_name stelf.thm)
- (modules thmsyn thmprint thm_)
- (libraries global lambda names formatter modes paths tabling basis)
+ (modules Thmsyn Thmprint Thm_ Thm_intf Thmprint_intf Thmsyn_intf)
+ (libraries display global intsyn names formatter modes paths tabling basis)
  (flags
   (:standard
    -w
@@ -16,9 +16,9 @@
    -open
    Global.Global_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Names
    -open
@@ -26,11 +26,11 @@
    -open
    Formatter
    -open
-   Formatter.Formatter_
+   Formatter__Formatter_
    -open
    Modes
    -open
-   Modes.Modes_
+   Modes__Modes_
    -open
    Paths
    -open

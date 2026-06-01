@@ -49,7 +49,6 @@ setup.log
 # Local OPAM switch
 _opam/
 
-
 # TEX Portion 
 ## Core latex/pdflatex auxiliary files:
 *.aux
@@ -396,3 +395,11 @@ test.elf
 .claude
 build/
 .remember
+
+*~
+
+
+
+.antlr
+
+dune.lock

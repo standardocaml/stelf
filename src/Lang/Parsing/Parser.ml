@@ -1,0 +1,49 @@
+module type PARSER = PARSER.PARSER
+
+module Parser : PARSER = struct
+  include Angstrom
+
+  let with_fc p =
+    let* start_pos = pos in
+    let* res = p in
+    let* end_pos = pos in
+    return (res, start_pos, end_pos)
+
+  let whitespace =
+    skip_while (function ' ' | '\t' | '\n' -> true | _ -> false)
+
+  let token s = (string s <* whitespace) *> return ()
+  let keyword s = token @@ "%" ^ s
+  let keywords ss = choice (List.map keyword ss)
+
+  let ident =
+    take_till (function
+      | ' ' | '\t' | '\n' | '(' | ')' | '{' | '}' | '[' | ']' | '%' -> true
+      | _ -> false)
+    <* whitespace
+
+  let ( let* ) = ( >>= )
+
+  let ( and* ) p q =
+    let* p = p in
+    let* q = q in
+    return (p, q)
+
+  let ( let+ ) x f = f <$> x
+  let ( and+ ) = ( and* )
+
+  let ( let| ) x f =
+    let* x = x in
+    whitespace *> f x
+
+  let ( and| ) p q =
+    let* p = p in
+    whitespace *> q >>= fun q -> return (p, q)
+
+  let ( let@ ) p f =
+    let* p, fc_start, fc_end = with_fc p in
+    f (p, fc_start, fc_end)
+
+  let given b p = if b then p else fail "failed test"
+  let inside x y p = token x *> p <* token y
+end

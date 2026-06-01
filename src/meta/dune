@@ -4,36 +4,60 @@
  (name meta)
  (public_name stelf.meta)
  (modules
-  funsyn
-  funnames
-  funtypecheck
-  funprint
-  weaken
-  mtp_weaken
-  funweaken
-  relfun
-  interpret
-  meta_
-  mtp_abstract
-  mtp_init
-  mtp_filling
-  mtp_global
-  mtp_data
-  mtp_mpi
-  mtp_recursion
-  mtp_search
-  uniquesearch
-  mtp_splitting
-  inference
-  statesyn
-  mtp_strategy
-  mtp_print
-  mtp_prover)
+  Funsyn
+  Funnames
+  Funtypecheck
+  Funprint
+  Weaken
+  MtpWeaken
+  Funweaken
+  Relfun
+  Interpret
+  Meta_
+  MtpAbstract
+  MtpInit
+  MtpFilling
+  MtpGlobal
+  MtpData
+  MtpMpi
+  MtpRecursion
+  MtpSearch
+  Uniquesearch
+  MtpSplitting
+  Inference
+  Statesyn
+  MtpStrategy
+  MtpPrint
+  MtpProver
+  Funnames_intf
+  Funprint_intf
+  Funsyn_intf
+  Funtypecheck_intf
+  Funweaken_intf
+  Inference_intf
+  Interpret_intf
+  MtpAbstract_intf
+  MtpData_intf
+  MtpFilling_intf
+  MtpGlobal_intf
+  MtpInit_intf
+  MtpMpi_intf
+  MtpPrint_intf
+  MtpProver_intf
+  MtpRecursion_intf
+  MtpSearch_intf
+  MtpSplitting_intf
+  MtpStrategy_intf
+  Relfun_intf
+  Statesyn_intf
+  Uniquesearch_intf
+  Weaken_intf)
  (libraries
+  display
   global
   trail
   table
-  lambda
+  intsyn
   names
   formatter
   print
@@ -67,9 +91,9 @@
    -open
    Table.Table_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Names
    -open
@@ -77,7 +101,7 @@
    -open
    Formatter
    -open
-   Formatter.Formatter_
+   Formatter__Formatter_
    -open
    Print
    -open
@@ -85,7 +109,7 @@
    -open
    Subordinate
    -open
-   Subordinate.Subordinate_
+   Subordinate
    -open
    Modes
    -open

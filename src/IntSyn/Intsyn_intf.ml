@@ -1,0 +1,1 @@
+module type INTSYN = Syntax.INTSYN

@@ -3,10 +3,11 @@
 (library
  (name cover)
  (public_name stelf.cover)
- (modules total cover_)
+ (modules Total Cover_ Cover_intf Total_intf)
  (libraries
+  display
   global
-  lambda
+  intsyn
   names
   paths
   table
@@ -34,9 +35,9 @@
    -open
    Global.Global_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Names
    -open
@@ -52,7 +53,7 @@
    -open
    Formatter
    -open
-   Formatter.Formatter_
+   Formatter__Formatter_
    -open
    Print
    -open
@@ -60,7 +61,7 @@
    -open
    Subordinate
    -open
-   Subordinate.Subordinate_
+   Subordinate
    -open
    Modes
    -open

@@ -1,51 +1,56 @@
-# STELF (Simple Theorems in the Edinburgh Logical Framework)
+# STELF (System for Totality in the Edinburgh Logical Framework)
 
-STELF is a port of the [Twelf](https://twelf.org) project, originally in [SML](https://smlfamily.github.io/), to [OCaml](https://ocaml.org/), as well as modernization efforts, such as improving the IDE interface, the build interface, the interlopability, among other efforts.
+This is the STELF project, a port of the Twelf system to OCaml, and subsequents developments thereof.
 
-> [!NOTE]
-> This is currently a work in progress, and is not yet fully functional
+## Twelf Port 
 
-Note that port in this case does mean a literal *port*, using the [Shibboleth](https://github.com/wizard7377/shibboleth) converter, we copied over the source litteraly, then fixed out kinks manually and used a [port](https://github.com/wizard7377/basis) of the SML Basis library.
-Only after this is working (which has not yet happended) do we intend to make any subsantitive changes to the project itself.
+The Twelf port, which is completed, involved translating between SML to OCaml, and also the creation of a temporary basis library.
+If you are interested in looking at the process, see [shibboleth](https://github.com/standardocaml/shibboleth) 
 
-## Goals of the Project
+## From Twelf to STELF
 
-Of the goals, there are some more short and longer term ones that are listed here:
+The STELF project, which is still in devolopment, involves a number of changes to the original Twelf codebase, designed to do the following:
 
-### Short term goals
+- Imporove the syntax
+  - Remove unnecassary special syntax (Parsing done, printing not started)
+  - Simplify the language
+  - Make the codebase trivial to parse for editor integration
+  - Overhaul the parser (Nearly done)
+- Increase performance (WIP)
+- Make the codebase more flexible, particular in regards to custom frontends 
+  - Changed the design of the concrete syntax tree to not depend on the actual concrete syntax, but instead be view based (CST is done, but integration is not)
+  - Make the codebase more modular, and break up larger modules / libraries into smaller ones (WIP)
+  - Make documentation consistent (WIP)
+  - Testing
+- Create a cleaner frontend 
+  - Internally, the frontend is exposed at one point (Mostly done)
+  - Output should be given and then dealt with, not done internally (Not started)
+  - Create a nicer REPL (Done)
+  - Create a nicer CLI (Done)
 
-- [X] Get the Twelf/Stelf server as is working correctly
-- [X] Get the testing infrastructure working, also add expected output and expected failure tests
-- [ ] Change references of Twelf to Stelf
-  
-### Medium Term Goals
+Heavy inspiration was taken from the following sources:
 
-- [ ] Port the wiki to a easier to use format (likely either `mld`, `typ`, `tex`, or some combination)
-- [ ] Port the documentation to odoc style
-- [ ] Make the server output nicer (add REPL, using `lambda-term`)
-- [ ] Reimplement the lexer and parser to be easier to understand and more efficient, preferably using `menhir`
+- Rocq (interlopability) 
+- Z3 theorem prover (language design)
+- Metamath (minimalism)
 
-### Long Term Goals
+## Documentation
 
+Documentation is very incomplete, but the following resources are available:
+- The dev docs are not yet available, but running `source hacking.sh BROWSER` where `BROWSER` is your browser should (propably (on Linux (maybe ))) open the dev docs (hopefully). 
+  Dev docs are not done
+- [The wiki](https://github.com/standardocaml/stelf/wiki) contains some documentation, but is also incomplete.
+- The STELF book, which is intended to be both a manual and reference, is located in [the book directory](./guide/). It is also incomplete, and as a little experiment is written in Typst.
+- Some other useful links include:
+  - Original Twelf [repo](https://github.com/standardml/twelf) and [website](https://twelf.org/)
+  - The [Shibboleth transpiler](https://github.com/standardocaml/shibboleth)
+  - A certain [paper](https://www.cs.cmu.edu/~rwh/papers/mech/jfp07.pdf) describing canonical LF
+  - [Building](./hacking/BUILD.md), which is hopefully up to date 
 
-- [ ] Split up the concrete syntax and abstract syntax into completely different libraries (ie, one that deals with the internals and another that deals with parsing)
-- [ ] Make better IDE support (Perhaps using LSP?)
-- [ ] Remove the `=` and `:` special syntax 
-- [ ] Add support for generics
+If you couldn't tell, this project is a tad large.
+If I miss something, please reach out. 
 
-## Links
-
-- [Contributing](CONTRIBUTING.md)
-- [Style Guide](STYLE.md)
-- [License](LICENSE)
-- [Building](BUILD.md)
-
-## Credits
-
-While I actually was the one to convert the project, a translator is nothing without a work to translate.
-As such, credit is in large part due to the original writers of the Twelf project; per the [README](twelf/README.md)
-
-### Original Twelf Source Code
+## Original README
 
 Copyright (C) 1997-2011, Frank Pfenning and Carsten Schuermann
 
@@ -61,9 +66,6 @@ With contributions by:
     Kevin Watkins
     Jason Reed
 
-### STELF Proper
+## STELF
 
 Copyright (C) 2026, Asher Frost
-
-[^1]: A number of ideas stolen from a similar project, [ELPI](https://github.com/LPCIC/elpi/blob/master/ELPI.md)
-

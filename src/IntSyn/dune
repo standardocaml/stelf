@@ -1,0 +1,53 @@
+; (include sources.dune)
+
+(library
+ (name intsyn)
+ (public_name stelf.intsyn)
+ (modules
+  Fgnopn
+  Fgnopntable
+  Order
+  IntSyn
+  Intsyn_
+  Whnf
+  Conv
+  Tomega
+  Constraints
+  Unify
+  Match
+  Abstract
+  Approx
+  Intsyn_intf
+  Lambda_
+  Abstract_intf
+  Approx_intf
+  Constraints_intf
+  Conv_intf
+  Fgnopn_intf
+  Match_intf
+  Order_intf
+  Tomega_intf
+  Unify_intf
+  Whnf_intf)
+ (libraries containers global trail table basis syntax debug)
+ (flags
+  (:standard
+   -w
+   -A
+   -open
+   Basis
+   -open
+   Global
+   -open
+   Global.Global_
+   -open
+   Trail
+   -open
+   Trail.Trail_
+   -open
+   Table
+   -open
+   Table.Table_))
+ (wrapped true)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq ppx_deriving.ord)))

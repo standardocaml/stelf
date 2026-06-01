@@ -3,12 +3,13 @@
 (library
  (name worldcheck)
  (public_name stelf.worldcheck)
- (modules worldSyn worldify worldcheck_)
+ (modules WorldSyn Worldify Worldcheck_ WorldSyn_intf Worldify_intf)
  (libraries
+  display
   global
   timing
   table
-  lambda
+  intsyn
   names
   paths
   formatter
@@ -37,9 +38,9 @@
    -open
    Table.Table_
    -open
-   Lambda
+   Intsyn
    -open
-   Lambda.Lambda_
+   Intsyn.Lambda_
    -open
    Names
    -open
@@ -51,7 +52,7 @@
    -open
    Formatter
    -open
-   Formatter.Formatter_
+   Formatter__Formatter_
    -open
    Print
    -open
@@ -63,7 +64,7 @@
    -open
    Subordinate
    -open
-   Subordinate.Subordinate_
+   Subordinate
    -open
    Meta
    -open

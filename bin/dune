@@ -1,5 +1,5 @@
 (executable
  (name main)
- (public_name stelf.main)
+ (public_name stelf)
  (modules main)
- (libraries stelf))
+ (libraries stelf server pal))
