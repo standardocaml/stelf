@@ -21,7 +21,8 @@ module Make_ReconQuery
 
   let queryToQuery (q, loc) =
     let (Paths.Loc (filename, r)) = loc in
-    let (opt_name, tm) = match Cst.View.Query.view q with
+    let opt_name, tm =
+      match Cst.View.Query.view q with
       | Cst.View.Query.Query (_, opt_name, tm) -> (opt_name, tm)
       | _ -> assert false
     in
@@ -102,7 +103,8 @@ module Make_ReconQuery
 
   let solveToSolve (defines, sol, loc) =
     let (Paths.Loc (filename, r)) = loc in
-    let (nameOpt, solve_tm) = match Cst.View.Solve.view sol with
+    let nameOpt, solve_tm =
+      match Cst.View.Solve.view sol with
       | Cst.View.Solve.Solve (_, nameOpt, solve_tm) -> (nameOpt, solve_tm)
       | _ -> assert false
     in
@@ -110,7 +112,8 @@ module Make_ReconQuery
     let _ = RT.resetErrors filename in
     (* Build job: AND of all define jobs, then the solve type *)
     let mkd d =
-      let (_, tm1, tm2_opt) = match Cst.View.Define.view d with
+      let _, tm1, tm2_opt =
+        match Cst.View.Define.view d with
         | Cst.View.Define.Define (_, opt, tm1, tm2_opt) -> (opt, tm1, tm2_opt)
         | _ -> assert false
       in
@@ -137,8 +140,10 @@ module Make_ReconQuery
           | Some con_dec -> [ (con_dec, None) ])
       | def :: rest_defs, RT.JAnd (RT.JTerm ((u_, oc1), v_d, l_d), rest_jobs)
         -> (
-          let (opt_name, _, _) = match Cst.View.Define.view def with
-            | Cst.View.Define.Define (_, opt, tm1, tm2_opt) -> (opt, tm1, tm2_opt)
+          let opt_name, _, _ =
+            match Cst.View.Define.view def with
+            | Cst.View.Define.Define (_, opt, tm1, tm2_opt) ->
+                (opt, tm1, tm2_opt)
             | _ -> assert false
           in
           match finishDefine (opt_name, ((u_, oc1), (v_d, None), l_d)) with
@@ -147,8 +152,10 @@ module Make_ReconQuery
               (con_dec, ocd_opt) :: sc (m_, rest_defs, rest_jobs))
       | ( def :: rest_defs,
           RT.JAnd (RT.JOf ((u_, oc1), (v_d, oc2), l_d), rest_jobs) ) -> (
-          let (opt_name, _, _) = match Cst.View.Define.view def with
-            | Cst.View.Define.Define (_, opt, tm1, tm2_opt) -> (opt, tm1, tm2_opt)
+          let opt_name, _, _ =
+            match Cst.View.Define.view def with
+            | Cst.View.Define.Define (_, opt, tm1, tm2_opt) ->
+                (opt, tm1, tm2_opt)
             | _ -> assert false
           in
           match finishDefine (opt_name, ((u_, oc1), (v_d, Some oc2), l_d)) with

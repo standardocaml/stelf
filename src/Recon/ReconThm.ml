@@ -44,7 +44,7 @@ module Make_ReconThm (M : S.S) (RT : RECON_TERM.RECON_TERM with module M = M) :
       | D.DecsList (rest, ds) -> go rest (Stdlib.List.rev_append ds acc)
       | _ -> assert false
     in
-    go decs [] 
+    go decs []
 
   (* ------------------------------------------------------------------ *)
   (* Order conversion *)
@@ -127,8 +127,10 @@ module Make_ReconThm (M : S.S) (RT : RECON_TERM.RECON_TERM with module M = M) :
 
   let resolveCallpats cps_cst =
     let module CP = Cst.View.Thm.CallPats in
-    let raw = match CP.view cps_cst with
-      | CP.CallPats cp -> List.map (fun (name, p_, _) -> (name, p_, Cst.ghost)) cp
+    let raw =
+      match CP.view cps_cst with
+      | CP.CallPats cp ->
+          List.map (fun (name, p_, _) -> (name, p_, Cst.ghost)) cp
       | _ -> assert false
     in
     let rec go = function
@@ -146,9 +148,8 @@ module Make_ReconThm (M : S.S) (RT : RECON_TERM.RECON_TERM with module M = M) :
 
   let tdeclTotDecl td =
     let module TD = Cst.View.Thm.TDecl in
-    let (ord, cps_cst) = match TD.view td with
-      | TD.TDecl (o, cp) -> (o, cp)
-      | _ -> assert false
+    let ord, cps_cst =
+      match TD.view td with TD.TDecl (o, cp) -> (o, cp) | _ -> assert false
     in
     let o_, r = convertOrder ord in
     let cp'_, rs = resolveCallpats cps_cst in
@@ -157,11 +158,13 @@ module Make_ReconThm (M : S.S) (RT : RECON_TERM.RECON_TERM with module M = M) :
   let rdeclTorDecl rd =
     let module RD = Cst.View.Thm.RDecl in
     let module PR = Cst.View.Thm.Predicate in
-    let (pred_cst, o1_cst, o2_cst, cps_cst) = match RD.view rd with
+    let pred_cst, o1_cst, o2_cst, cps_cst =
+      match RD.view rd with
       | RD.RDecl (p, o1, o2, cp) -> (p, o1, o2, cp)
       | _ -> assert false
     in
-    let (pred_str, _pred_loc) = match PR.view pred_cst with
+    let pred_str, _pred_loc =
+      match PR.view pred_cst with
       | PR.Predicate (s, l) -> (s, l)
       | _ -> assert false
     in
@@ -180,9 +183,8 @@ module Make_ReconThm (M : S.S) (RT : RECON_TERM.RECON_TERM with module M = M) :
 
   let tableddeclTotabledDecl td =
     let module Tab = Cst.View.Thm.TabledDecl in
-    let name = match Tab.view td with
-      | Tab.TabledDecl (s, _) -> s
-      | _ -> assert false
+    let name =
+      match Tab.view td with Tab.TabledDecl (s, _) -> s | _ -> assert false
     in
     let r = Cst.loc_to_region Cst.ghost in
     let qid = Names.Qid ([], name) in
@@ -197,9 +199,8 @@ module Make_ReconThm (M : S.S) (RT : RECON_TERM.RECON_TERM with module M = M) :
 
   let keepTabledeclToktDecl ktd =
     let module KT = Cst.View.Thm.KeepTableDecl in
-    let name = match KT.view ktd with
-      | KT.KeepTableDecl (s, _) -> s
-      | _ -> assert false
+    let name =
+      match KT.view ktd with KT.KeepTableDecl (s, _) -> s | _ -> assert false
     in
     let r = Cst.loc_to_region Cst.ghost in
     let qid = Names.Qid ([], name) in
@@ -217,16 +218,16 @@ module Make_ReconThm (M : S.S) (RT : RECON_TERM.RECON_TERM with module M = M) :
 
   let proveToProve pv =
     let module PV = Cst.View.Thm.Prove in
-    let (n, td) = match PV.view pv with
-      | PV.Prove (n, td) -> (n, td)
-      | _ -> assert false
+    let n, td =
+      match PV.view pv with PV.Prove (n, td) -> (n, td) | _ -> assert false
     in
     let td_, rrs = tdeclTotDecl td in
     (ThmSyn.PDecl (n, td_), rrs)
 
   let establishToEstablish es =
     let module ES = Cst.View.Thm.Establish in
-    let (n, td) = match ES.view es with
+    let n, td =
+      match ES.view es with
       | ES.Establish (n, td) -> (n, td)
       | _ -> assert false
     in
@@ -235,9 +236,8 @@ module Make_ReconThm (M : S.S) (RT : RECON_TERM.RECON_TERM with module M = M) :
 
   let assertToAssert a =
     let module AS = Cst.View.Thm.Assert in
-    let cps_cst = match AS.view a with
-      | AS.Assert cp -> cp
-      | _ -> assert false
+    let cps_cst =
+      match AS.view a with AS.Assert cp -> cp | _ -> assert false
     in
     resolveCallpats cps_cst
 
@@ -314,21 +314,15 @@ module Make_ReconThm (M : S.S) (RT : RECON_TERM.RECON_TERM with module M = M) :
           let g' = makectx (viewDecs decs) in
           let m' = ctxMap (fun _ -> Modes.Modes_.ModeSyn.Plus) g' in
           go rest
-            ( gbs,
-              ctxAppend g_cst g',
-              ctxAppend m_ctx m',
-              IntSyn.ctxLength g' )
+            (gbs, ctxAppend g_cst g', ctxAppend m_ctx m', IntSyn.ctxLength g')
       | TH.ForallG (_, gblist, rest) ->
           let gbs' =
             List.map
-              (fun (d1, d2) ->
-                ( makectx (viewDecs d1),
-                  makectx (viewDecs d2) ))
+              (fun (d1, d2) -> (makectx (viewDecs d1), makectx (viewDecs d2)))
               gblist
           in
           go rest (gbs', IntSyn.Null, IntSyn.Null, 0)
-      | TH.Top _ ->
-          (gbs, g_cst, m_ctx, k)
+      | TH.Top _ -> (gbs, g_cst, m_ctx, k)
       | _ -> assert false
     in
     let gbs_cst, g_cst, m_ctx, k = go t ([], IntSyn.Null, IntSyn.Null, 0) in
@@ -339,7 +333,8 @@ module Make_ReconThm (M : S.S) (RT : RECON_TERM.RECON_TERM with module M = M) :
 
   let theoremDecToTheoremDec td =
     let module ThmDec = Cst.View.Thm.ThmDec in
-    let (name, thm) = match ThmDec.view td with
+    let name, thm =
+      match ThmDec.view td with
       | ThmDec.ThmDec (n, t) -> (n, t)
       | _ -> assert false
     in
@@ -350,7 +345,8 @@ module Make_ReconThm (M : S.S) (RT : RECON_TERM.RECON_TERM with module M = M) :
 
   let wdeclTowDecl wd =
     let module WD = Cst.View.Thm.WDecl in
-    let (w_raw, cps_cst) = match WD.view wd with
+    let w_raw, cps_cst =
+      match WD.view wd with
       | WD.WDecl (pairs, cp) -> (pairs, cp)
       | _ -> assert false
     in

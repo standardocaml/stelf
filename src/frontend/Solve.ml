@@ -214,7 +214,7 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
       ReconQuery.solveToSolve (defines, solve_, Paths.Loc (fileName, r))
     in
     let _ =
-      Display.display' 
+      Display.display'
         (Display.Info.msg
            ~level:(Display.Info.from_chatter 3)
            (Display.Info.Form.string "%solve "))

@@ -1,10 +1,7 @@
-
-
 module type DISPLAY = sig
-
-  
   val register : (Info.t -> unit Lwt.t) -> unit
   val display' : Info.t -> unit
+
   val message :
     ?src:Info.src -> ?kind:Info.kind -> ?level:Info.level -> Form.Form.t -> unit
 
@@ -12,7 +9,6 @@ module type DISPLAY = sig
   val info : ?src:Info.src -> ?level:Info.level -> Form.Form.t -> unit
   val warning : ?src:Info.src -> ?level:Info.level -> Form.Form.t -> unit
   val error : ?src:Info.src -> ?level:Info.level -> Form.Form.t -> unit
-
 end
 
 module Form = Form.Form

@@ -43,11 +43,13 @@ module Form : FORM = struct
   let hbox xs = Boxed (HBox, xs)
   let vbox xs = Boxed (VBox, xs)
   let hvbox xs = Boxed (HVBox, xs)
+
   let optional ?def f = function
-    | None -> (match def with Some d -> d | None -> empty)
+    | None -> ( match def with Some d -> d | None -> empty)
     | Some x -> f x
 
-  let (++) x y = x +++ space () +++ y
+  let ( ++ ) x y = x +++ space () +++ y
+
   module Style = struct
     let bold x = Bold x
     let italic x = Italic x
@@ -92,7 +94,9 @@ module Form : FORM = struct
       | Fg (c, x) -> LTerm_text.([ B_fg c ] @ aux x @ [ E_fg ])
       | Bg (c, x) -> LTerm_text.([ B_bg c ] @ aux x @ [ E_bg ])
       | Bold x -> LTerm_text.([ B_bold true ] @ aux x @ [ E_bold ])
-      | Italic x -> aux x (* Italic not supported by LTerm_text on all platforms; render plain *)
+      | Italic x ->
+          aux x
+          (* Italic not supported by LTerm_text on all platforms; render plain *)
       | Underline x ->
           LTerm_text.([ B_underline true ] @ aux x @ [ E_underline ])
       | Marked (carats, x) -> aux carats @ aux x
@@ -117,6 +121,7 @@ module Form : FORM = struct
     aux x
 
   let markup x = LTerm_text.eval (markup' x)
+
   let rec to_plain : t -> string = function
     | Space n | NonbreakingSpace n -> String.make n ' '
     | Cut n -> String.make n '\n'

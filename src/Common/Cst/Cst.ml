@@ -432,6 +432,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
        and type Fixity.t = fixity
        and type Cmd.t = cmd = struct
     module Paths = Paths
+
     exception Lacking
     (** Module of paths and regions, which we allow to be shared *)
 
@@ -458,76 +459,79 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
 
     module Loc = struct
       type t = loc
-      type u =
-      | Loc of Fpath.t option * int * int 
-      | Ghost
+      type u = Loc of Fpath.t option * int * int | Ghost
+
       let view (x : t) : u =
         let path_opt = None in
         Loc (path_opt, x.start_pos, x.end_pos)
+
       let review (y : u) : t =
         match y with
         | Loc (path_opt, start_pos, end_pos) -> { start_pos; end_pos }
         | Ghost -> ghost
-        
-    end 
+    end
 
     (** {3 Term Syntax} *)
     module rec Term : sig
       type t = term
+
       type u =
-      | Lowercase of loc * symbol
-      | Uppercase of loc * symbol
-      | Qualified of loc * symbol
-      | Text of loc * name
-      | ExistVar of loc * name
-      | FreeVar of loc * name
-      | Pi of loc * Decl.t list * t
-      | Lam of loc * Decl.t list * t
-      | App of loc * t * t list
-      | HasType of loc * t * t
-      | Omitted of loc
-      | Typ of loc
-      | Arrow of loc * t * t
-      | BackArrow of loc * t * t
-      | Foreign of loc * t
-      | Internal of int
+        | Lowercase of loc * symbol
+        | Uppercase of loc * symbol
+        | Qualified of loc * symbol
+        | Text of loc * name
+        | ExistVar of loc * name
+        | FreeVar of loc * name
+        | Pi of loc * Decl.t list * t
+        | Lam of loc * Decl.t list * t
+        | App of loc * t * t list
+        | HasType of loc * t * t
+        | Omitted of loc
+        | Typ of loc
+        | Arrow of loc * t * t
+        | BackArrow of loc * t * t
+        | Foreign of loc * t
+        | Internal of int
+
       val view : t -> u
       val review : u -> t
     end = struct
       type t = term
+
       type u =
-      | Lowercase of Loc.t * symbol
-      | Uppercase of Loc.t * symbol
-      | Qualified of Loc.t * symbol
-      | Text of Loc.t * string
-      | ExistVar of Loc.t * string
-      | FreeVar of Loc.t * string
-      | Pi of Loc.t * Decl.t list * t
-      | Lam of Loc.t * Decl.t list * t
-      | App of Loc.t * t * t list
-      | HasType of Loc.t * t * t
-      | Omitted of Loc.t
-      | Typ of Loc.t
-      | Arrow of Loc.t * t * t
-      | BackArrow of Loc.t * t * t
-      | Foreign of Loc.t * t
-      | Internal of int
+        | Lowercase of Loc.t * symbol
+        | Uppercase of Loc.t * symbol
+        | Qualified of Loc.t * symbol
+        | Text of Loc.t * string
+        | ExistVar of Loc.t * string
+        | FreeVar of Loc.t * string
+        | Pi of Loc.t * Decl.t list * t
+        | Lam of Loc.t * Decl.t list * t
+        | App of Loc.t * t * t list
+        | HasType of Loc.t * t * t
+        | Omitted of Loc.t
+        | Typ of Loc.t
+        | Arrow of Loc.t * t * t
+        | BackArrow of Loc.t * t * t
+        | Foreign of Loc.t * t
+        | Internal of int
+
       let view (x : t) : u =
         let rec collect_pis = function
           | Pi_ (d, body) ->
-            let (ds, b) = collect_pis body in
-            (d :: ds, b)
+              let ds, b = collect_pis body in
+              (d :: ds, b)
           | body -> ([], body)
         in
         let rec collect_lams = function
           | Lam_ (d, body) ->
-            let (ds, b) = collect_lams body in
-            (d :: ds, b)
+              let ds, b = collect_lams body in
+              (d :: ds, b)
           | body -> ([], body)
         in
         let rec collect_apps acc = function
           | App_ (f, arg) -> collect_apps (arg :: acc) f
-          | head -> (head, acc) 
+          | head -> (head, acc)
         in
         match x with
         | Lcid_ (ns, name, _) -> Lowercase (ghost, (ns, name))
@@ -537,14 +541,14 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | Evar_ (name, _) -> ExistVar (ghost, name)
         | Fvar_ (name, _) -> FreeVar (ghost, name)
         | Pi_ _ ->
-          let (decls, body) = collect_pis x in
-          Pi (ghost, decls, body)
+            let decls, body = collect_pis x in
+            Pi (ghost, decls, body)
         | Lam_ _ ->
-          let (decls, body) = collect_lams x in
-          Lam (ghost, decls, body)
+            let decls, body = collect_lams x in
+            Lam (ghost, decls, body)
         | App_ _ ->
-          let (head, args) = collect_apps [] x in
-          App (ghost, head, args)
+            let head, args = collect_apps [] x in
+            App (ghost, head, args)
         | Hastype_ (tm, ty) -> HasType (ghost, tm, ty)
         | Omitted_ _ -> Omitted ghost
         | Typ_ _ -> Typ ghost
@@ -567,33 +571,34 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | ExistVar (_, name) -> Evar_ (name, g)
         | FreeVar (_, name) -> Fvar_ (name, g)
         | Pi (_, decls, body) ->
-          fold_right (fun d acc -> Pi_ (d, acc)) decls body
+            fold_right (fun d acc -> Pi_ (d, acc)) decls body
         | Lam (_, decls, body) ->
-          fold_right (fun d acc -> Lam_ (d, acc)) decls body
+            fold_right (fun d acc -> Lam_ (d, acc)) decls body
         | App (_, head, args) ->
-          fold_left (fun acc arg -> App_ (acc, arg)) head args
+            fold_left (fun acc arg -> App_ (acc, arg)) head args
         | HasType (_, tm, ty) -> Hastype_ (tm, ty)
         | Omitted _ -> Omitted_ g
         | Typ _ -> Typ_ g
         | Arrow (_, a, b) -> Arrow_ (a, b)
         | BackArrow (_, a, b) -> Arrow_ (b, a)
-        
     end
 
     (** Binder declaration constructors. *)
     and Decl : sig
       type t = decl
+
       type u =
-      | Decl1 of Loc.t * string option list * Term.t * Term.t
-      | Decl0 of Loc.t * string option list * Term.t
+        | Decl1 of Loc.t * string option list * Term.t * Term.t
+        | Decl0 of Loc.t * string option list * Term.t
 
       val view : t -> u
       val review : u -> t
     end = struct
       type t = decl
+
       type u =
-      | Decl1 of Loc.t * string option list * Term.t * Term.t
-      | Decl0 of Loc.t * string option list * Term.t
+        | Decl1 of Loc.t * string option list * Term.t * Term.t
+        | Decl0 of Loc.t * string option list * Term.t
 
       let view (x : t) : u =
         let g = { start_pos = 0; end_pos = 0 } in
@@ -606,17 +611,17 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         match y with
         | Decl1 (_, names, typ, _) -> Dec_ (names, typ, g)
         | Decl0 (_, names, typ) -> Dec_ (names, typ, g)
-        
     end
 
     (** Top-level declaration constructors. *)
     module ConDec = struct
       type t = conDec
+
       type u =
-      | ConstantDecl of Loc.t * Decl.t
-      | BlockDecl of Loc.t * string * Decl.t list * Decl.t list
-      | BlockDef of Loc.t * string * symbol list
-      | ConstantDef of Loc.t * string * Term.t * Term.t option
+        | ConstantDecl of Loc.t * Decl.t
+        | BlockDecl of Loc.t * string * Decl.t list * Decl.t list
+        | BlockDef of Loc.t * string * symbol list
+        | ConstantDef of Loc.t * string * Term.t * Term.t option
 
       let view (x : t) : u =
         match x with
@@ -631,17 +636,17 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | BlockDecl (_, n, ds1, ds2) -> BlockDecl_ (n, ds1, ds2)
         | BlockDef (_, n, syms) -> BlockDef_ (n, syms)
         | ConstantDef (_, n, tm, opt) -> ConstantDef_ (n, tm, opt)
-        
     end
 
     (** Mode syntax constructors. *)
     module Mode = struct
       type t = mode
+
       type u =
-      | Plus of Loc.t
-      | Star of Loc.t
-      | Minus of Loc.t
-      | Minus1 of Loc.t
+        | Plus of Loc.t
+        | Star of Loc.t
+        | Minus of Loc.t
+        | Minus1 of Loc.t
 
       let view (x : t) : u =
         match x with
@@ -656,44 +661,46 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | Star _ -> Star_
         | Minus _ -> Minus_
         | Minus1 _ -> Minus1_
-        
 
       type t_mode = t
 
       module Spine = struct
         type t = modeSpine
+
         type u =
-        | ModeNil of Loc.t
-        | ModeApp of Loc.t * (t_mode * string option) * t
+          | ModeNil of Loc.t
+          | ModeApp of Loc.t * (t_mode * string option) * t
 
         let view (x : t) : u =
           match x with
           | ModeSpineInternal_ [] -> ModeNil ghost
-          | ModeSpineInternal_ (x :: xs) -> ModeApp (ghost, x, ModeSpineInternal_ xs)
+          | ModeSpineInternal_ (x :: xs) ->
+              ModeApp (ghost, x, ModeSpineInternal_ xs)
 
         let review (y : u) : t =
           match y with
           | ModeNil _ -> ModeSpineInternal_ []
-          | ModeApp (_, entry, ModeSpineInternal_ xs) -> ModeSpineInternal_ (entry :: xs)
-          
+          | ModeApp (_, entry, ModeSpineInternal_ xs) ->
+              ModeSpineInternal_ (entry :: xs)
       end
 
       module Term = struct
         type t = modeTerm
+
         type u =
-        | ModeTerm of Loc.t * symbol * Spine.t
-        | ModePi of Loc.t * Decl.t * t * t
+          | ModeTerm of Loc.t * symbol * Spine.t
+          | ModePi of Loc.t * Decl.t * t * t
 
         let view (x : t) : u =
           match x with
           | ModeTermRoot_ tm ->
-            let rec extract_head = function
-              | Quid_ (ns, n, _) -> (ns, n)
-              | Lcid_ (ns, n, _) -> ([], n)
-              | App_ (f, _) -> extract_head f
-              | _ -> raise Lacking
-            in
-            ModeTerm (ghost, extract_head tm, ModeSpineInternal_ [])
+              let rec extract_head = function
+                | Quid_ (ns, n, _) -> (ns, n)
+                | Lcid_ (ns, n, _) -> ([], n)
+                | App_ (f, _) -> extract_head f
+                | _ -> raise Lacking
+              in
+              ModeTerm (ghost, extract_head tm, ModeSpineInternal_ [])
           | ModeTermPi_ (_, d, body) -> ModePi (ghost, d, body, body)
 
         let review (y : u) : t =
@@ -701,37 +708,35 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
           match y with
           | ModeTerm (_, (ns, n), _) -> ModeTermRoot_ (Quid_ (ns, n, g))
           | ModePi (_, d, body, _) -> ModeTermPi_ (Plus_, d, body)
-          
       end
 
       module Dec = struct
         type t = modeDec
-        type u =
-        | ModeDec of Loc.t * (t_mode * string option) list * Term.t
+        type u = ModeDec of Loc.t * (t_mode * string option) list * Term.t
 
         let view (x : t) : u =
           let rec decompose = function
             | ModeTermPi_ (m, Dec_ (names, _, _), body) ->
-              let n = match names with n :: _ -> n | [] -> None in
-              let (spine, root) = decompose body in
-              ((m, n) :: spine, root)
+                let n = match names with n :: _ -> n | [] -> None in
+                let spine, root = decompose body in
+                ((m, n) :: spine, root)
             | root -> ([], root)
           in
           match x with
           | ModeDec_ mt ->
-            let (spine, root) = decompose mt in
-            ModeDec (ghost, spine, root)
+              let spine, root = decompose mt in
+              ModeDec (ghost, spine, root)
 
         let review (y : u) : t =
           let g = { start_pos = 0; end_pos = 0 } in
           match y with
           | ModeDec (_, spine, root) ->
-            let rec build = function
-              | [] -> root
-              | (m, n) :: rest -> ModeTermPi_ (m, Dec_ ([n], Omitted_ g, g), build rest)
-            in
-            ModeDec_ (build spine)
-          
+              let rec build = function
+                | [] -> root
+                | (m, n) :: rest ->
+                    ModeTermPi_ (m, Dec_ ([ n ], Omitted_ g, g), build rest)
+              in
+              ModeDec_ (build spine)
       end
     end
 
@@ -739,24 +744,18 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     module Struct = struct
       module StrExp = struct
         type t = strexp
-        type u =
-        | StrExp of Loc.t * symbol
+        type u = StrExp of Loc.t * symbol
 
-        let view (x : t) : u =
-          match x with
-          | StrExp_ sym -> StrExp (ghost, sym)
-
-        let review (y : u) : t =
-          match y with
-          | StrExp (_, sym) -> StrExp_ sym
-          
+        let view (x : t) : u = match x with StrExp_ sym -> StrExp (ghost, sym)
+        let review (y : u) : t = match y with StrExp (_, sym) -> StrExp_ sym
       end
 
       module Inst = struct
         type t = inst
+
         type u =
-        | ConInst of Loc.t * symbol * Loc.t * Term.t
-        | StrInst of Loc.t * symbol * Loc.t * StrExp.t
+          | ConInst of Loc.t * symbol * Loc.t * Term.t
+          | StrInst of Loc.t * symbol * Loc.t * StrExp.t
 
         let view (x : t) : u =
           match x with
@@ -768,15 +767,15 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
           match y with
           | ConInst (_, sym, _, tm) -> ConInst_ (sym, g, tm)
           | StrInst (_, sym, _, se) -> StrInst_ (sym, g, se)
-          
       end
 
       module SigExp = struct
         type t = sigexp
+
         type u =
-        | Thesig of Loc.t
-        | SigId of Loc.t * string
-        | WhereSig of Loc.t * t * Inst.t list
+          | Thesig of Loc.t
+          | SigId of Loc.t * string
+          | WhereSig of Loc.t * t * Inst.t list
 
         let view (x : t) : u =
           match x with
@@ -789,29 +788,25 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
           | Thesig _ -> TheSig_
           | SigId (_, str) -> SigId_ str
           | WhereSig (_, se, insts) -> WhereSig_ (se, insts)
-          
       end
 
       module SigDef = struct
         type t = sigdef
-        type u =
-        | SigDef of Loc.t * string option * SigExp.t
+        type u = SigDef of Loc.t * string option * SigExp.t
 
         let view (x : t) : u =
-          match x with
-          | SigDef_ (n, se) -> SigDef (ghost, n, se)
+          match x with SigDef_ (n, se) -> SigDef (ghost, n, se)
 
         let review (y : u) : t =
-          match y with
-          | SigDef (_, n, se) -> SigDef_ (n, se)
-          
+          match y with SigDef (_, n, se) -> SigDef_ (n, se)
       end
 
       module StructDec = struct
         type t = structDec
+
         type u =
-        | StructDecl of Loc.t * string option * SigExp.t
-        | StructDef of Loc.t * string option * StrExp.t
+          | StructDecl of Loc.t * string option * SigExp.t
+          | StructDef of Loc.t * string option * StrExp.t
 
         let view (x : t) : u =
           match x with
@@ -822,64 +817,51 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
           match y with
           | StructDecl (_, n, se) -> StructDecl_ (n, se)
           | StructDef (_, n, se) -> StructDef_ (n, se)
-          
       end
     end
 
     module Query = struct
       type t = query
-      type u =
-      | Query of Loc.t * string option * Term.t
+      type u = Query of Loc.t * string option * Term.t
 
       let view (x : t) : u =
-        match x with
-        | Query_ (n, tm) -> Query (ghost, n, tm)
+        match x with Query_ (n, tm) -> Query (ghost, n, tm)
 
-      let review (y : u) : t =
-        match y with
-        | Query (_, n, tm) -> Query_ (n, tm)
-        
+      let review (y : u) : t = match y with Query (_, n, tm) -> Query_ (n, tm)
     end
 
     module Define = struct
       type t = define
-      type u =
-      | Define of Loc.t * string option * Term.t * Term.t option
+      type u = Define of Loc.t * string option * Term.t * Term.t option
 
       let view (x : t) : u =
         match x with
         | Define_ (n, tm1, tm2_opt) -> Define (ghost, n, tm1, tm2_opt)
 
       let review (y : u) : t =
-        match y with
-        | Define (_, n, tm1, tm2_opt) -> Define_ (n, tm1, tm2_opt)
-        
+        match y with Define (_, n, tm1, tm2_opt) -> Define_ (n, tm1, tm2_opt)
     end
 
     module Solve = struct
       type t = solve
-      type u =
-      | Solve of Loc.t * string option * Term.t
+      type u = Solve of Loc.t * string option * Term.t
 
       let view (x : t) : u =
-        match x with
-        | Solve_ (n, tm) -> Solve (ghost, n, tm)
+        match x with Solve_ (n, tm) -> Solve (ghost, n, tm)
 
-      let review (y : u) : t =
-        match y with
-        | Solve (_, n, tm) -> Solve_ (n, tm)
-        
+      let review (y : u) : t = match y with Solve (_, n, tm) -> Solve_ (n, tm)
     end
 
     module Fixity = struct
       type t = fixity
+
       type u =
-      | Left of Loc.t
-      | Right of Loc.t
-      | Prefix of Loc.t
-      | Postfix of Loc.t
-      | Middle of Loc.t
-      | None of Loc.t
+        | Left of Loc.t
+        | Right of Loc.t
+        | Prefix of Loc.t
+        | Postfix of Loc.t
+        | Middle of Loc.t
+        | None of Loc.t
 
       let view (x : t) : u =
         match x with
@@ -898,14 +880,11 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | Postfix _ -> Postfix_
         | Middle _ -> Middle_
         | None _ -> FNone_
-        
     end
 
     module BlockItem = struct
       type t = block_item
-      type u =
-      | Any of Loc.t * Decl.t
-      | All of Loc.t * Decl.t
+      type u = Any of Loc.t * Decl.t | All of Loc.t * Decl.t
 
       let view (x : t) : u =
         match x with
@@ -913,49 +892,46 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | BlockPi_ d -> All (ghost, d)
 
       let review (y : u) : t =
-        match y with
-        | Any (_, d) -> BlockSome_ d
-        | All (_, d) -> BlockPi_ d
-        
+        match y with Any (_, d) -> BlockSome_ d | All (_, d) -> BlockPi_ d
     end
 
     module Cmd = struct
       type t = cmd
-      type u =
-      | Query of Loc.t * int option * int option * int option * Query.t
-      | QueryTabled of Loc.t * int option * int option * int option * Query.t
 
-      | AdhocQuery of Loc.t * Query.t
-      | Unique of Loc.t * Term.t
-      | Mode of Loc.t * Mode.Dec.t
-      | Define of Loc.t * Define.t
-      | DeclCmd of Loc.t * Term.t
-      | Inline of Loc.t * string * Term.t
-      | Symbol of Loc.t * string * string
-      | Freeze of Loc.t * string list
-      | Thaw of Loc.t * string list
-      | Sort of Loc.t * string * Decl.t list
-      | Term of Loc.t * Decl.t
-      | Block of Loc.t * string * BlockItem.t list
-      | Union of Loc.t * string * string list
-      | Worlds of Loc.t * string list * Term.t
-      | Deterministic of Loc.t * string list
-      | ModuleCmd of Loc.t * string * string list * t list
-      | Use of Loc.t * string * string * string list
-      | OpenCmd of Loc.t * string * string list
-      | Eval of Loc.t * t list
-      | Prec of Loc.t * Fixity.t * int * string list
-      | Solve of Loc.t * Solve.t
-      | Stop of Loc.t * unit
-      | ReplQuit of Loc.t * unit
-      | ReplHelp of Loc.t * string option
-      | ReplGet of Loc.t * string
-      | ReplSet of Loc.t * string * string
-      | ReplVersion of Loc.t * unit
-      | Total of Loc.t * string list list * Term.t list
-      | Terminates of Loc.t * string list list * Term.t list
-      | Covers of Loc.t * Mode.Dec.t
-      | Name of Loc.t * string
+      type u =
+        | Query of Loc.t * int option * int option * int option * Query.t
+        | QueryTabled of Loc.t * int option * int option * int option * Query.t
+        | AdhocQuery of Loc.t * Query.t
+        | Unique of Loc.t * Term.t
+        | Mode of Loc.t * Mode.Dec.t
+        | Define of Loc.t * Define.t
+        | DeclCmd of Loc.t * Term.t
+        | Inline of Loc.t * string * Term.t
+        | Symbol of Loc.t * string * string
+        | Freeze of Loc.t * string list
+        | Thaw of Loc.t * string list
+        | Sort of Loc.t * string list * Decl.t list
+        | Term of Loc.t * Decl.t
+        | Block of Loc.t * string * BlockItem.t list
+        | Union of Loc.t * string * string list
+        | Worlds of Loc.t * string list * Term.t
+        | Deterministic of Loc.t * string list
+        | ModuleCmd of Loc.t * string * string list * t list
+        | Use of Loc.t * string * string * string list
+        | OpenCmd of Loc.t * string * string list
+        | Eval of Loc.t * t list
+        | Prec of Loc.t * Fixity.t * int * string list
+        | Solve of Loc.t * Solve.t
+        | Stop of Loc.t * unit
+        | ReplQuit of Loc.t * unit
+        | ReplHelp of Loc.t * string option
+        | ReplGet of Loc.t * string
+        | ReplSet of Loc.t * string * string
+        | ReplVersion of Loc.t * unit
+        | Total of Loc.t * string list list * Term.t list
+        | Terminates of Loc.t * string list list * Term.t list
+        | Covers of Loc.t * Mode.Dec.t
+        | Name of Loc.t * string
 
       let view (x : t) : u =
         match x with
@@ -970,7 +946,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | SymbolCmd_ (id1, id2) -> Symbol (ghost, id1, id2)
         | FreezeCmd_ ids -> Freeze (ghost, ids)
         | ThawCmd_ ids -> Thaw (ghost, ids)
-        | SortCmd_ (id, decls) -> Sort (ghost, id, decls)
+        | SortCmd_ (id, decls) -> Sort (ghost, [ id ], decls)
         | TermCmd_ d -> Term (ghost, d)
         | BlockCmd_ (id, items) -> Block (ghost, id, items)
         | UnionCmd_ (id, ids) -> Union (ghost, id, ids)
@@ -1002,7 +978,9 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | Symbol (loc, id1, id2) -> SymbolCmd_ (id1, id2)
         | Freeze (loc, ids) -> FreezeCmd_ ids
         | Thaw (loc, ids) -> ThawCmd_ ids
-        | Sort (loc, id, decls) -> SortCmd_ (id, decls)
+        | Sort (loc, [ id ], decls) -> SortCmd_ (id, decls)
+        | Sort (loc, ids, decls) ->
+            assert false (* TODO Handle mutiple sort declerations *)
         | Term (loc, d) -> TermCmd_ d
         | Block (loc, id, items) -> BlockCmd_ (id, items)
         | Union (loc, id, ids) -> UnionCmd_ (id, ids)
@@ -1020,7 +998,6 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | ReplGet (loc, s) -> GetCmd_ s
         | ReplSet (loc, s, v) -> SetCmd_ (s, v)
         | ReplVersion (loc, ()) -> VersionCmd_
-        
     end
 
     module Thm = struct
@@ -1034,128 +1011,144 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
 
       module Order = struct
         type t = Thm.order
+
         type u =
-        | Varg of Loc.t * string list
-        | Lex of Loc.t * t list
-        | Simul of Loc.t * t list
+          | Varg of Loc.t * string list
+          | Lex of Loc.t * t list
+          | Simul of Loc.t * t list
+
         let view (x : t) : u =
           match x with
           | Thm.Varg_ (l, names) -> Varg (l, names)
           | Thm.Lex_ (l, orders) -> Lex (l, orders)
           | Thm.Simul_ (l, orders) -> Simul (l, orders)
+
         let review (y : u) : t =
           match y with
           | Varg (l, names) -> Thm.Varg_ (l, names)
           | Lex (l, orders) -> Thm.Lex_ (l, orders)
           | Simul (l, orders) -> Thm.Simul_ (l, orders)
-          
       end
 
       module CallPats = struct
         type t = Thm.callpats
-        type u =
-        | CallPats of (string * string option list * Loc.t) list
+        type u = CallPats of (string * string option list * Loc.t) list
+
         let view (x : t) : u = CallPats x
-        let review (y : u) : t =
-          match y with CallPats cp -> cp 
+        let review (y : u) : t = match y with CallPats cp -> cp
       end
 
       module TDecl = struct
         type t = Thm.tdecl
-        type u =
-        | TDecl of Order.t * CallPats.t
-        let view (x : t) : u = let (o, cp) = x in TDecl (o, cp)
-        let review (y : u) : t =
-          match y with TDecl (o, cp) -> (o, cp) 
+        type u = TDecl of Order.t * CallPats.t
+
+        let view (x : t) : u =
+          let o, cp = x in
+          TDecl (o, cp)
+
+        let review (y : u) : t = match y with TDecl (o, cp) -> (o, cp)
       end
 
       module Predicate = struct
         type t = Thm.predicate
-        type u =
-        | Predicate of string * Loc.t
-        let view (x : t) : u = let (s, l) = x in Predicate (s, l)
-        let review (y : u) : t =
-          match y with Predicate (s, l) -> (s, l) 
+        type u = Predicate of string * Loc.t
+
+        let view (x : t) : u =
+          let s, l = x in
+          Predicate (s, l)
+
+        let review (y : u) : t = match y with Predicate (s, l) -> (s, l)
       end
 
       module RDecl = struct
         type t = Thm.rdecl
-        type u =
-        | RDecl of Predicate.t * Order.t * Order.t * CallPats.t
-        let view (x : t) : u = let (p, o1, o2, cp) = x in RDecl (p, o1, o2, cp)
+        type u = RDecl of Predicate.t * Order.t * Order.t * CallPats.t
+
+        let view (x : t) : u =
+          let p, o1, o2, cp = x in
+          RDecl (p, o1, o2, cp)
+
         let review (y : u) : t =
-          match y with RDecl (p, o1, o2, cp) -> (p, o1, o2, cp) 
+          match y with RDecl (p, o1, o2, cp) -> (p, o1, o2, cp)
       end
 
       module TabledDecl = struct
         type t = Thm.tableddecl
-        type u =
-        | TabledDecl of string * Loc.t
-        let view (x : t) : u = let (s, l) = x in TabledDecl (s, l)
-        let review (y : u) : t =
-          match y with TabledDecl (s, l) -> (s, l) 
+        type u = TabledDecl of string * Loc.t
+
+        let view (x : t) : u =
+          let s, l = x in
+          TabledDecl (s, l)
+
+        let review (y : u) : t = match y with TabledDecl (s, l) -> (s, l)
       end
 
       module KeepTableDecl = struct
         type t = Thm.keepTabledecl
-        type u =
-        | KeepTableDecl of string * Loc.t
-        let view (x : t) : u = let (s, l) = x in KeepTableDecl (s, l)
-        let review (y : u) : t =
-          match y with KeepTableDecl (s, l) -> (s, l) 
+        type u = KeepTableDecl of string * Loc.t
+
+        let view (x : t) : u =
+          let s, l = x in
+          KeepTableDecl (s, l)
+
+        let review (y : u) : t = match y with KeepTableDecl (s, l) -> (s, l)
       end
 
       module Prove = struct
         type t = Thm.prove
-        type u =
-        | Prove of int * TDecl.t
-        let view (x : t) : u = let (n, td) = x in Prove (n, td)
-        let review (y : u) : t =
-          match y with Prove (n, td) -> (n, td) 
+        type u = Prove of int * TDecl.t
+
+        let view (x : t) : u =
+          let n, td = x in
+          Prove (n, td)
+
+        let review (y : u) : t = match y with Prove (n, td) -> (n, td)
       end
 
       module Establish = struct
         type t = Thm.establish
-        type u =
-        | Establish of int * TDecl.t
-        let view (x : t) : u = let (n, td) = x in Establish (n, td)
-        let review (y : u) : t =
-          match y with Establish (n, td) -> (n, td) 
+        type u = Establish of int * TDecl.t
+
+        let view (x : t) : u =
+          let n, td = x in
+          Establish (n, td)
+
+        let review (y : u) : t = match y with Establish (n, td) -> (n, td)
       end
 
       module Assert = struct
         type t = Thm.assert_
-        type u =
-        | Assert of CallPats.t
+        type u = Assert of CallPats.t
+
         let view (x : t) : u = Assert x
-        let review (y : u) : t =
-          match y with Assert cp -> cp 
+        let review (y : u) : t = match y with Assert cp -> cp
       end
 
       module Decs = struct
         type t = Thm.decs
-        type u =
-        | DecsNil of Loc.t
-        | DecsList of t * Decl.t list
+        type u = DecsNil of Loc.t | DecsList of t * Decl.t list
+
         let view (x : t) : u =
           match x with
           | [] -> DecsNil ghost
-          | d :: rest -> DecsList (rest, [d])
+          | d :: rest -> DecsList (rest, [ d ])
+
         let review (y : u) : t =
           match y with
           | DecsNil _ -> []
           | DecsList (rest, decls) -> rest @ decls
-          
       end
 
       module Thm = struct
         type t = concrete_theorem
+
         type u =
-        | Top of Loc.t
-        | Exists of Loc.t * Decs.t * t
-        | Forall of Loc.t * Decs.t * t
-        | ForallStar of Loc.t * Decs.t * t
-        | ForallG of Loc.t * (Decs.t * Decs.t) list * t
+          | Top of Loc.t
+          | Exists of Loc.t * Decs.t * t
+          | Forall of Loc.t * Decs.t * t
+          | ForallStar of Loc.t * Decs.t * t
+          | ForallG of Loc.t * (Decs.t * Decs.t) list * t
+
         let view (x : t) : u =
           match x with
           | Thm.Top_ -> Top ghost
@@ -1163,6 +1156,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
           | Thm.Forall_ (ds, body) -> Forall (ghost, ds, body)
           | Thm.ForallStar_ (ds, body) -> ForallStar (ghost, ds, body)
           | Thm.ForallG_ (pairs, body) -> ForallG (ghost, pairs, body)
+
         let review (y : u) : t =
           match y with
           | Top _ -> Thm.Top_
@@ -1170,7 +1164,6 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
           | Forall (_, ds, body) -> Thm.Forall_ (ds, body)
           | ForallStar (_, ds, body) -> Thm.ForallStar_ (ds, body)
           | ForallG (_, pairs, body) -> Thm.ForallG_ (pairs, body)
-          
       end
 
       let view (x : t) : u = assert false
@@ -1178,26 +1171,27 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
 
       module ThmDec = struct
         type t = concrete_theoremdec
-        type u =
-        | ThmDec of string * Thm.t
+        type u = ThmDec of string * Thm.t
 
-        let view (x : t) : u = let (name, thm) = x in ThmDec (name, thm)
-        let review (y : u) : t =
-          match y with ThmDec (name, thm) -> (name, thm) 
+        let view (x : t) : u =
+          let name, thm = x in
+          ThmDec (name, thm)
+
+        let review (y : u) : t = match y with ThmDec (name, thm) -> (name, thm)
       end
 
       module WDecl = struct
         type t = concrete_wdecl
-        type u =
-        | WDecl of (string list * string) list * CallPats.t
+        type u = WDecl of (string list * string) list * CallPats.t
 
-        let view (x : t) : u = let (pairs, cp) = x in WDecl (pairs, cp)
-        let review (y : u) : t =
-          match y with WDecl (pairs, cp) -> (pairs, cp) 
+        let view (x : t) : u =
+          let pairs, cp = x in
+          WDecl (pairs, cp)
+
+        let review (y : u) : t = match y with WDecl (pairs, cp) -> (pairs, cp)
       end
     end
   end
 end
 
-module Cst : CST = Make_Cst (Paths.Paths_) 
- 
+module Cst : CST = Make_Cst (Paths.Paths_)

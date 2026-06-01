@@ -26,8 +26,11 @@ module type RECON_THM = sig
     Cst.View.Thm.Prove.t -> ThmSyn.pDecl * (Paths.region * Paths.region list)
 
   val establishToEstablish :
-    Cst.View.Thm.Establish.t -> ThmSyn.pDecl * (Paths.region * Paths.region list)
+    Cst.View.Thm.Establish.t ->
+    ThmSyn.pDecl * (Paths.region * Paths.region list)
 
-  val assertToAssert : Cst.View.Thm.Assert.t -> ThmSyn.callpats * Paths.region list
+  val assertToAssert :
+    Cst.View.Thm.Assert.t -> ThmSyn.callpats * Paths.region list
+
   val wdeclTowDecl : Cst.View.Thm.WDecl.t -> ThmSyn.wDecl * Paths.region list
 end

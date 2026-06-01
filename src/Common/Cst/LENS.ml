@@ -1,12 +1,20 @@
+(** Lens based interface to CST
 
+Rather than having just one CST, STELF has a view based interface for the CST, allowing for new concrete syntax to be used without replacing any code
+*)
 open Base
 
-
+module type S = sig 
+  type t 
+  type u 
+  val view : t -> u
+  val review : u -> t
+end
 module type LENS = sig 
   type t 
   type u 
-  val view : t -> u 
-  val review : u -> t
+  include S with type t := t and type u := u 
+  
 end
 (** {2 LENS} *)
 module type VIEW = sig
@@ -211,7 +219,7 @@ module type VIEW = sig
     | Symbol of Loc.t * string * string
     | Freeze of Loc.t * string list
     | Thaw of Loc.t * string list
-    | Sort of Loc.t * string * Decl.t list
+    | Sort of Loc.t * string list * Decl.t list
     | Term of Loc.t * Decl.t
     | Block of Loc.t * string * BlockItem.t list
     | Union of Loc.t * string * string list

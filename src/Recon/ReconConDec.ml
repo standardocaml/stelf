@@ -68,7 +68,8 @@ module Make_ReconConDec
     match Cst.View.ConDec.view condec with
     | Cst.View.ConDec.ConstantDecl (_, decl) ->
         (* Case A: %sort / %term  — constant type declaration *)
-        let (names, tm) = match Cst.View.Decl.view decl with
+        let names, tm =
+          match Cst.View.Decl.view decl with
           | Cst.View.Decl.Decl1 (_, names, tm, _) -> (names, tm)
           | Cst.View.Decl.Decl0 (_, names, tm) -> (names, tm)
           | _ -> assert false
@@ -123,8 +124,7 @@ module Make_ReconConDec
         let (u_, oc1), (v_, oc2_opt), l_ =
           match f' with
           | RT.JTerm ((u_, oc1), v_, l_) -> ((u_, oc1), (v_, None), l_)
-          | RT.JOf ((u_, oc1), (v_, oc2), l_) ->
-              ((u_, oc1), (v_, Some oc2), l_)
+          | RT.JOf ((u_, oc1), (v_, oc2), l_) -> ((u_, oc1), (v_, Some oc2), l_)
           | _ -> assert false
         in
         let _ = RT.checkErrors r in
@@ -137,8 +137,7 @@ module Make_ReconConDec
         let ocd = Paths.def (i, oc1, oc2_opt) in
         let cd =
           if abbFlag then
-            Names.nameConDec
-              (IntSyn.AbbrevDef (name, None, i, u''_, v''_, l_))
+            Names.nameConDec (IntSyn.AbbrevDef (name, None, i, u''_, v''_, l_))
           else begin
             Typecheck.Typecheck_.Strict.check ((u''_, v''_), None);
             Names.nameConDec
@@ -156,8 +155,8 @@ module Make_ReconConDec
           if !Global.doubleCheck then begin
             (try Typecheck.Typecheck_.TypeCheck.check (v''_, IntSyn.Uni l_)
              with Typecheck.Typecheck_.TypeCheck.Error msg ->
-               Printf.eprintf
-                 "DOUBLE-CHECK FAIL on ConDef %s (type): %s\n%!" name msg;
+               Printf.eprintf "DOUBLE-CHECK FAIL on ConDef %s (type): %s\n%!"
+                 name msg;
                raise (Typecheck.Typecheck_.TypeCheck.Error msg));
             try Typecheck.Typecheck_.TypeCheck.check (u''_, v''_)
             with Typecheck.Typecheck_.TypeCheck.Error msg ->
@@ -180,12 +179,8 @@ module Make_ReconConDec
         in
         let _ = Names.varReset IntSyn.Null in
         let _ = RT.resetErrors filename in
-        let j =
-          RT.jwithctx (gsome, RT.jwithctx (gblock, RT.jnothing))
-        in
-        let (RT.JWithCtx (gsome_, RT.JWithCtx (gblock_, _))) =
-          RT.recon j
-        in
+        let j = RT.jwithctx (gsome, RT.jwithctx (gblock, RT.jnothing)) in
+        let (RT.JWithCtx (gsome_, RT.JWithCtx (gblock_, _))) = RT.recon j in
         let _ = RT.checkErrors r in
         let g0_, ctxs =
           try Abstract.abstractCtxs [ gsome_; gblock_ ]
@@ -215,9 +210,7 @@ module Make_ReconConDec
         (Some bd, None)
     | Cst.View.ConDec.BlockDef (_, name, worlds) ->
         (* Case D: block definition *)
-        let w' =
-          List.map (fun (ids, id) -> Names.Qid (ids, id)) worlds
-        in
+        let w' = List.map (fun (ids, id) -> Names.Qid (ids, id)) worlds in
         let cids =
           List.map
             (function
@@ -227,15 +220,12 @@ module Make_ReconConDec
                       raise
                         (Names.Error
                            ("Undeclared label "
-                           ^ Names.qidToString
-                               (valOf (Names.constUndef qid))
+                           ^ Names.qidToString (valOf (Names.constUndef qid))
                            ^ "."))
                   | Some cid -> cid))
             w'
         in
-        let bd =
-          Names.nameConDec (IntSyn.BlockDef (name, None, cids))
-        in
+        let bd = Names.nameConDec (IntSyn.BlockDef (name, None, cids)) in
         let _ =
           Display.display'
             (Display.Info.msg

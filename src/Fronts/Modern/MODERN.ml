@@ -30,7 +30,7 @@ module type MODERN = sig
   val parse_query :
     unit -> (int option * int option * int option * Cst.Query.query) t
 
-  val parse_define : unit -> Cst.Query.define t
+  val parse_define : unit -> Cst.define t
   val parse_solve : unit -> Cst.Query.solve t
   val parse_bound : unit -> int option t
   val parse_id_list : unit -> string list t

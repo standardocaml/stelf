@@ -1,4 +1,4 @@
-(lang dune 3.20)
+(lang dune 3.21)
 
 (name stelf)
 
@@ -13,12 +13,12 @@
 
 (maintainers "Maintainer Name <maintainer@example.com>")
 
-(license LICENSE)
+(license BSD-3-Clause)
 
-(documentation https://url/to/documentation)
+(documentation https://github.com/standardocaml/stelf/wiki)
 
 (pin
- (url "file://basis")
+ (url "basis")
  (package
   (name basis)))
 
@@ -30,8 +30,9 @@
   "STELF (System for the Typed Edinburgh Logical Framework) is a port of Twelf to OCaml. It provides a framework for defining and reasoning about formal systems, such as programming languages and logics.")
  (depends
   (ocaml
-   (>= 5.0.0))
-  basis
+   (and
+    (>= 5.0.0)
+    (< 5.4)))
   lwt
   containers
   base
@@ -40,10 +41,11 @@
   (alcotest-lwt :with-test)
   (bisect-ppx :with-dev)
   (odoc :with-doc)
+  (bisect_ppx :with-dev)
   lambda-term
   fmt
-  (logs
-   (>= 3.0.0)))
+  cmdliner 
+  logs)
  (tags
   ("logic" "language" stelf)))
 

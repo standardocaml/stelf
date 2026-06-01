@@ -87,7 +87,11 @@ module Impl = struct
   (* Helpers                                                              *)
   (* ------------------------------------------------------------------ *)
 
-  let msg s = Msg.Msg_.Msg.message s
+  (* let msg s = Msg.Msg_.Msg.message s *)
+
+  let msg m =
+    Display.message ~level:Display.Verbose ~kind:Display.Info
+      (Display.Form.string m)
 
   let print_error (label : string) (detail : string) : unit =
     Printf.eprintf "%s: %s\n%!" label detail
@@ -127,40 +131,47 @@ module Impl = struct
 
   let rec factor_sort : Cst.decl list -> Cst.term = function
     | [] -> Cst.Term.typ ()
-    | decl :: decls -> Cst.Term.pi [decl] (factor_sort decls)
+    | decl :: decls -> Cst.Term.pi [ decl ] (factor_sort decls)
 
   module Install = struct
     let unfold_app tm =
       let rec go acc = function
         | Cst.App_ (f, arg) -> go (arg :: acc) f
         | head -> (head, acc)
-      in go [] tm
+      in
+      go [] tm
 
     let term_to_name = function
       | Cst.Ucid_ (_, "_", _) -> None
-      | Cst.Ucid_ (_, n, _)   -> Some n
-      | Cst.Lcid_ (_, n, _)   -> Some n
-      | Cst.Evar_ (n, _)      -> Some n
-      | Cst.Fvar_ (n, _)      -> Some n
+      | Cst.Ucid_ (_, n, _) -> Some n
+      | Cst.Lcid_ (_, n, _) -> Some n
+      | Cst.Evar_ (n, _) -> Some n
+      | Cst.Fvar_ (n, _) -> Some n
       | _ -> None
 
     let term_to_head = function
       | Cst.Ucid_ (_, n, _) | Cst.Lcid_ (_, n, _) -> n
-      | _ -> failwith "%total/%terminates: expected identifier as call-pattern head"
+      | _ ->
+          failwith
+            "%total/%terminates: expected identifier as call-pattern head"
 
     let build_thm_tdecl label intros body =
       let module TS = ThmSyn in
       let mk_order names = TS.Varg names in
-      let order = match intros with
-        | []      -> mk_order []
-        | [names] -> mk_order names
-        | many    -> TS.Simul (List.map mk_order many)
+      let order =
+        match intros with
+        | [] -> mk_order []
+        | [ names ] -> mk_order names
+        | many -> TS.Simul (List.map mk_order many)
       in
       let term_to_cp tm =
-        let (head, args) = unfold_app tm in
+        let head, args = unfold_app tm in
         let name = term_to_head head in
-        let cid = match Names.constLookup (Names.Qid ([], name)) with
-          | None -> failwith (label ^ ": undeclared identifier " ^ name ^ " in call pattern")
+        let cid =
+          match Names.constLookup (Names.Qid ([], name)) with
+          | None ->
+              failwith
+                (label ^ ": undeclared identifier " ^ name ^ " in call pattern")
           | Some c -> c
         in
         (cid, List.map term_to_name args)
@@ -208,26 +219,35 @@ module Impl = struct
             msg' ~src:Group.pal ~level:Level.Debug Fmt.string
               "Installing term command");
 
-            
-          let (names, ty) = match Cst.View.Decl.view decl with
+          let names, ty =
+            match Cst.View.Decl.view decl with
             | Cst.View.Decl.Decl1 (_, ns, t, _) -> (ns, t)
             | Cst.View.Decl.Decl0 (_, ns, t) -> (ns, t)
-            
           in
           let names' = List.map (function Some n -> n | None -> "_") names in
-          Display.message ~level:Display.Verbose (Display.(string "Installing term command for" ++ each string names' ++ space () ++ hvbox [shown Cst.show_term ty]) );
+          Display.message ~level:Display.Verbose
+            Display.(
+              string "Installing term command for"
+              ++ each string names' ++ space ()
+              ++ hvbox [ shown Cst.show_term ty ]);
           let condec = Cst.ConstantDecl_ decl in
-          match Recon.ReconConDec.condecToConDec (condec, loc_of Cst.ghost, false) with
+          match
+            Recon.ReconConDec.condecToConDec (condec, loc_of Cst.ghost, false)
+          with
           | Some cd, _ -> install_condec cd
           | None, _ -> ())
       | Cst.DefineCmd_ (Cst.Define_ (name_opt, tm, tp_opt)) -> (
           let name = match name_opt with Some n -> n | None -> "_" in
           let condec = Cst.ConstantDef_ (name, tm, tp_opt) in
-          match Recon.ReconConDec.condecToConDec (condec, loc_of Cst.ghost, false) with
+          match
+            Recon.ReconConDec.condecToConDec (condec, loc_of Cst.ghost, false)
+          with
           | Some cd, _ -> install_condec cd
           | None, _ -> ())
       | Cst.QueryCmd_ (_n, _b, _d, q) ->
-          let v_, opt_name, xs_ = Recon.ReconQuery.queryToQuery (q, loc_of Cst.ghost) in
+          let v_, opt_name, xs_ =
+            Recon.ReconQuery.queryToQuery (q, loc_of Cst.ghost)
+          in
           let g =
             Compile.Compile_.Compile.compileGoal (Intsyn.IntSyn.Null, v_)
           in
@@ -265,7 +285,9 @@ module Impl = struct
           if !solutions = 0 && !Global.Global_.Global.chatter >= 3 then
             msg "No solution.\n"
       | Cst.SolveCmd_ sol ->
-          let v_, sc_fn = Recon.ReconQuery.solveToSolve ([], sol, loc_of Cst.ghost) in
+          let v_, sc_fn =
+            Recon.ReconQuery.solveToSolve ([], sol, loc_of Cst.ghost)
+          in
           let g =
             Compile.Compile_.Compile.compileGoal (Intsyn.IntSyn.Null, v_)
           in
@@ -305,7 +327,9 @@ module Impl = struct
       | Cst.VersionCmd_ -> msg (Frontend.Version.Version.version_string ^ "\n")
       | Cst.EvalCmd_ cmds -> List.app install1 cmds
       | Cst.AdhocQueryCmd_ q ->
-          let v_, opt_name, xs_ = Recon.ReconQuery.queryToQuery (q, loc_of Cst.ghost) in
+          let v_, opt_name, xs_ =
+            Recon.ReconQuery.queryToQuery (q, loc_of Cst.ghost)
+          in
           let g =
             Compile.Compile_.Compile.compileGoal (Intsyn.IntSyn.Null, v_)
           in
@@ -395,7 +419,9 @@ module Impl = struct
           Names.installNamePref (cid, ([ pref ], [ pref ]))
       | Cst.InlineCmd_ (name, tm) -> (
           let condec = Cst.ConstantDef_ (name, tm, None) in
-          match Recon.ReconConDec.condecToConDec (condec, loc_of Cst.ghost, true) with
+          match
+            Recon.ReconConDec.condecToConDec (condec, loc_of Cst.ghost, true)
+          with
           | Some cd, _ -> install_condec cd
           | None, _ -> ())
       | Cst.BlockCmd_ (id, items) -> (
@@ -415,9 +441,13 @@ module Impl = struct
           with
           | Some cd, _ -> install_condec cd
           | None, _ -> ())
-      | Cst.ModeCmd_ ( md) -> 
-
-          let () = Display.(message ~level:Verbose (string "Installing mode declaration for " ++ shown Cst.show_modeDec md) ) in
+      | Cst.ModeCmd_ md ->
+          let () =
+            Display.(
+              message ~level:Verbose
+                (string "Installing mode declaration for "
+                ++ shown Cst.show_modeDec md))
+          in
           let mdec, _r = Recon.ReconMode.modeToMode md in
           let cid, _ = mdec in
           (match ModeTable.modeLookup cid with
@@ -429,19 +459,18 @@ module Impl = struct
           ModeTable.installMode mdec;
           ModeCheck.checkMode mdec
       | Cst.TotalCmd_ (intros, body) ->
-          let (t_, rrs) = build_thm_tdecl "%total" intros body in
+          let t_, rrs = build_thm_tdecl "%total" intros body in
           let la_ = ThmInst.installTotal (t_, rrs) in
           List.app ThmTotal.install la_;
           List.app ThmTotal.checkFam la_
       | Cst.TerminatesCmd_ (intros, body) ->
-          let (t_, rrs) = build_thm_tdecl "%terminates" intros body in
+          let t_, rrs = build_thm_tdecl "%terminates" intros body in
           let la_ = ThmInst.installTerminates (t_, rrs) in
           ignore la_
       | Cst.CoversCmd_ md ->
           let mdec, _r = Recon.ReconMode.modeToMode md in
           Cover.checkCovers mdec
-      | Cst.NameCmd_ _id ->
-          ()
+      | Cst.NameCmd_ _id -> ()
       | Cst.UniqueCmd_ tm ->
           let mdec_opt =
             match Cst.View.Term.view tm with
@@ -486,9 +515,12 @@ module Impl = struct
           let w_ = Intsyn.Lambda_.Tomega.Worlds block_cids in
           let lookup_head tm =
             match Cst.View.Term.view tm with
-            | Cst.View.Term.Lowercase (_, (ns, n)) -> Names.constLookup (Names.Qid (ns, n))
-            | Cst.View.Term.Uppercase (_, (ns, n)) -> Names.constLookup (Names.Qid (ns, n))
-            | Cst.View.Term.Qualified (_, (ns, n)) -> Names.constLookup (Names.Qid (ns, n))
+            | Cst.View.Term.Lowercase (_, (ns, n)) ->
+                Names.constLookup (Names.Qid (ns, n))
+            | Cst.View.Term.Uppercase (_, (ns, n)) ->
+                Names.constLookup (Names.Qid (ns, n))
+            | Cst.View.Term.Qualified (_, (ns, n)) ->
+                Names.constLookup (Names.Qid (ns, n))
             | _ -> None
           in
           let family_cid_opt =
@@ -503,7 +535,9 @@ module Impl = struct
               WorldSyn.worldcheck w_ a
           end
       | Cst.QueryTabledCmd_ (numSol, try_, _d, q) ->
-          let a_, opt_name, xs_ = Recon.ReconQuery.queryToQuery (q, loc_of Cst.ghost) in
+          let a_, opt_name, xs_ =
+            Recon.ReconQuery.queryToQuery (q, loc_of Cst.ghost)
+          in
           let g =
             Compile.Compile_.Compile.compileGoal (Intsyn.IntSyn.Null, a_)
           in

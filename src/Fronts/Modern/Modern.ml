@@ -77,6 +77,27 @@ module Make_Modern
           let+ body = self in
           Cst.Term.has_type body ty)
           <|>
+          (* -> A B C  ==>  {_ A} {_ B} C  (last arg is the body) *)
+          (keyword "->" *> commit
+          *>
+          let+ args = many1 (parse_expr1 ()) in
+          let rev = List.rev args in
+          let body = List.hd rev in
+          let init = List.rev (List.tl rev) in
+          List.fold_right
+            (fun t acc -> Cst.Term.pi [ Cst.Decl.decl1 [ None ] t ] acc)
+            init body)
+          <|>
+          (* <- A B C  ==>  {_ C} {_ B} A  (first arg is the body) *)
+          (keyword "<-" *> commit
+          *>
+          let+ args = many1 (parse_expr1 ()) in
+          let body = List.hd args in
+          let rest_rev = List.rev (List.tl args) in
+          List.fold_right
+            (fun t acc -> Cst.Term.pi [ Cst.Decl.decl1 [ None ] t ] acc)
+            rest_rev body)
+          <|>
           let* atoms = many expr1 in
           (let+ trail = parse_expr_trail () in
            match atoms with
@@ -89,7 +110,7 @@ module Make_Modern
     end
     <?> "expression"
 
-  and parse_var () : string t =
+  and parse_var () : string t = 
     begin
       ident1
     end
@@ -104,10 +125,12 @@ module Make_Modern
             let q0, q1 = split q in
             (List.append [ p ] q0, q1)
       in
-      keyword "val"
-      *> inside "(" ")"
-           (let* ns = many1 ident in
-            return @@ split ns)
+      keyword "val" *> commit
+      *> ((let* ident in
+           return ([], ident))
+         <|> inside "(" ")"
+               (let* ns = many1 ident in
+                return @@ split ns))
     end
     <?> "qualified name"
 
@@ -130,28 +153,39 @@ module Make_Modern
 
   and parse_mode () : Cst.Mode.mode t =
     begin
-      keyword "out1" *> return (Cst.Mode.minus1 ())
-      <|> keyword "out" *> return (Cst.Mode.minus ())
-      <|> keyword "in" *> return (Cst.Mode.plus ())
-      <|> keyword "star" *> return (Cst.Mode.star ())
+      keyword "out1" *> commit *> return (Cst.Mode.minus1 ())
+      <|> keyword "out" *> commit *> return (Cst.Mode.minus ())
+      <|> keyword "in" *> commit *> return (Cst.Mode.plus ())
+      <|> keyword "star" *> commit *> return (Cst.Mode.star ())
     end
     <?> "mode"
 
   and parse_mode_dec () : Cst.Mode.modedec t =
     begin
-      let* arg =
+      let* braced_args =
         many
         @@ inside "{" "}"
              (let* m = parse_mode () and* d = parse_decl () in
               return (m, d))
-      and* body = parse_expr () in
-      let rec go body = function
-        | [] -> Cst.Mode.Full.mode_root body
-        | (m, d) :: rest -> Cst.Mode.Full.mode_pi m d (go body rest)
       in
-      return @@ Cst.Mode.Full.to_modeDec (go body arg)
+      let* body = parse_expr () in
+      let+ bare_modes = many (parse_mode ()) in
+      let rec go_bare body = function
+        | [] -> Cst.Mode.Full.mode_root body
+        | m :: rest ->
+            Cst.Mode.Full.mode_pi m (Cst.Decl.decl0 [ None ])
+              (go_bare body rest)
+      in
+      let rec go_braced inner = function
+        | [] -> inner
+        | (m, d) :: rest -> Cst.Mode.Full.mode_pi m d (go_braced inner rest)
+      in
+      Cst.Mode.Full.to_modeDec (go_braced (go_bare body bare_modes) braced_args)
     end
     <?> "mode declaration"
+
+  and parse_simple_mode_dec () : Cst.Mode.modedec t =
+    parse_mode_dec () <?> "simple mode declaration"
 
   and parse_inst () : Cst.Struct.inst t =
     begin
@@ -214,12 +248,15 @@ module Make_Modern
     end
     <?> "query"
 
-  and parse_define () : Cst.Query.define t =
+  and parse_define () : Cst.define t =
     begin
-      let* id = parse_var () in
-      let* tm = parse_expr1 () in
-      let+ ty = Parser.option None @@ ((fun s -> Some s) <$> parse_expr ()) in
-      Cst.Query.define (Some id) tm ty
+      let* id =
+        (fun s -> Some s) <$> parse_var () <|> Parser.string "_" *> return None
+      in
+
+      let* ty = Parser.option None @@ ((fun s -> Some s) <$> parse_expr1 ()) in
+      let+ tm = parse_expr () in
+      Cst.View.(Define.(review @@ Define (Loc.(review Ghost), id, tm, ty)))
     end
     <?> "definition"
 

@@ -5,12 +5,15 @@ module Repl (M : REPL.S) : REPL.REPL = struct
         (Debug.Level.log_level @@ Debug.Level.from_chatter
         @@ Display.Info.to_int M.verbosity)
       ()
+
   let msgs : Display.Info.t list ref = ref []
   let add_msg m = msgs := m :: !msgs
+
   let flush_msgs () : Display.Info.t array Lwt.t =
     let pending = Array.of_list (List.rev !msgs) in
     msgs := [];
     Lwt.return pending
+
   let () = Display.register (fun m -> Lwt.return @@ add_msg m)
 
   let seq_l : 'a 'b. 'a Lwt.t -> 'b Lwt.t -> 'b Lwt.t =

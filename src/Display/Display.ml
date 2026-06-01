@@ -6,29 +6,42 @@
 
 module type DISPLAY = DISPLAY.DISPLAY
 
-
 open Lwt.Syntax
-include Form  
-include Info 
-module Display : DISPLAY = struct 
+include Form
+include Info
+
+module Display : DISPLAY = struct
   type t = Info.t
-  let registered : bool ref = ref false 
+
+  let registered : bool ref = ref false
   let rep : (t -> unit Lwt.t) ref = ref (fun _ -> Lwt.return ())
-  let register f = 
+
+  let register f =
     registered := true;
     rep := f
-  let display' info = 
+
+  let display' info =
     assert !registered;
-    Lwt.dont_wait (fun () -> !rep info) (fun exn -> Printf.eprintf "Error in display handler: %s\n%!" (Printexc.to_string exn))
-  let message ?src ?kind ?(level=Quiet) t =
+    Lwt.dont_wait
+      (fun () -> !rep info)
+      (fun exn ->
+        Printf.eprintf "Error in display handler: %s\n%!"
+          (Printexc.to_string exn))
+
+  let message ?src ?kind ?(level = Quiet) t =
     assert !registered;
-    Lwt.dont_wait (fun () -> !rep { src; kind; level; msg = t }) (fun exn -> Printf.eprintf "Error in display handler: %s\n%!" (Printexc.to_string exn))
+    Lwt.dont_wait
+      (fun () -> !rep { src; kind; level; msg = t })
+      (fun exn ->
+        Printf.eprintf "Error in display handler: %s\n%!"
+          (Printexc.to_string exn))
+
   let debug ?src ?level t = message ?src ~kind:Info.Debug ?level t
   let info ?src ?level t = message ?src ~kind:Info.Info ?level t
   let warning ?src ?level t = message ?src ~kind:Info.Warning ?level t
   let error ?src ?level t = message ?src ~kind:Info.Error ?level t
-end 
+end
+
 module Info = Info
 include Display
-
-include Info.Form 
+include Info.Form

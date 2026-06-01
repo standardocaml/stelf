@@ -22,6 +22,7 @@ module Make_ReconModule
   type structDec =
     | StructDec of string option * ModSyn.module_ * whereclause list
     | StructDef of string option * Ast.mid
+
   (* OLD *)
   (*
   let strexpToStrexp se =
@@ -39,8 +40,8 @@ module Make_ReconModule
         | Some mid -> mid)
   *)
   (* NEW *)
-  let strexpToStrexp se = 
-    match Cst.View.Struct.StrExp.view se with 
+  let strexpToStrexp se =
+    match Cst.View.Struct.StrExp.view se with
     | Cst.View.Struct.StrExp.StrExp (loc, (ids, id)) -> (
         let qid = ModSyn.Names.Qid (ids, id) in
         match ModSyn.Names.structLookup qid with
@@ -63,20 +64,19 @@ module Make_ReconModule
         let wherecl ns =
           let rec go = function
             | [] -> []
-            | inst :: rest ->
+            | inst :: rest -> (
                 let eqns = go rest in
-                (match Cst.View.Struct.Inst.view inst with
-                | Cst.View.Struct.Inst.ConInst (_, (ids, id), _, tm) ->
+                match Cst.View.Struct.Inst.view inst with
+                | Cst.View.Struct.Inst.ConInst (_, (ids, id), _, tm) -> (
                     let r = Cst.loc_to_region Cst.ghost in
                     let qid = ModSyn.Names.Qid (ids, id) in
-                    (match ModSyn.Names.constLookupIn (ns, qid) with
+                    match ModSyn.Names.constLookupIn (ns, qid) with
                     | None ->
                         error
                           ( r,
                             "Undeclared identifier "
                             ^ ModSyn.Names.qidToString
-                                (valOf
-                                   (ModSyn.Names.constUndefIn (ns, qid))) )
+                                (valOf (ModSyn.Names.constUndefIn (ns, qid))) )
                     | Some cid -> (cid, External tm, r) :: eqns)
                 | Cst.View.Struct.Inst.StrInst (_, (ids, id), _, strexp) ->
                     let r1 = Cst.loc_to_region Cst.ghost in
@@ -86,10 +86,10 @@ module Make_ReconModule
                       | None ->
                           error
                             ( r1,
-                              "Undeclared structure " 
+                              "Undeclared structure "
                               ^ ModSyn.Names.qidToString
-                                  (valOf
-                                     (ModSyn.Names.structUndefIn (ns, qid))) )
+                                  (valOf (ModSyn.Names.structUndefIn (ns, qid)))
+                            )
                       | Some mid1 -> mid1
                     in
                     let mid2 = strexpToStrexp strexp in
@@ -133,7 +133,8 @@ module Make_ReconModule
     ModSyn.Names.appStructs doStruct ns1
 
   let sigdefToSigdef (sd, module_opt) =
-    let (name_opt, sigexp) = match Cst.View.Struct.SigDef.view sd with
+    let name_opt, sigexp =
+      match Cst.View.Struct.SigDef.view sd with
       | Cst.View.Struct.SigDef.SigDef (_, name_opt, sigexp) -> (name_opt, sigexp)
       | _ -> assert false
     in

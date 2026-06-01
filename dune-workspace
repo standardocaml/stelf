@@ -1,6 +1,6 @@
-(lang dune 3.20)
+(lang dune 3.21)
 
-
+(pkg enabled)
 (context default)
 
 (env
@@ -10,4 +10,4 @@
  (_ (flags (:standard -warn-error -8-26-27-32..38-67)))
 )
 
-(instrument_with bisect_ppx landmarks)
+(instrument_with bisect_ppx)

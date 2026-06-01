@@ -14,7 +14,6 @@ type src =
   | Prove
   | Total
 
-
 type kind = Debug | Info | Warning | Error | Response
 
 (* Corresponds to chatter 5 4 3 2 1 0, respectively *)

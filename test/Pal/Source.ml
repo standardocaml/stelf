@@ -3,31 +3,34 @@ let zf_core = {|
 %sort prop
 %sort pf {_ prop}
 %sort set
-|} 
-let zf_basics = {|
+|}
+
+let zf_basics =
+  {|
 %term false prop
 %term imp {_ prop} {_ prop} prop
 %term all {_ {_ set} prop} prop 
 %term eq {_ set} {_ set} prop
 %term in {_ set} {_ set} prop
 |}
-let zf_def_basic = {|
-%def not ({_ prop} prop) ([a] imp a false)
-%def and ({_ prop} {_ prop} prop) ([a][b] not (imp a (not b)) %.
-%def or ({_ prop} {_ prop} prop) ([a][b] imp (not a) b %.
-%def iff ({_ prop} {_ prop} prop) ([a][b] and (imp a b) (imp b a) %.
-%def ex ({_ {_ set} prop} prop) ([p] not(all([z]not (p z))) %.
-%def unique ({_ {_ set} prop} prop) =
-([p] all([z] imp (p z) (all ([z'] imp (p z') (eq z z')))) %.
+
+let zf_def_basic =
+  {|
+%def not ({_ prop} prop) ([a] imp a false) %.
+%def and ({_ prop} {_ prop} prop) ([a][b] not (imp a (not b))) %.
+%def or ({_ prop} {_ prop} prop) ([a][b] imp (not a) b) %.
+%def iff ({_ prop} {_ prop} prop) ([a][b] and (imp a b) (imp b a)) %.
+%def ex ({_ {_ set} prop} prop) ([p] not(all([z]not (p z)))) %.
+%def unique ({_ {_ set} prop} prop) ([p] all([z] imp (p z) (all ([z'] imp (p z') (eq z z'))))) %.
 |}
 
-let zf_high = {|
-%term ex_unique {_ {_ set} prop} prop = [p]
- and (ex p) (unique p) %.
+let zf_high =
+  {|
+%def ex_unique ({_ {_ set} prop} prop) ([p] and (ex p) (unique p)) %.
 %term imp_i {_ {_ pf _A} pf _B} pf (imp _A _B) %.
 %term imp_e {_ pf (imp _A _B)} {_ pf _A} pf _B %.
 %term all_i {_ {z} pf (_P z)} pf (all _P) %.
-%term all_e {_ pf (all _P)} {z}pf (P z) %.
+%term all_e {_ pf (all _P)} {z set} pf (_P z) %.
 %term classical {_ pf (not(not _A))} pf _A %.
 %term eq_i pf (eq _A _A) %.
 %term eq_e {_ pf (eq _A _B)} {s {_ set} prop} {_ pf (s _A)} pf (s _B) %.
@@ -35,9 +38,9 @@ let zf_high = {|
 %term if_then {_ pf _P} pf (eq (if _P _X _Y) _X) %.
 %term if_else {_ pf (not _P)} pf (eq (if _P _X _Y) _Y) %.
 %term empty    set %.
-%term double   {_ set} {_ set} set.  
-%term unions   {_ set} set.        
-%term powerset set %.
+%term double   {_ set} {_ set} set %.
+%term unions   {_ set} set %.
+%term powerset {_ set} set %.
 %term replace  {_ set} {_ {_ set} set} set %.
 %term omega    set %.
 %def single ({_ set} set) [x] double x x %.
