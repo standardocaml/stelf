@@ -18,7 +18,7 @@ module Pal : PAL.PAL = struct
 
       method exec (s : string) : unit = List.iter self#install (self#parse s)
     end
-
+ 
   let top (module N : Tui.REPL.S) =
     let pi = new pal in
     let module R = Tui.Repl.Repl (N) in

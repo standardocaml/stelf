@@ -32,18 +32,29 @@
   (ocaml
    (and
     (>= 5.0.0)
-    (< 5.4)))
+    (not (and 
+      (< 5.5.0)
+      (>= 5.4.0)
+    ))
+    ))
   lwt
   containers
   base
   angstrom
   (alcotest :with-test)
   (alcotest-lwt :with-test)
-  (bisect-ppx :with-dev)
+  (bisect-ppx :dev)
   (odoc :with-doc)
-  (bisect_ppx :with-dev)
+  (sherlodoc :with-doc)
+  (bisect_ppx :dev)
+  (ocamlformat :dev)
+  (ocaml-lsp-server :dev)
+  (user-setup :dev)
+  (merlin :dev)
+  ppx_deriving
   lambda-term
   fmt
+  bos
   cmdliner 
   logs)
  (tags

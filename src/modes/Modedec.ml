@@ -41,6 +41,7 @@ module MakeModeDec () : MODEDEC = struct
                 end
           in
           checkName' mS
+      | M.Mapp (M.Marg (_, None), mS) -> checkName mS
 
     let rec modeConsistent = function
       | M.Star, M.Plus -> false

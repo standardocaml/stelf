@@ -1,7 +1,11 @@
+
+
 (* TODO: Thinks that will be added eventually 
 Groups (sections, list, etc)
 Math markup 
 Boxes*)
+
+(** Common colors for the foreground and background (for use with {!FORM}) *)
 module type COLORS = sig
   type t
 
@@ -18,7 +22,7 @@ end
 
 module type FORM = sig
   type t
-  type style
+  type style = t -> t
   type 'a scribe = 'a -> t
 
   module Style : sig

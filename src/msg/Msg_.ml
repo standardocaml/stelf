@@ -8,7 +8,7 @@ open Basis
 include Msg_intf
 
 module Msg : MSG = struct
-  let default = print
+  let default m = Display.debug (Display.string m)
   let messageFunc = ref default
   let setMessageFunc f = messageFunc := f
   let message s = ( ! ) messageFunc s

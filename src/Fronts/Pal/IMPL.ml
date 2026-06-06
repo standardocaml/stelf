@@ -9,7 +9,7 @@ module type IMPL = sig
 
   (** Names module — same as Cmd.Names. *)
 
-  module Recon : Recon.RECON
+  module Recon : Recon.RECON 
   (** New elaboration layer: reconstruction / type-inference sub-modules. *)
 
   (** Input source for loading: a file path or an inline string. *)

@@ -31,6 +31,8 @@ module MakeModeCheck
   exception Error of string
 
   open! struct
+    let print' s = Display.(debug Form.(string s))
+    
     module I = IntSyn
     module M = ModeSyn
     module P = Paths
@@ -61,6 +63,8 @@ module MakeModeCheck
     exception ModeError of P.occ * string
     exception Error' of P.occ * string
 
+    let modeError' (occ, msg) = Display.debug (Display.Form.string msg) ; raise (ModeError (occ, msg))
+    let error'' (occ, msg) = Display.debug (Display.Form.string msg) ; raise (Error' (occ, msg))
     let rec lookup (a, occ) =
       begin match ModeTable.mmodeLookup a with
       | [] ->
@@ -514,7 +518,7 @@ module MakeModeCheck
 
     let rec checkDlocal (d_, v_, occ) =
       try checkD1 (d_, v_, occ, function d'_ -> [ d'_ ])
-      with ModeError (occ, msg) -> raise (Error' (occ, msg))
+      with ModeError (occ, msg) -> error'' ( (occ, msg))
 
     let cidFromHead = function I.Const a -> a | I.Def a -> a
 
@@ -547,7 +551,7 @@ module MakeModeCheck
       | [] -> ()
       | I.Const c :: clist -> begin
           begin if !Global.chatter > 3 then
-            print (Names.qidToString (Names.constQid c) ^ " ")
+            print' (Names.qidToString (Names.constQid c) ^ " ")
           else ()
           end;
           (try checkDlocal (I.Null, I.constType c, P.top)
@@ -556,7 +560,7 @@ module MakeModeCheck
         end
       | I.Def d :: clist -> begin
           begin if !Global.chatter > 3 then
-            print (Names.qidToString (Names.constQid d) ^ " ")
+            print' (Names.qidToString (Names.constQid d) ^ " ")
           else ()
           end;
           (try checkDlocal (I.Null, I.constType d, P.top)
@@ -567,7 +571,7 @@ module MakeModeCheck
     let rec checkMode (a, ms) =
       let _ =
         begin if !Global.chatter > 3 then
-          print
+          print'
             (("Mode checking family " ^ Names.qidToString (Names.constQid a))
             ^ ":\n")
         else ()
@@ -577,7 +581,7 @@ module MakeModeCheck
       let _ = checkFree := false in
       let _ = checkAll clist in
       let _ =
-        begin if !Global.chatter > 3 then print "\n" else ()
+        begin if !Global.chatter > 3 then print' "\n" else ()
         end
       in
       ()
@@ -585,7 +589,7 @@ module MakeModeCheck
     let rec checkFreeOut (a, ms) =
       let _ =
         begin if !Global.chatter > 3 then
-          print
+          print'
             (("Checking output freeness of "
              ^ Names.qidToString (Names.constQid a))
             ^ ":\n")
@@ -596,7 +600,7 @@ module MakeModeCheck
       let _ = checkFree := true in
       let _ = checkAll clist in
       let _ =
-        begin if !Global.chatter > 3 then print "\n" else ()
+        begin if !Global.chatter > 3 then print' "\n" else ()
         end
       in
       ()

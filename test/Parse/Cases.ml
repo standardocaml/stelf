@@ -47,6 +47,10 @@ let cases () =
             test "Qualified" Term "%val ( x y )";
             test "Nofix" Term "%val +";
           ] );
+        ("Explicit implicits", [
+          test "Simple" Term "{{X Y}} X Y";
+          test "Nested" Term "{{X Y}} X {{Z}} Y Z";
+        ]) ;
         ( "Hypotheses",
           [
             test "Simple" Decl "x nat";
@@ -82,7 +86,7 @@ let cases () =
             test "Complex (unnamed, multi)" Cmd1
               "%sort eq {t type} {(_ _) term t}";
             (* UNTIL MUTIPLE SORTS WORK *)
-            test ~skip:true "Sorts (combined)" Cmd1 "%sort (nat bool)";
+            test "Sorts (combined)" Cmd1 "%sort (nat bool)";
           ] );
         ( "%term",
           [
@@ -135,28 +139,39 @@ let cases () =
         ( "%total",
           [
             test "Simple" Cmd1 "%total N (add N _ _)";
-            (* TODO totality in context ? *)
-            test "Context" Cmd1 ~skip:true "%total (b) N (add N _ _)";
             test "Mutual" Cmd1 ~skip:false
               "%total (N1 N2) (add N1 _ _) (mul N2 _ _)";
-            test "Mutual (context)" Cmd1 ~skip:true
-              "%total (b) (N1 N2) (add N1 _ _) (mul N2 _ _)";
           ] );
         ( "%terminates",
           [
             test "Simple" Cmd1 "%terminates N (add N _ _)";
-            test "Context" Cmd1 ~skip:true "%terminates (b) N (add N _ _)";
             test "Mutual" Cmd1 ~skip:false
               "%terminates (N1 N2) (add N1 _ _) (mul N2 _ _)";
-            test "Mutual (context)" Cmd1 ~skip:true
-              "%terminates (b) (N1 N2) (add N1 _ _) (mul N2 _ _)";
-          ] );
+            test "Simultaneous" Cmd1 
+              "%terminates [A B] max A B";
+            test "Lexocographic" Cmd1 
+              "%terminates {A B} max A B";
+            test "Nested" Cmd1 
+              "%terminates {A [B C] F} (max A (max B C))";
+            test "Nested (mutual)" Cmd1 "%terminates ({A [B C] G} [D E] F) (max A (max B C) max D (max E C))";
+            test "Nested (mutual, issue)" Cmd1 ~skip:true "({A [B C]} [D E]) (max A (max B C) max D (max E C))"
+          ] ); 
         ( "%query",
           [
             test "Atomic (%?)" Cmd1 "%? nat";
             test "Complex (%?)" Cmd1 "%? add zero zero zero";
             test "Atom (Full)" Cmd1 "%query _ _ 1 add zero zero zero";
           ] );
+
+        ( "%reduces", 
+          [
+            test "Same size" Cmd1 "%reduces = X Y add X Y zero";
+            test "Smaller" Cmd1 "%reduces < X Y add X Y zero";
+            test "Larger" Cmd1 "%reduces > X Y add X Y zero";
+            test "Same size or greater" Cmd1 "%reduces >= X Y add X Y zero";
+            test "Same size or smaller" Cmd1 "%reduces <= X Y add X Y zero";
+          ] 
+          )
       ]
     end
     ~verbose:true

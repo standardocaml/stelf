@@ -60,5 +60,25 @@ let cases () =
                 Source.zf_high;
               ];
           ] );
+        ( "FOL", Source.[ 
+          test "FOL" [ fol1 ]; 
+          test "FOL2" [ fol1; fol2 ] ;
+          test "FOL3.1" [ fol1; fol2; fol3_1 ];
+          test "FOL3.2.1" [ fol1; fol2; fol3_1; fol3_2_1 ];
+          test "FOL3.2.2" [ fol1; fol2; fol3_1; fol3_2_1; fol3_2_2 ];
+          test "FOL3.2.3" [ fol1; fol2; fol3_1; fol3_2_1; fol3_2_2; fol3_2_3 ];
+          test "FOL3.2.*" [ fol1; fol2; fol3_1; fol3_2 ];
+          test "FOL3.3" [ fol1; fol2; fol3_1; fol3_2; fol3_3 ];
+          test "FOL3.4" [ fol1; fol2; fol3_1; fol3_2; fol3_3; fol3_4 ]; 
+          test "FOL3.*" [ fol1; fol2; fol3 ];
+          test "FOL4.1" [ fol1; fol2; fol3; fol4_1 ]; 
+          test "FOL4.2" [ fol1; fol2; fol3; fol4_1; fol4_2 ]; 
+          test "FOL4.*" [ fol1; fol2; fol3; fol4 ]; 
+          test "FOL5" [ fol1; fol2; fol3; fol4; fol5 ];
+          test "FOL6" [ fol1; fol2; fol3; fol4; fol5; fol6 ]
+        ] );
+        ( "S4", [ test "S4" [ Source.js4 ] ] );
+        ( "LAM", [ test "LAM" [ Source.lam ] ] );
+        ( "POLYLAM", [ test "POLYLAM" [ Source.polylam ] ] )
       ]
-    end
+    end ~verbose:false

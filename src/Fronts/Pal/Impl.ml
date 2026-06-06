@@ -136,7 +136,7 @@ module Impl = struct
   module Install = struct
     let unfold_app tm =
       let rec go acc = function
-        | Cst.App_ (f, arg) -> go (arg :: acc) f
+        | Cst.App_ (_, f, arg) -> go (arg :: acc) f
         | head -> (head, acc)
       in
       go [] tm
@@ -155,14 +155,53 @@ module Impl = struct
           failwith
             "%total/%terminates: expected identifier as call-pattern head"
 
-    let build_thm_tdecl label intros body =
+    let build_thm_rdecl pred_str body =
       let module TS = ThmSyn in
-      let mk_order names = TS.Varg names in
+      let pred, swap =
+        match pred_str with
+        | "="  -> (TS.Eq,   false)
+        | "<"  -> (TS.Less, false)
+        | "<=" -> (TS.Leq,  false)
+        | ">"  -> (TS.Less, true)
+        | ">=" -> (TS.Leq,  true)
+        | s    -> failwith ("%reduces: unknown predicate " ^ s)
+      in
+      let term_to_order tm =
+        TS.Varg [ term_to_head tm ]
+      in
+      let o_out, o_in, body_rest =
+        match body with
+        | out_tm :: in_tm :: rest -> (term_to_order out_tm, term_to_order in_tm, rest)
+        | _ -> failwith "%reduces: expected predicate, two order arguments, and call patterns"
+      in
+      let o1, o2 = if swap then (o_in, o_out) else (o_out, o_in) in
+      let term_to_cp tm =
+        let head, args = unfold_app tm in
+        let name = term_to_head head in
+        let cid =
+          match Names.constLookup (Names.Qid ([], name)) with
+          | None -> failwith ("%reduces: undeclared identifier " ^ name ^ " in call pattern")
+          | Some c -> c
+        in
+        (cid, List.map term_to_name args)
+      in
+      let callpats = TS.Callpats (List.map term_to_cp body_rest) in
+      let dummy_r = PathsConcrete.Reg (0, 0) in
+      let rrs = (dummy_r, List.map (fun _ -> dummy_r) body_rest) in
+      (TS.RDecl (TS.RedOrder (pred, o1, o2), callpats), rrs)
+
+    let build_thm_tdecl label (orders : Cst.order list) body =
+      let module TS = ThmSyn in
+      let rec cst_to_thm = function
+        | Cst.Varg_ (_, names) -> TS.Varg names
+        | Cst.Lex_ (_, ords)   -> TS.Lex   (List.map cst_to_thm ords)
+        | Cst.Simul_ (_, ords) -> TS.Simul (List.map cst_to_thm ords)
+      in
       let order =
-        match intros with
-        | [] -> mk_order []
-        | [ names ] -> mk_order names
-        | many -> TS.Simul (List.map mk_order many)
+        match orders with
+        | []    -> TS.Varg []
+        | [ o ] -> cst_to_thm o
+        | many  -> TS.Simul (List.map cst_to_thm many)
       in
       let term_to_cp tm =
         let head, args = unfold_app tm in
@@ -200,20 +239,23 @@ module Impl = struct
         | Some cid -> cid
       in
       match cmd with
-      | Cst.SortCmd_ (id, decls) -> (
-          Debug.(
-            msg' ~src:Group.pal ~level:Level.Debug
-              Fmt.(const string "Installing sort" ++ sp ++ string)
-              id);
-          let kind = factor_sort decls in
-          let condec =
-            Cst.ConDec.constant_decl (Cst.Decl.decl1 [ Some id ] kind)
-          in
-          match
-            Recon.ReconConDec.condecToConDec (condec, loc_of Cst.ghost, false)
-          with
-          | Some cd, _ -> install_condec cd
-          | None, _ -> ())
+      | Cst.SortCmd_ (ids, decls) ->
+          List.app
+            (fun id ->
+              Debug.(
+                msg' ~src:Group.pal ~level:Level.Debug
+                  Fmt.(const string "Installing sort" ++ sp ++ string)
+                  id);
+              let kind = factor_sort decls in
+              let condec =
+                Cst.ConDec.constant_decl (Cst.Decl.decl1 [ Some id ] kind)
+              in
+              (match
+                Recon.ReconConDec.condecToConDec (condec, loc_of Cst.ghost, false)
+              with
+              | Some cd, _ -> install_condec cd
+              | None, _ -> ()))
+            ids
       | Cst.TermCmd_ decl -> (
           Debug.(
             msg' ~src:Group.pal ~level:Level.Debug Fmt.string
@@ -471,6 +513,10 @@ module Impl = struct
           let mdec, _r = Recon.ReconMode.modeToMode md in
           Cover.checkCovers mdec
       | Cst.NameCmd_ _id -> ()
+      | Cst.ReducesCmd_ (pred_str, body) ->
+          let r_, rrs = build_thm_rdecl pred_str body in
+          let la_ = ThmInst.installReduces (r_, rrs) in
+          List.app Terminate.Terminate_.Reduces.checkFamReduction la_
       | Cst.UniqueCmd_ tm ->
           let mdec_opt =
             match Cst.View.Term.view tm with

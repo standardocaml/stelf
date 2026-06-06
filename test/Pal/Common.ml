@@ -10,11 +10,12 @@ let test ?(skip = false) ?(failure = false) (name : string) (cmds : string list)
     : unit Alcotest.test_case =
   let () = Printexc.record_backtrace true in
   let () = Logs.set_reporter (Logs_fmt.reporter ()) in
-  let () = Logs.set_level (Some Logs.Debug) in
+  let () = Logs.set_level ~all:false (Some Logs.Debug) in
+  let () = Fmt_tty.setup_std_outputs () in
   let () =
     Display.register (fun m ->
-        Lwt.return @@ prerr_endline
-        @@ Fmt.to_to_string Display.Info.Form.fmt m.msg)
+        let _ = (Display.fmt Fmt.stdout m.msg ) in 
+        Lwt.return ()) 
   in
   Alcotest.test_case name `Slow (fun () ->
       if skip then Alcotest.skip ()

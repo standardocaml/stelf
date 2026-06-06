@@ -13,13 +13,33 @@ module Parser : PARSER = struct
     skip_while (function ' ' | '\t' | '\n' -> true | _ -> false)
 
   let token s = (string s <* whitespace) *> return ()
-  let keyword s = token @@ "%" ^ s
+
+  (* Require that the character after the keyword body is either EOF
+     or one of the identifier-delimiters used by [ident1] below.
+     Without this, [keyword "term"] succeeds on the [%term] prefix of
+     [%terminates], and the [Cmd.ml] [choice] (which tries [term]
+     before [terminates]) commits to the wrong branch. *)
+  let keyword s =
+    let s' = "%" ^ s in
+    let boundary =
+      peek_char >>= function
+      | None -> return ()
+      | Some (' ' | '\t' | '\n'
+             | '(' | ')' | '{' | '}' | '[' | ']' | '%') -> return ()
+      | _ -> fail ("keyword " ^ s' ^ " not at word boundary")
+    in
+    string s' *> boundary *> whitespace
   let keywords ss = choice (List.map keyword ss)
 
   let ident =
     take_till (function
       | ' ' | '\t' | '\n' | '(' | ')' | '{' | '}' | '[' | ']' | '%' -> true
       | _ -> false)
+    <* whitespace
+  let ident1 =
+    take_while1 (function
+      | ' ' | '\t' | '\n' | '(' | ')' | '{' | '}' | '[' | ']' | '%' -> false
+      | _ -> true) (* TODO Generalize to unicode ws *)
     <* whitespace
 
   let ( let* ) = ( >>= )
@@ -46,4 +66,6 @@ module Parser : PARSER = struct
 
   let given b p = if b then p else fail "failed test"
   let inside x y p = token x *> p <* token y
+
+  let forget p = p *> return ()
 end

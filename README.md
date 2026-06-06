@@ -2,6 +2,10 @@
 
 This is the STELF project, a port of the Twelf system to OCaml, and subsequents developments thereof.
 
+> [!warning] If you get `dune` seeming to be "paused" on building, or the number of tasks increasing, your computer (probably) won't explode. 
+> This is merely an artificat of the new Dune package managment system (the first pause is due to the ocaml compiler).
+> If you want to make sure nothing is going wrong, add `--verbose` to the `dune build` command, and you should see the tasks being built one by one.
+
 ## Twelf Port 
 
 The Twelf port, which is completed, involved translating between SML to OCaml, and also the creation of a temporary basis library.
