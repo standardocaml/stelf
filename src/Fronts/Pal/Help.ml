@@ -1,7 +1,8 @@
-let rec help : string Fmt.t = fun fmt s -> help' s fmt ()
+let help : string list -> Display.form = function
+  | ["help"] | ["%help"] -> assert false
+  | ["set"] | ["%set"] -> assert false
+  | ["get"] | ["%get"] -> assert false
+  | ["sort"] | ["%sort"] -> assert false
+  | ["?"] | ["%?"] -> assert false
+    
 
-and help' : string -> unit Fmt.t = function
-  | "" -> assert false
-  | "help" | "%help" -> assert false
-  | "sort" | "%sort" -> assert false
-  | "expr" -> assert false

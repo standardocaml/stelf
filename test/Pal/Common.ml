@@ -6,8 +6,18 @@ let test_value (cmds : string list) : exn option =
     None
   with e -> Some e
 
+class tester = object 
+  val mutable p = new Pal.Pal.pal
+  method run cmd =
+    try      
+      Printexc.record_backtrace true;
+      p#exec cmd;
+      None
+    with e -> Some e
+  method reset () = p <- new Pal.Pal.pal
+end
 let test ?(skip = false) ?(failure = false) (name : string) (cmds : string list)
-    : unit Alcotest.test_case =
+    : string * unit Alcotest.test_case list =
   let () = Printexc.record_backtrace true in
   let () = Logs.set_reporter (Logs_fmt.reporter ()) in
   let () = Logs.set_level ~all:false (Some Logs.Debug) in
@@ -17,13 +27,16 @@ let test ?(skip = false) ?(failure = false) (name : string) (cmds : string list)
         let _ = (Display.fmt Fmt.stdout m.msg ) in 
         Lwt.return ()) 
   in
-  Alcotest.test_case name `Slow (fun () ->
+  let tester' = new tester in
+  name, List.mapi(fun i cmd -> Alcotest.test_case (name ^ " - " ^ string_of_int (i + 1)) `Slow (fun () ->
       if skip then Alcotest.skip ()
       else
-        match test_value cmds with
+        match tester'#run cmd with
         | None when failure -> Alcotest.fail "Expected failure, but test passed"
         | Some e when not failure ->
+            let bt = Printexc.get_backtrace () in
+            Printf.eprintf "Exception: %s\nBacktrace:\n%s\n%!" (Printexc.to_string e) bt;
             Alcotest.failf
-              "Expected success, but test failed with exception: %s"
-              (Printexc.to_string e)
-        | None | Some _ -> ())
+              "Expected success, but test failed with exception: %s\nBacktrace:\n%s"
+              (Printexc.to_string e) bt
+        | None | Some _ -> ())) cmds
