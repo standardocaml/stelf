@@ -308,17 +308,17 @@ Mapping natural deductions to Hilbert derivations.
 
 %term ndh_impe {{A B D1 D2 H1 H2}} {_ ndhil D1 H1} {_ ndhil D2 H2} ndhil (impe D1 D2) (mp H1 H2)
 
-%term ndh_noti {{A1 H1 H1' H1'' D1}} {_ ded (H1 (not A1)) H1'} {_ {p o} {u nd A1} {v hil A1} {_ {C o} ded ([w hil C] v) (mp k v)} {_ ndhil u v} ndhil (D1 p u) (H1 p v)} ndhil (noti D1) (mp (mp n1 H1') H1'')
+%term ndh_noti {{A1 H1 H1' H1'' D1}} {_ ded (H1 (not A1)) H1'} {_ ded (H1 A1) H1''} {_ {p o} {u nd A1} {v hil A1} {_ {C o} ded ([w hil C] v) (mp k v)} {_ ndhil u v} ndhil (D1 p u) (H1 p v)} ndhil (noti D1) (mp (mp n1 H1') H1'')
 
 %term ndh_note {{A C D1 D2 H1 H2}} {_ ndhil D1 H1} {_ ndhil D2 H2} ndhil (note D1 C D2) (mp (mp n2 H1) H2)
 
-%term ndh_foralli {{A}} {D1 {_ i} nd _} {H1 {_ i} hil _} {_ {a i} ndhil (D1 a) (H1 a)} ndhil (foralli D1) (ug H1)
+%term ndh_foralli {{A D1 H1}} {_ {a i} ndhil (D1 a) (H1 a)} ndhil (foralli D1) (ug H1)
 
-%term ndh_foralle {{A}} {T i} {D1 nd (forall A)} {H1 hil (forall A)} {_ ndhil D1 H1} ndhil (foralle D1 T) (mp (f1 T) H1)
+%term ndh_foralle {{A T D1 H1}} {_ ndhil D1 H1} ndhil (foralle D1 T) (mp (f1 T) H1)
 |}
 let fol6_2 = {|
 %mode {%in X _} {%out Y _} ndhil X Y
-%block lndhil [A o] {u nd A} {v hil A} {h {C o} ded ([w] v) (mp k v)} {nh ndhil u v}
+%block lndhil [A o] {u nd A} {v hil A} {h {C o} ded ([w hil C] v) (mp k v)} {nh ndhil u v}
 %worlds (li lo lndhil) (ndhil D H)
 %terminates D (ndhil D _)
 %covers ndhil %in %out
