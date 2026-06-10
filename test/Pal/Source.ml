@@ -1,11 +1,11 @@
-let zf_core = {|
+let zf_1 = {|
 
 %sort prop
 %sort pf {_ prop}
 %sort set
 |}
 
-let zf_basics =
+let zf_2 =
   {|
 %term false prop
 %term imp {_ prop} {_ prop} prop
@@ -14,7 +14,7 @@ let zf_basics =
 %term in {_ set} {_ set} prop
 |}
 
-let zf_def_basic =
+let zf_3 =
   {|
 %def not ({_ prop} prop) ([a] imp a false) %.
 %def and ({_ prop} {_ prop} prop) ([a][b] not (imp a (not b))) %.
@@ -22,11 +22,12 @@ let zf_def_basic =
 %def iff ({_ prop} {_ prop} prop) ([a][b] and (imp a b) (imp b a)) %.
 %def ex ({_ {_ set} prop} prop) ([p] not(all([z]not (p z)))) %.
 %def unique ({_ {_ set} prop} prop) ([p] all([z] imp (p z) (all ([z'] imp (p z') (eq z z'))))) %.
+%def ex_unique ({_ {_ set} prop} prop) ([p] and (ex p) (unique p)) %.
 |}
 
-let zf_high =
+let zf_4 =
   {|
-%def ex_unique ({_ {_ set} prop} prop) ([p] and (ex p) (unique p)) %.
+
 %term imp_i {_ {_ pf _A} pf _B} pf (imp _A _B) %.
 %term imp_e {_ pf (imp _A _B)} {_ pf _A} pf _B %.
 %term all_i {_ {z} pf (_P z)} pf (all _P) %.
@@ -43,6 +44,8 @@ let zf_high =
 %term powerset {_ set} set %.
 %term replace  {_ set} {_ {_ set} set} set %.
 %term omega    set %.
+|}
+let zf_5 = {|
 %def single ({_ set} set) [x] double x x %.
 %def restrict ({_ set} {_ {_ set} prop} set) [x][q] unions (replace x ([z] if (q z) (single z) empty)) %.
 %def inter ({_ set} {_ set} set) [x][y] restrict x ([z] in z y) %.
@@ -52,6 +55,8 @@ let zf_high =
 %def subset ({_ set} {_ set} prop) [x][y]all[z] imp (in z x) (in z y) %.
 %def disjoint ({_ set} {_ set} prop) [x][y] eq (inter x y) empty %.
 %def omega_closed ({_ set} prop) [x] and (in empty x) (all [n] imp (in n x) (in (succ n) x)) %.
+|}
+let zf_6 = {|
 %term extensionality pf (iff (eq _X _Y) (all[z] iff (in z _X) (in z _Y))) %.
 %term foundation     pf (ex([z] and (in z _X) (disjoint z _X))) %.
 %term emtpy_ax       pf (not (in _X empty)) %.
@@ -327,7 +332,7 @@ let fol6_2 = {|
 
 |}
 let fol6 = fol6_1 ^ fol6_2
-let js4 =
+let jsf_1 =
   {|
 Judgmental S4
 [A judgmental reconstruction of modal logic, F.Pfenning and R.Davies,
@@ -357,26 +362,29 @@ and if J = (M : A) then J* = M* : tm A W
 %sort tm {_ tp} {_ world}
 %sort exp {_ tp} {_ world}
 
-%term lam {A tp} {B tp} {W world} {_ {_ tm A W} tm B W} tm (A => B) W
-%term app {A tp} {B tp} {W world} {_ tm (A => B) W} {_ tm A W} tm B W
-%term boxi {A tp} {W world} {_ {w world} tm A w} tm (box A) W
-%term boxe {A tp} {C tp} {W world} {_ tm (box A) W} {_ {_ {W' world} tm A W'} tm C W} tm C W
-%term t2e {A tp} {W world} {_ tm A W} exp A W
-%term diai {A tp} {W world} {_ exp A W} tm (dia A) W
-%term diae {A tp} {C tp} {W world} {_ tm (dia A) W} {_ {w world} {_ tm A w} exp C w} exp C W
-%term boxep {A tp} {C tp} {W world} {_ tm (box A) W} {_ {_ {W' world} tm A W'} exp C W} exp C W
-
+%term lam {{A B W}} {_ {_ tm A W} tm B W} tm (A => B) W
+%term app {{A B W}} {_ tm (A => B) W} {_ tm A W} tm B W
+%term boxi {{A W}} {_ {w world} tm A w} tm (box A) W
+%term boxe {{A C W}} {_ tm (box A) W} {_ {_ {W' world} tm A W'} tm C W} tm C W
+%term t2e {{A W}} {_ tm A W} exp A W
+%term diai {{A W}} {_ exp A W} tm (dia A) W
+%term diae {{A C W}} {_ tm (dia A) W} {_ {w world} {_ tm A w} exp C w} exp C W
+%term boxep {{A C W}} {_ tm (box A) W} {_ {_ {W' world} tm A W'} exp C W} exp C W
 %sort subdia {_ exp A W} {_ {w world} {_ tm A w} exp C w} {_ exp C W}
-%mode subdia %in %in %out
-
+|} 
+let jsf_2_1 = {|
+%mode {%in X _} {%in Y _} {%out Z _} subdia X Y Z
+|}
+let jsf_2_2 = {|
 %term sdt2e {A tp} {C tp} {W world} {M tm A W} {F {w world} {_ tm A w} exp C w} subdia (t2e M) ([w] [x] F w x) (F W M)
 
-%term sddiae {A tp} {B tp} {C tp} {W world} {M tm (dia A) W} {E {_ world} {_ tm A _} exp B _} {F {_ world} {_ tm B _} exp C _} {F' {_ world} {_ tm A _} exp C _} {_ {v world} {y tm A v} subdia (E v y) ([w] [x] F w x) (F' v y)} subdia (diae M [v] [y] E v y) ([w] [x] F w x) (diae M [v] [y] F' v y)
+%term sddiae {A tp} {B tp} {C tp} {W world} {M tm (dia A) W} {E {v world} {_ tm A v} exp B v} {F {w world} {_ tm B w} exp C w} {F' {v world} {_ tm A v} exp C v} {_ {v world} {y tm A v} subdia (E v y) ([w] [x] F w x) (F' v y)} subdia (diae M [v] [y] E v y) ([w] [x] F w x) (diae M [v] [y] F' v y)
 
-%term sdboxep {A tp} {B tp} {C tp} {W world} {M tm (box A) W} {E {_ {_ world} tm B _} exp C _} {F {_ world} {_ tm A _} exp C _} {F' {_ {_ world} tm B _} exp C _} {_ {u {V world} tm B V} subdia (E u) ([w] [x] F w x) (F' u)} subdia (boxep M [u] E u) ([w] [x] F w x) (boxep M [u] F' u)
-
-%block by {B tp} {v world} {y tm B v}
-%block bu {B tp} {u {V world} tm B V}
+%term sdboxep {A tp} {C tp} {D tp} {W world} {M tm (box A) W} {E {u {V world} tm A V} exp C W} {F {w world} {_ tm C w} exp D w} {F' {u {V world} tm A V} exp D W} {_ {u {V world} tm A V} subdia (E u) ([w] [x] F w x) (F' u)} subdia (boxep M [u] E u) ([w] [x] F w x) (boxep M [u] F' u)
+|}
+let jsf_3 = {|
+%block by [B tp] {v world} {y tm B v}
+%block bu [B tp] {u {V world} tm B V}
 %worlds (by bu) (subdia E F F')
 %total E (subdia E F _) %.
 
@@ -385,15 +393,16 @@ The "str" strengthening lemma would require handling cases like strlam where a b
 variable y2 of type tm C2 w appears free in the conclusion, but w is also quantified
 by the str family. The main issue is that the case for str ([x][w] y2) ([w] y2) cannot
 be typed because y2 has type tm C2 w but w is the variable we are quantifying over.
-
+|}
+let jsf_4 = {|
 Examples
 
-%def _ ({A tp} {W world} tm (box A => A) W) (lam [x] boxe x [u] u W)
-%def _ ({A tp} {W world} tm (box A => box (box A)) W) (lam [x] boxe x [u] boxi [w] boxi [w'] u w')
-%def _ ({A tp} {B tp} {W world} tm (box (A => B) => box A => box B) W) (lam [x] lam [y] boxe x [u] boxe y [v] boxi [w] app (u w) (v w))
-%def _ ({A tp} {W world} tm (A => dia A) W) (lam [x] diai (t2e x))
-%def _ ({A tp} {W world} tm (dia (dia A) => dia A) W) (lam [x] diai (diae x [w] [y] diae y [v] [z] t2e z))
-%def _ ({A tp} {B tp} {W world} tm (box (A => B) => dia A => dia B) W) (lam [x] lam [y] diai (boxep x [u] diae y [w] [z] t2e (app (u w) z)))
+%def _ (tm (box A => A) W) (lam [x] boxe x [u] u W)
+%def _ (tm (box A => box (box A)) W) (lam [x] boxe x [u] boxi [w] boxi [w'] u w')
+%def _ (tm (box (A => B) => box A => box B) W) (lam [x] lam [y] boxe x [u] boxe y [v] boxi [w] app (u w) (v w))
+%def _ (tm (A => dia A) W) (lam [x] diai (t2e x))
+%def _ (tm (dia (dia A) => dia A) W) (lam [x] diai (diae x [w] [y] diae y [v] [z] t2e z))
+%def _ (tm (box (A => B) => dia A => dia B) W) (lam [x] lam [y] diai (boxep x [u] diae y [w] [z] t2e (app (u w) z)))
 %.
 Counterexamples, all must fail:
 The following would require box to be a comonad (A => box A), but this is not valid in S4.
@@ -408,7 +417,7 @@ The two S5 theorems (dia A => box (dia A)) and (dia (box A) => box A) both fail 
 S4 does not have the symmetry or Euclidean properties needed for S5.
 |}
 
-let lam =
+let lam_1 =
   {|
 Lambda-Calculus Fragment of Mini-ML.
 Author: Frank Pfenning
@@ -428,11 +437,13 @@ Simple types
 |- E : T  (expression E has type T)
 
 %sort of {_ exp} {_ tp}
+|}
+let lam_2 = {|
 %mode of %in %star
 
-%term tp_lam {E {_ exp} exp} {T1 tp} {T2 tp} {_ {x exp} {_ of x T1} of (E x) T2} of (lam E) (arrow T1 T2)
+%term tp_lam {{E T1 T2}} {_ {x exp} {_ of x T1} of (E x) T2} of (lam E) (arrow T1 T2)
 
-%term tp_app {E1 exp} {E2 exp} {T1 tp} {T2 tp} {_ of E1 (arrow T2 T1)} {_ of E2 T2} of (app E1 E2) T1
+%term tp_app {{E1 E2 T1 T2}} {_ of E1 (arrow T2 T1)} {_ of E2 T2} of (app E1 E2) T1
 
 %. Evaluation (call-by-value)
 E ==> V  (expression E evaluates to value V)
@@ -440,10 +451,12 @@ E ==> V  (expression E evaluates to value V)
 %sort eval {_ exp} {_ exp}
 %mode eval %in %out
 
-%term ev_lam {E {_ exp} exp} eval (lam E) (lam E)
+%term ev_lam {{E}} eval (lam E) (lam E)
 
-%term ev_app {E1 exp} {E2 exp} {V exp} {V2 exp} {E1' {_ exp} exp} {_ eval E1 (lam E1')} {_ eval E2 V2} {_ eval (E1' V2) V} eval (app E1 E2) V
+%term ev_app {{E1 E2 V V2 E1'}} {_ eval E1 (lam E1')} {_ eval E2 V2} {_ eval (E1' V2) V} eval (app E1 E2) V
 
+|}
+let lam_3 = {|
 %. Regular world for type-checking
 %block tp_var [T tp] {x exp} {u of x T}
 %worlds (tp_var) (of E T)
@@ -460,23 +473,21 @@ E ==> V  (expression E evaluates to value V)
 %. There is at least one evaluation rule for every closed expression
 %covers eval %in %out
 
+|}
+let lam_4 = {|
 %. Type preservation as higher-level family
 %sort tps {_ eval E V} {_ of E T} {_ of V T}
 
-%term tps_lam {E {_ exp} exp} {T1 tp} {T2 tp} {P {_ exp} {_ of _ T1} of _ T2} tps ev_lam (tp_lam P) (tp_lam P)
+%term tps_lam {E {_ exp} exp} {T1 tp} {T2 tp} {P {x exp} {_ of x T1} of (E x) T2} tps ev_lam (tp_lam P) (tp_lam P)
 
-%term tps_app {E1 exp} {E2 exp} {V exp} {V2 exp} {E1' {_ exp} exp} {T tp} {T2 tp} {D1 eval E1 (lam E1')} {D2 eval E2 V2} {D3 eval (E1' V2) V} {P1 of E1 (arrow T2 T)} {P2 of E2 T2} {Q1' {_ exp} {_ of _ T2} of _ T2} {Q2 of V2 T2} {Q of V T} {_ tps D1 P1 (tp_lam Q1')} {_ tps D2 P2 Q2} {_ tps D3 (Q1' V2 Q2) Q} tps (ev_app D3 D2 D1) (tp_app P2 P1) Q
-
-%mode tps %in %in %out
-%worlds () (tps D P _)
-%total D (tps D P _)
+%term tps_app {E1 exp} {E2 exp} {V exp} {V2 exp} {E1' {_ exp} exp} {T tp} {T2 tp} {D1 eval E1 (lam E1')} {D2 eval E2 V2} {D3 eval (E1' V2) V} {P1 of E1 (arrow T2 T)} {P2 of E2 T2} {Q1' {x exp} {_ of x T2} of (E1' x) T} {Q2 of V2 T2} {Q of V T} {_ tps D1 P1 (tp_lam Q1')} {_ tps D2 P2 Q2} {_ tps D3 (Q1' V2 Q2) Q} tps (ev_app D1 D2 D3) (tp_app P1 P2) Q
 
 %. Applying type preservation
 %def e0 _ (app (lam [x] x) (lam [y] y))
 %? of e0 T
 %? eval e0 V
-%? tps d0 p0 Q
-
+|}
+let lam_5 = {|
 %. Example of regular worlds
 cp copies input to output.
 
@@ -509,18 +520,18 @@ let polylam =
 %term all {_ {_ tp} tp} tp
 
 %sort tm {_ tp}
-%term lam {A tp} {B tp} {_ {_ tm A} tm B} tm (A => B)
-%term app {A tp} {B tp} {_ tm (A => B)} {_ tm A} tm B
-%term tlam {A {_ tp} tp} {_ {a tp} tm (A a)} tm (all A)
-%term tapp {A {_ tp} tp} {_ tm (all A)} {B tp} tm (A B)
+%term lam {{A tp}} {{B tp}} {_ {_ tm A} tm B} tm (A => B)
+%term app {{A tp}} {{B tp}} {_ tm (A => B)} {_ tm A} tm B
+%term tlam {{A}} {_ {a tp} tm (A a)} tm (all A)
+%term tapp {{A}} {_ tm (all A)} {B tp} tm (A B)
 
-%def nat _ (all [a] a => (a => a) => a)
-%def zero _ (tlam [a] lam [z] lam [s] z)
-%def succ _ (lam [x] tlam [a] lam [z] lam [s] app s (app (app (tapp x a) z) s))
-%def succ' (tm (nat => nat)) (lam [x] tlam [a] lam [z] lam [s] app s (app (app (tapp x a) z) s))
-%def plus _ (lam [x] lam [y] app (app (tapp y nat) x) succ)
-%def times _ (lam [x] lam [y] app (app (tapp y nat) zero) (app plus x))
-%def exp _ (lam [x] lam [y] app (app (tapp y nat) (app succ zero)) (app times x))
+%def nat _ (all [a tp] a => (a => a) => a)
+%def zero _ (tlam [a tp] lam [z tm a] lam [s tm (a => a)] z)
+%def succ _ (lam [x tm nat] tlam [a tp] lam [z tm a] lam [s tm (a => a)] app s (app (app (tapp x a) z) s))
+%def succ' (tm (nat => nat)) (lam [x tm nat] tlam [a tp] lam [z tm a] lam [s tm (a => a)] app s (app (app (tapp x a) z) s))
+%def plus _ (lam [x tm nat] lam [y tm nat] app (app (tapp y nat) x) succ)
+%def times _ (lam [x tm nat] lam [y tm nat] app (app (tapp y nat) zero) (app plus x))
+%def exp _ (lam [x tm nat] lam [y tm nat] app (app (tapp y nat) (app succ zero)) (app times x))
 |}
 
 (* Propositional calculus: intuitionistic natural deduction
@@ -531,6 +542,7 @@ let polylam =
 let prop_calc_types =
   {|
 %sort o
+%name o A
 %term imp {_ o} {_ o} o
 %prec %right 10 imp
 %term and {_ o} {_ o} o
@@ -544,6 +556,7 @@ let prop_calc_hilbert =
   {|
 %. Provability (Hilbert-style)
 %sort pf {_ o}
+%name pf P
 %term K {{A B}} pf (A imp (B imp A))
 %term S {{A B C}} pf ((A imp (B imp C)) imp ((A imp B) imp (A imp C)))
 %term ONE pf true
@@ -559,6 +572,7 @@ let prop_calc_nd =
   {|
 %. Natural deduction
 %sort nd {_ o}
+%name nd D
 %term trueI nd true
 %term andI {{A B}} {_ nd A} {_ nd B} nd (A and B)
 %term andEL {{A B}} {_ nd (A and B)} nd A
@@ -573,6 +587,7 @@ let prop_calc_nd =
 let mini_ml_exp =
   {|
 %sort exp
+%name exp E
 %term z exp
 %term s {_ exp} exp
 %term case {_ exp} {_ exp} {_ {_ exp} exp} exp
@@ -618,6 +633,7 @@ let mini_ml_tp =
 let arith_nat =
   {|
 %sort nat
+%name nat X
 %term z nat
 %term s {_ nat} nat
 |}
@@ -625,6 +641,7 @@ let arith_nat =
 let arith_nt =
   {|
 %sort nt {_ nat}
+%name nt N
 %term nt-z nt z
 %term nt-s {{X}} %<- (nt (s X)) (nt X)
 |}
@@ -632,6 +649,7 @@ let arith_nt =
 let arith_plus =
   {|
 %sort plus {_ nat} {_ nat} {_ nat}
+%name plus P
 %term p-z {{Y}} plus z Y Y
 %term p-s {{X Y Z}} %<- (plus (s X) Y (s Z)) (plus X Y Z)
 |}
@@ -681,6 +699,7 @@ let guide_lists_mode =
 let tapl_nat_base =
   {|
 %sort nat
+%name nat N
 %term z nat
 %term s {_ nat} nat
 |}
@@ -704,13 +723,15 @@ let tapl_nat_eq =
 (* Positive fragment of first-order logic with natural deduction.
    Ported from twelf/examples/lp_horn/natded.elf.
    Operator declarations: imp with %prec %right 10, and with %prec %right 11.
-   Note: %name hints and %block/%worlds omitted.
 *)
 let lp_horn_nd =
   {|
 %sort i
+%name i T
 %sort o
+%name o A
 %sort p
+%name p P
 
 %term atom {_ p} o
 %term and {_ o} {_ o} o
@@ -721,6 +742,7 @@ let lp_horn_nd =
 %term forall {_ {_ i} o} o
 
 %sort pf {_ o}
+%name pf D
 %term andi {{A B}} {_ pf A} {_ pf B} pf (A and B)
 %term andel {{A B}} {_ pf (A and B)} pf A
 %term ander {{A B}} {_ pf (A and B)} pf B
@@ -738,18 +760,20 @@ let lp_horn_nd =
 let church_rosser_lam =
   {|
 %sort term
+%name term M
 %term lam {_ {_ term} term} term
 %term app {_ term} {_ term} term
 |}
 
 (* Formula syntax for predicate calculus (intuitionistic and classical).
    Ported from twelf/examples/cut_elim/formulas.elf.
-   Note: %name hints omitted.
 *)
 let cut_elim_formulas =
   {|
 %sort i
+%name i T
 %sort o
+%name o A
 %term and {_ o} {_ o} o
 %prec %right 11 and
 %term imp {_ o} {_ o} o
@@ -766,14 +790,16 @@ let cut_elim_formulas =
 
 (* Natural deduction for intuitionistic logic (positive+negative fragment).
    Ported from twelf/examples/guide/nd.elf.
-   Note: %theorem/%prove stripped; abbreviation definitions for not/noti/note
-   handled as regular terms since STELF does not support Twelf abbreviation syntax.
+   Abbreviation definitions for not/noti/note handled as regular terms
+   since STELF does not support Twelf abbreviation syntax.
    The %block/%worlds declarations are kept as-is.
 *)
 let guide_nd =
   {|
 %sort i
+%name i T
 %sort o
+%name o A
 %term imp {_ o} {_ o} o
 %prec %right 10 imp
 %term and {_ o} {_ o} o
@@ -786,6 +812,7 @@ let guide_nd =
 %term exists {_ {_ i} o} o
 
 %sort nd {_ o}
+%name nd D
 
 %term impi {{A B}} {_ {_ nd A} nd B} nd (A imp B)
 %term impe {{A B}} {_ nd (A imp B)} {_ nd A} nd B
@@ -802,7 +829,7 @@ let guide_nd =
 %term existsi {{A}} {T i} {_ nd (A T)} nd (exists A)
 %term existse {{A C}} {_ nd (exists A)} {_ {x i} {_ nd (A x)} nd C} nd C
 
-%block nd_hyp {A o} {u nd A}
+%block nd_hyp [A o] {u nd A}
 %block nd_parm {x i}
 %worlds (nd_hyp nd_parm) (nd A)
 
@@ -814,6 +841,11 @@ let guide_nd =
 %term orred2 {{A B C D E1 E2}} red (ore (ori2 D) E1 E2) (E2 D)
 %term forallred {{A D T}} red (foralle (foralli D) T) (D T)
 %term existsred {{A C T D E}} red (existse (existsi T D) E) (E T D)
+
+%theorem
+trivI exists {D {A o} nd (A imp A)} true
+
+%prove 2 {} (trivI D)
 |}
 
 (* Direct-style CPS BNF term syntax.
@@ -823,8 +855,11 @@ let guide_nd =
 let cpsocc_dsbnf =
   {|
 %sort droot
+%name droot DROOT
 %sort dexp
+%name dexp DEXP
 %sort dtriv
+%name dtriv DTRIV
 
 %term dexp->droot {_ dexp} droot
 %term dapp {_ dexp} {_ dexp} dexp
@@ -882,7 +917,6 @@ let small_step_lam_step =
 (* Explicit contexts in LF: types, expressions, and natural numbers.
    Ported from twelf/examples/crary/explicit/excon.elf (first part only —
    typing rules and nat up through leq).
-   Note: %name hints omitted.
 *)
 let crary_excon =
   {|
@@ -903,20 +937,19 @@ let crary_excon =
 %term of/app {{A B M N}} {_ of M (pi A B)} {_ of N A} of (app M N) (B N)
 
 %sort nat
-%term zero nat
+%term 0 nat
 %term s {_ nat} nat
 
 %sort nat-eq {_ nat} {_ nat}
 %term nat-eq/i {{N}} nat-eq N N
 
 %sort leq {_ nat} {_ nat}
-%term leq/z {{N}} leq zero N
+%term leq/z {{N}} leq 0 N
 %term leq/s {{N1 N2}} %<- (leq (s N1) (s N2)) (leq N1 N2)
 |}
 
 (* CRARY-EXCON-REV: excon-rev.elf (explicit contexts, reversed variant)
    Ported from twelf/examples/crary/explicit/excon-rev.elf (syntax-only chunk).
-   Note: Twelf uses `0 : nat` (numeric literal); renamed to `zero` for STELF.
    The `-` family (isvar dependency decl) is a Twelf quirk; omitted.
 *)
 let crary_excon_rev_syntax =
@@ -938,14 +971,14 @@ let crary_excon_rev_syntax =
 %term of/app {{A B M N}} {_ of M (pi A B)} {_ of N A} of (app M N) (B N)
 
 %sort nat
-%term zero nat
+%term 0 nat
 %term s {_ nat} nat
 
 %sort nat-eq {_ nat} {_ nat}
 %term nat-eq/i {{N}} nat-eq N N
 
 %sort lt {_ nat} {_ nat}
-%term lt/z {{N}} lt zero (s N)
+%term lt/z {{N}} lt 0 (s N)
 %term lt/s {{N1 N2}} %<- (lt (s N1) (s N2)) (lt N1 N2)
 
 %sort ctx
@@ -959,11 +992,12 @@ let crary_excon_rev_syntax =
    `tp` → `ref_tp`, `exp` → `ref_exp` to avoid clashes with SMALL-STEP-LAM/CRARY-EXCON.
    `nat`, `z`, `s` re-used from earlier suites (already in scope).
    `=>` already infix-left 5 from SMALL-STEP-LAM; used that way here.
-   Dropped: %name hints, %freeze, %terminates {}, %unique, step/typing rules.
+   Dropped: %freeze (var sort not included), %terminates {}, %unique, step/typing rules.
 *)
 let tapl_defs_types =
   {|
 %sort ref_tp
+%name ref_tp T
 %term ref_arrow {_ ref_tp} {_ ref_tp} ref_tp
 %term unit_tp ref_tp
 %term ref {_ ref_tp} ref_tp
@@ -976,12 +1010,14 @@ let tapl_defs_labels =
 %term s {_ nat} nat
 
 %sort label
+%name label L
 %term lbl {_ nat} label
 |}
 
 let tapl_defs_exp =
   {|
 %sort ref_exp
+%name ref_exp E
 %term ref_app {_ ref_exp} {_ ref_exp} ref_exp
 %term ref_lam {_ ref_tp} {_ {_ ref_exp} ref_exp} ref_exp
 %term dot ref_exp
@@ -994,6 +1030,7 @@ let tapl_defs_exp =
 let tapl_defs_value =
   {|
 %sort ref_value {_ ref_exp}
+%name ref_value V
 %mode ref_value %in
 %term v_lam {{T E}} ref_value (ref_lam T E)
 %term v_dot ref_value dot
@@ -1003,6 +1040,7 @@ let tapl_defs_value =
 let tapl_defs_store =
   {|
 %sort ref_store
+%name ref_store S
 %term store_nil ref_store
 %term store_cons {_ ref_tp} {_ ref_store} ref_store
 
@@ -1023,6 +1061,7 @@ let tapl_defs_store =
 let tapl_defs_heap =
   {|
 %sort ref_heap
+%name ref_heap H
 %term heap_nil ref_heap
 %term heap_cons {_ ref_exp} {_ ref_heap} ref_heap
 
@@ -1198,6 +1237,7 @@ let small_step_sysf_iso_step =
 let poplmark_1a_syntax =
   {|
 %sort tp
+%name tp T
 %term top tp
 %term arrow {_ tp} {_ tp} tp
 %term forall {_ tp} {_ {_ tp} tp} tp
@@ -1215,6 +1255,7 @@ let poplmark_1a_syntax =
 %sort false
 
 %sort nat
+%name nat N
 %term z nat
 %term s {_ nat} nat
 
@@ -1232,12 +1273,14 @@ let poplmark_1a_syntax =
 let poplmark_2a_syntax =
   {|
 %sort sub_tp {_ tp} {_ tp}
+%name sub_tp T
 %term sub_tp_top {{T}} sub_tp T top
 %term sub_tp_refl {{T}} sub_tp T T
 %term sub_tp_trans {{T1 T2 T3}} %<- (sub_tp T1 T3) (sub_tp T1 T2) (sub_tp T2 T3)
 %term sub_tp_arrow {{S1 S2 T1 T2}} %<- (sub_tp (arrow S1 S2) (arrow T1 T2)) (sub_tp T1 S1) (sub_tp S2 T2)
 
 %sort term
+%name term E
 %term abs {_ tp} {_ {_ term} term} term
 %term app {_ term} {_ term} term
 %term tabs {_ tp} {_ {_ tp} term} term
@@ -1407,8 +1450,11 @@ let poplmark_2b_syntax =
 let ccc_syntax =
   {|
 %sort obj
+%name obj _A
 %sort mor {_ obj} {_ obj}
+%name mor _F
 %sort meq {_ mor _A _B} {_ mor _A _B}
+%name meq _ME
 
 %term id {{A}} mor A A
 %term comp {{A B C}} {_ mor B C} {_ mor A B} mor A C
@@ -1448,7 +1494,6 @@ let ccc_syntax =
 
 (* INCLL: INCLL sorts and terms.
    Ported from twelf/examples/incll/incll.elf.
-   Renamed: numeric term names `1..5` → `v1..v5` (STELF identifiers must not start with digit).
    Dropped: Twelf abbreviation syntax (`<= = [x][y] y => x` etc.).
    Dropped: `|` infix list cons (single-char identifier, may fail — using `cons` instead).
    `^` prefix also risky — using `atm_frm` instead.
@@ -1472,11 +1517,11 @@ let incll_syntax =
 %sort frm
 %term int sort
 
-%term v1 trm int
-%term v2 trm int
-%term v3 trm int
-%term v4 trm int
-%term v5 trm int
+%term 1 trm int
+%term 2 trm int
+%term 3 trm int
+%term 4 trm int
+%term 5 trm int
 
 %sort list_sort {_ sort}
 %term list_sort/nil {{A}} list_sort A

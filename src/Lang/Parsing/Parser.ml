@@ -67,5 +67,6 @@ module Parser : PARSER = struct
   let given b p = if b then p else fail "failed test"
   let inside x y p = token x *> p <* token y
 
+  let extend _p _q = assert false
   let forget p = p *> return ()
 end

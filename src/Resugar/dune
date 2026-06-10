@@ -1,4 +1,5 @@
 (library
  (name resugar)
  (public_name stelf.resugar)
- (libraries syntax cst))
+ (libraries syntax names paths cst))
+ 

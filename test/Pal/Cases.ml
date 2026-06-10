@@ -24,90 +24,20 @@ let total_add_mul_test =
     {| %total N (add N _ _) |};
   ]
 
-let cases () =
-  Alcotest.run "PAL"
-    begin
-      [
-        ( "%term and %sort",
-          List.concat
-            [
-              snd (test "Natural Numbers (nat)" nat_test);
-              snd (test "Natural Numbers (nat, add)" (nat_test @ add_test));
-              snd
-                (test "Natural Numbers (nat, add, mul)"
-                   (nat_test @ add_test @ mul_test));
-              snd
-                (test ~failure:true "Natural numbers (ill-formed)"
-                   [
-                     {| %sort nat |};
-                     {| %term zero nat |};
-                     {| %term succ {_ bool} nat |};
-                   ]);
-            ] );
-        ( "%total and friends",
-          List.concat
-            [
-              snd
-                (test "Natural Numbers (total)"
-                   (nat_test @ add_test @ mul_test @ total_add_mul_test));
-            ] );
-        ( "Wiki",
-          List.concat
-            [
-              snd (test "ZF 1" [ Source.zf_core ]);
-              snd (test "ZF 2" [ Source.zf_core; Source.zf_basics ]);
-              snd
-                (test "ZF 3"
-                   [ Source.zf_core; Source.zf_basics; Source.zf_def_basic ]);
-              snd
-                (test "ZF 4"
-                   [
-                     Source.zf_core;
-                     Source.zf_basics;
-                     Source.zf_def_basic;
-                     Source.zf_high;
-                   ]);
-            ] );
-        ( "Nats",
-          List.concat
-            [
-              snd (test "Nats 1" [ Source.nats1 ]);
-              snd (test "Nats 2" [ Source.nats1; Source.nats2 ]);
-              snd (test "Nats 3" [ Source.nats1; Source.nats2; Source.nats3 ]);
-              snd (test "Nats 4" [ Source.nats1; Source.nats2; Source.nats3; Source.nats4 ]);
-            ] );
-        ( "FOL",
-          List.concat
-            [
-              snd (test "FOL" [ Source.fol1 ]);
-              snd (test "FOL2" [ Source.fol1; Source.fol2 ]);
-              snd (test "FOL3.1" [ Source.fol1; Source.fol2; Source.fol3_1 ]);
-              snd (test "FOL3.2.1" [ Source.fol1; Source.fol2; Source.fol3_1; Source.fol3_2_1 ]);
-              snd (test "FOL3.2.2" [ Source.fol1; Source.fol2; Source.fol3_1; Source.fol3_2_1; Source.fol3_2_2 ]);
-              snd
-                (test "FOL3.2.3" [ Source.fol1; Source.fol2; Source.fol3_1; Source.fol3_2_1; Source.fol3_2_2; Source.fol3_2_3 ]);
-              snd (test "FOL3.2.*" [ Source.fol1; Source.fol2; Source.fol3_1; Source.fol3_2 ]);
-              snd (test "FOL3.3" [ Source.fol1; Source.fol2; Source.fol3_1; Source.fol3_2; Source.fol3_3 ]);
-              snd (test "FOL3.4" [ Source.fol1; Source.fol2; Source.fol3_1; Source.fol3_2; Source.fol3_3; Source.fol3_4 ]);
-              snd (test "FOL3.*" [ Source.fol1; Source.fol2; Source.fol3 ]);
-              snd (test "FOL4.1" [ Source.fol1; Source.fol2; Source.fol3; Source.fol4_1 ]);
-              snd (test "FOL4.2" [ Source.fol1; Source.fol2; Source.fol3; Source.fol4_1; Source.fol4_2 ]);
-              snd (test "FOL4.*" [ Source.fol1; Source.fol2; Source.fol3; Source.fol4 ]);
-              snd (test "FOL5" [ Source.fol1; Source.fol2; Source.fol3; Source.fol4; Source.fol5 ]);
-              snd (test "FOL6" [ Source.fol1; Source.fol2; Source.fol3; Source.fol4; Source.fol5; Source.fol6 ]);
-            ] );
-        ( "S4", List.concat [ snd (test "S4" [ Source.js4 ]) ] );
-        ( "LAM", List.concat [ snd (test "LAM" [ Source.lam ]) ] );
-        ( "POLYLAM", List.concat [ snd (test "POLYLAM" [ Source.polylam ]) ] )
-      ]
-    end ~verbose:false 
-let trash _ = " %. "
 let cases () = Alcotest.run "PAL" begin [
   test "%term and %sort" Source.[
       String.concat "\n" nat_test;
       String.concat "\n" add_test;
       String.concat "\n" mul_test;
       String.concat "\n" total_add_mul_test;
+    ];
+    test "ZF" Source.[
+      zf_1;
+      zf_2;
+      zf_3;
+      zf_4;
+      zf_5;
+      zf_6;
     ];
     test "FOL" Source.[
       fol1;
@@ -125,12 +55,7 @@ let cases () = Alcotest.run "PAL" begin [
       fol6_1;
       fol6_2;
     ];
-    test "ZF" Source.[
-      zf_core;
-      zf_basics;
-      zf_def_basic;
-      zf_high;
-    ];
+    
     test "Nats" Source.[
       nats1;
       nats2;
@@ -138,10 +63,18 @@ let cases () = Alcotest.run "PAL" begin [
       nats4;
     ];
     test "S4" Source.[
-      js4;
+      jsf_1;
+      jsf_2_1;
+      jsf_2_2;
+      jsf_3;
+      jsf_4;
     ];
     test "LAM" Source.[
-      lam;
+      lam_1;
+      lam_2;
+      lam_3;
+      lam_4; 
+      lam_5;
     ];
     test "POLYLAM" Source.[
       polylam;
@@ -207,7 +140,7 @@ let cases () = Alcotest.run "PAL" begin [
       tapl_defs_store;
       tapl_defs_heap;
     ];
-    test "SMALL-STEP-SYSF" Source.[
+    test "SMALL-STEP-SYSF" Source.[ 
       small_step_sysf_types;
       small_step_sysf_terms;
       small_step_sysf_typing;

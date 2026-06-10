@@ -36,5 +36,12 @@ module Global : GLOBAL = struct
   let chMessage n s f =
     begin if !chatter >= n then f (s ()) else ()
     end
+
+  let arrow_reserved = ref false
+  let arrow_infix = ref false
+  let latin_uppercase = ref false
+  let bar_in_block = ref false
+  let old_some = ref false
+  let stop_reserved = ref false
 end
 (* structure Global *)

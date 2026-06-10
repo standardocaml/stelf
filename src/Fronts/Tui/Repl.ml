@@ -7,7 +7,10 @@ module Repl (M : REPL.S) : REPL.REPL = struct
       ()
 
   let msgs : Display.Info.t list ref = ref []
-  let add_msg m = msgs := m :: !msgs
+  let add_msg (m : Display.Info.t) = let r = if Display.Info.to_int M.verbosity >= Display.Info.to_int m.level then
+  m :: !msgs
+  else !msgs in
+  msgs := r 
 
   let flush_msgs () : Display.Info.t array Lwt.t =
     let pending = Array.of_list (List.rev !msgs) in

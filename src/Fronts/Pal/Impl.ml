@@ -10,7 +10,7 @@ let string_to_source = function
   | "<INTERACTIVE>" -> None
   | s -> Some (Fpath.of_string s)
 
-module Impl = struct
+module Impl () = struct
   (* Save Basis's OS before any module definitions shadow it *)
   module BasisOS = OS
 

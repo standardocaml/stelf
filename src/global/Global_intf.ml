@@ -18,4 +18,11 @@ module type GLOBAL = sig
   val chPrint : int -> (unit -> string) -> unit
   val chMessage : int -> (unit -> string) -> (string -> unit) -> unit
   val timeLimit : Time.time option ref
+
+  val arrow_reserved : bool ref
+  val arrow_infix : bool ref
+  val latin_uppercase : bool ref
+  val bar_in_block : bool ref
+  val old_some : bool ref
+  val stop_reserved : bool ref
 end

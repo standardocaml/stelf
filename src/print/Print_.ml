@@ -77,6 +77,7 @@ module MakePrint
     module F = Formatter
     module T = Tomega
 
+    let full_stop = F.string "%."
     let lvars : I.block option ref list ref = ref []
 
     let rec lookuplvar l =
@@ -164,7 +165,7 @@ module MakePrint
     let rec arrow (v1_, v2_) =
       OpArgs
         ( FX.Infix (arrowPrec, FX.Right),
-          [ F.break; sym "->"; F.space ],
+          [ F.break; sym "%->"; F.space ],
           I.App (v1_, I.App (v2_, I.Nil)) )
 
     let appCtxt = Ctxt (FX.Nonfix, [], 0)
@@ -193,7 +194,7 @@ module MakePrint
       if !showConstPath then
         F.hVbox
           (foldr
-             (function id, fmt -> str0_ (Symbol.str id) :: sym "." :: fmt)
+             (function id, fmt -> str0_ (Symbol.str id) :: full_stop :: fmt)
              [ str0_ (f id) ]
              ids)
       else str0_ (f id)
@@ -317,19 +318,13 @@ module MakePrint
                   d,
                   ctx,
                   (braces (g_, d, ((d'_, v2_), s)), I.dot1 s) )
-          | meta_ ->
+          | _ ->
               let d'_ = Names.decLUName (g_, d_) in
               fmtLevel
                 ( I.Decl (g_, d'_),
                   d,
                   ctx,
                   (braces (g_, d, ((d'_, v2_), s)), I.dot1 s) )
-          | I.No ->
-              fmtLevel
-                ( I.Decl (g_, d_),
-                  d,
-                  ctx,
-                  (arrow (I.EClo (v1_, I.shift), v2_), I.dot1 s) )
           end
       | g_, d, ctx, (I.Pi (((I.BDec _ as d_), p_), v2_), s) ->
           let d'_ = Names.decLUName (g_, d_) in
@@ -579,16 +574,16 @@ module MakePrint
           F.hVbox
             [
               str0_ (Symbol.bvar (nameOf x));
-              sym ":";
+              F.space;
               fmtExp (g_, d + 1, noCtxt, (v_, s));
             ]
       | g_, d, (I.BDec (x, (cid, t)), s) ->
           let gsome_, gblock_ = I.constBlock cid in
           F.hVbox
-            ([ str0_ (Symbol.const (nameOf x)); sym ":" ]
+            ([ str0_ (Symbol.const (nameOf x)); F.space]
             @ fmtDecList' (g_, (gblock_, I.comp (t, s))))
       | g_, d, (I.ADec (x, _), s) ->
-          F.hVbox [ str0_ (Symbol.bvar (nameOf x)); sym ":_" ]
+          F.hVbox [ str0_ (Symbol.bvar (nameOf x)); sym "_" ]
       | g_, d, (I.NDec (Some name), s) -> F.hVbox [ sym name ]
 
     and fmtDecList' = function
@@ -625,6 +620,16 @@ module MakePrint
 
     let rec fmtCtx (g0_, g_) = fmtDecList (g0_, ctxToDecList (g_, []))
 
+    let rec fmtKindBinders (g_, d, v_) =
+      begin match v_ with
+      | I.Uni _ -> []
+      | I.Pi ((d_, _), v2_) ->
+          let d'_ = Names.decLUName (g_, d_) in
+          sym "{" :: fmtDec (g_, d, (d'_, I.id)) :: sym "}" :: F.break
+          :: fmtKindBinders (I.Decl (g_, d'_), d + 1, v2_)
+      | _ -> [ fmtExp (g_, d, noCtxt, (v_, I.id)) ]
+      end
+
     let rec fmtBlock = function
       | I.Null, lblock_ ->
           [ sym "block"; F.break ] @ fmtDecList (I.Null, lblock_)
@@ -634,6 +639,7 @@ module MakePrint
             F.break;
             F.hVbox ([ sym "block"; F.space ] @ fmtDecList (gsome_, lblock_));
           ]
+ (* Fix *)
 
     let rec fmtConDec = function
       | hide, (I.ConDec (_, _, imp, _, v_, l_) as condec) ->
@@ -643,16 +649,27 @@ module MakePrint
             begin if hide then skipI (imp, I.Null, v_) else (I.Null, v_)
             end
           in
-          let vfmt_ = fmtExp (g_, 0, noCtxt, (v_, I.id)) in
-          F.hVbox
-            [
-              fmtConstPath (Symbol.const, qid);
-              F.space;
-              sym ":";
-              F.break;
-              vfmt_;
-              sym ".";
-            ]
+          begin match l_ with
+          | I.Kind ->
+              let binders = fmtKindBinders (g_, 0, v_) in
+              F.hVbox
+                ([ sym "%sort"; F.space; fmtConstPath (Symbol.const, qid) ]
+                @ (if binders = [] then [] else [ F.space ])
+                @ binders
+                @ [ full_stop ])
+          | I.Type ->
+              let vfmt_ = fmtExp (g_, 0, noCtxt, (v_, I.id)) in
+              F.hVbox
+                [
+                  sym "%term";
+                  F.space;
+                  fmtConstPath (Symbol.const, qid);
+                  F.space;
+                  F.break;
+                  vfmt_;
+                  full_stop;
+                ]
+          end
       | hide, (I.SkoDec (_, _, imp, v_, l_) as condec) ->
           let qid = Names.conDecQid condec in
           let _ = Names.varReset IntSyn.Null in
@@ -667,10 +684,9 @@ module MakePrint
               F.break;
               fmtConstPath (Symbol.skonst, qid);
               F.space;
-              sym ":";
               F.break;
               vfmt_;
-              sym ".";
+              full_stop;
             ]
       | hide, (I.BlockDec (_, _, gsome_, lblock_) as condec) ->
           let qid = Names.conDecQid condec in
@@ -681,11 +697,10 @@ module MakePrint
                F.break;
                fmtConstPath (Symbol.label, qid);
                F.space;
-               sym ":";
                F.break;
              ]
             @ fmtBlock (gsome_, lblock_)
-            @ [ sym "." ])
+            @ [ full_stop ])
       | hide, (I.BlockDef (_, _, w_) as condec) ->
           let qid = Names.conDecQid condec in
           let _ = Names.varReset IntSyn.Null in
@@ -695,10 +710,9 @@ module MakePrint
                F.break;
                fmtConstPath (Symbol.label, qid);
                F.space;
-               sym "=";
                F.break;
              ]
-            @ [ formatWorlds (T.Worlds w_); sym "." ])
+            @ [ formatWorlds (T.Worlds w_); full_stop ])
       | hide, (I.ConDef (_, _, imp, u_, v_, l_, _) as condec) ->
           let qid = Names.conDecQid condec in
           let _ = Names.varReset IntSyn.Null in
@@ -710,16 +724,16 @@ module MakePrint
           let ufmt_ = fmtExp (g_, 0, noCtxt, (u_, I.id)) in
           F.hVbox
             [
+              sym "%def";
+              F.space;
               fmtConstPath (Symbol.def, qid);
               F.space;
-              sym ":";
               F.break;
               vfmt_;
               F.break;
-              sym "=";
               F.space;
               ufmt_;
-              sym ".";
+              sym "%.";
             ]
       | hide, (I.AbbrevDef (_, _, imp, u_, v_, l_) as condec) ->
           let qid = Names.conDecQid condec in
@@ -732,16 +746,17 @@ module MakePrint
           let ufmt_ = fmtExp (g_, 0, noCtxt, (u_, I.id)) in
           F.hVbox
             [
+              sym "%inline";
               fmtConstPath (Symbol.def, qid);
               F.space;
-              sym ":";
+              
               F.break;
               vfmt_;
               F.break;
-              sym "=";
+              
               F.space;
               ufmt_;
-              sym ".";
+              full_stop;
             ]
 
     let rec fmtCnstr = function

@@ -1,0 +1,4 @@
+(library
+ (name project)
+ (public_name stelf.project)
+ (libraries sexplib))

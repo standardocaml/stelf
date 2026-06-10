@@ -51,6 +51,7 @@
   (ocaml-lsp-server :dev)
   (user-setup :dev)
   (merlin :dev)
+  sexplib
   ppx_deriving
   lambda-term
   fmt
