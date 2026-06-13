@@ -1,9 +1,9 @@
-include Sgn_intf
+include SGN
 
 module Make_Sgn
     (Common : Common.COMMON)
-    (Ast : Ast_intf.AST with module Common = Common) :
-  Sgn_intf.SGN with module Common = Common and module Ast = Ast = struct
+    (Ast : AST.AST with module Common = Common) :
+  SGN.SGN with module Common = Common and module Ast = Ast = struct
   module CTable = Containers.Hashtbl.Make (struct
     type t = Ast.cid
 

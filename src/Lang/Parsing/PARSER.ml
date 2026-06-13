@@ -5,10 +5,12 @@ module type PARSER = sig
   val inside : string -> string -> 'a t -> 'a t
   val whitespace : unit t
   val ident : string t
+  val ident1 : string t
   val keyword : string -> unit t
   val keywords : string list -> unit t
   val token : string -> unit t
   val given : bool -> 'a t -> 'a t
+  val extend : 'a t -> bool * 'a t -> 'a t
   val ( let| ) : 'a t -> ('a -> 'b t) -> 'b t
   val ( and| ) : 'a t -> 'b t -> ('a * 'b) t
   val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
@@ -16,4 +18,5 @@ module type PARSER = sig
   val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
   val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
   val ( let@ ) : 'a t -> ('a * int * int -> 'b t) -> 'b t
+  val forget : 'a t -> unit t
 end

@@ -4,7 +4,7 @@ open Intsyn_
 
 (* Approximate language for term reconstruction *)
 (* Author: Kevin Watkins *)
-include Approx_intf
+include APPROX
 
 (* # 1 "src/lambda/Approx.fun.ml" *)
 open! Whnf

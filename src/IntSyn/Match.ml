@@ -4,7 +4,7 @@ open Intsyn_
 
 (* Matching *)
 (* Author: Frank Pfenning, Carsten Schuermann *)
-include Match_intf
+include MATCH
 (* signature MATCH *)
 
 (* # 1 "src/lambda/Match.fun.ml" *)

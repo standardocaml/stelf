@@ -1,13 +1,17 @@
+module type PAL' = sig
+  module M : IMPL.IMPL
+
+  val install : M.Cst.cmd -> unit
+  val parse : string -> M.Cst.cmd list
+  val exec : string -> unit
+end
+
 module type PAL = sig
   module M : IMPL.IMPL
 
   exception Error of exn
 
-  class pal : object
-    method install : M.Cst.cmd -> unit
-    method parse : string -> M.Cst.cmd list
-    method exec : string -> unit
-  end
+  module Start () : PAL' with module M = M
 
   val run : unit -> unit
 end

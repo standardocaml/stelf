@@ -1,14 +1,15 @@
 module type MODERN = sig
-  module Paths : Paths.Paths_intf.PATHS
+  module Paths : Paths.PATHS.PATHS
   module Cst : Cst.CST
-  module Names : Names.Names_intf.NAMES
+  module Names : Names.NAMES.NAMES
+  module N := Names
+  module FX := N.Fixity
   module Parser : Parsing.PARSER.PARSER
 
   type 'a t = 'a Parser.t
 
   exception ParseError of string
 
-  val set_fixities : Names.namespace -> unit
   val parse_expr1 : unit -> Cst.Term.t t
   val parse_expr : unit -> Cst.Term.t t
   val parse_var : unit -> string t
@@ -34,9 +35,11 @@ module type MODERN = sig
   val parse_solve : unit -> Cst.Query.solve t
   val parse_bound : unit -> int option t
   val parse_id_list : unit -> string list t
+  val parse_reduces_rel : unit -> string t
   val parse_block_item : unit -> Cst.block_item t
   val parse_fixity_kw : unit -> Cst.fixity t
   val parse_params : unit -> string list t
+  val register_local_fixity : Cst.fixity -> int -> string list -> unit
   val parse_group : 'a t -> 'a list t
   val parse_parens : 'a t -> 'a t
   val parse_braced : 'a t -> 'a t
@@ -45,5 +48,8 @@ module type MODERN = sig
   val debug_parser : 'a t -> string -> 'a
   [@@alert debug "This should only be used in the REPL"]
 
-  val run : 'a t -> Names.namespace ref -> Cst.loc -> string -> 'a
+  val debug_parser_with_ops : (string * FX.fixity) list -> 'a t -> string -> 'a
+  [@@alert debug "This should only be used in the REPL"]
+
+  val run : 'a t -> N.namespace ref -> Cst.loc -> string -> 'a
 end

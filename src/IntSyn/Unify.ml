@@ -4,7 +4,7 @@ open Intsyn_
 
 (* Unification *)
 (* Author: Frank Pfenning, Carsten Schuermann *)
-include Unify_intf
+include UNIFY
 (* signature UNIFY *)
 
 (* # 1 "src/lambda/Unify.fun.ml" *)

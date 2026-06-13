@@ -1,4 +1,3 @@
-
 open Base
 (**
    The concrete syntax tree (CST) interface (in Twelf, it bore the name [ExtSyn]. 
@@ -18,9 +17,8 @@ open Base
 
 (** {2 CST} *)
 module type CST = sig
-  module Paths : Paths.Paths_intf.PATHS
+  module Paths : Paths.PATHS.PATHS
   (** Module of paths and regions, which we allow to be shared *)
-
 
   type query
   (** Query payload. *)
@@ -76,6 +74,9 @@ module type CST = sig
   type block_item
   (** One item in a %block world declaration. *)
 
+  type order [@@deriving show { with_path = false }, eq]
+  (** Termination/totality order (Varg, Lex, Simul). *)
+
   type cmd [@@deriving show { with_path = false }, eq]
   (** Top-level command node. *)
 
@@ -103,7 +104,6 @@ module type CST = sig
   (** {3 Term Syntax} *)
   module Term : sig
     type t = term
-
 
     val lowercase : ?fc:loc -> symbol -> term
     (** Lowercase identifier (does not start with [_]). *)
@@ -358,7 +358,7 @@ module type CST = sig
     val thaw : ?fc:loc -> string list -> cmd
     (** [%thaw id_list] — unfreeze type families. *)
 
-    val sort : ?fc:loc -> string -> decl list -> cmd
+    val sort : ?fc:loc -> string list -> decl list -> cmd
     (** [%sort id {decl}+] — declare a type family. *)
 
     val term : ?fc:loc -> decl -> cmd
@@ -375,15 +375,6 @@ module type CST = sig
 
     val deterministic : ?fc:loc -> string list -> cmd
     (** [%deterministic id_list] — mark type families as deterministic. *)
-
-    val module_cmd : ?fc:loc -> string -> string list -> cmd list -> cmd
-    (** [%module id params body] — declare a parameterised module. *)
-
-    val use : ?fc:loc -> string -> string -> string list -> cmd
-    (** [%use id id iparams] — instantiate a module. *)
-
-    val open_cmd : ?fc:loc -> string -> string list -> cmd
-    (** [%open id id_list] — bring names from a module into scope. *)
 
     val eval : ?fc:loc -> cmd list -> cmd
     (** [%eval %{ cmds %}] — evaluate a command block. *)
@@ -406,20 +397,23 @@ module type CST = sig
       val version : ?fc:loc -> unit -> cmd
     end
 
-    val total : ?fc:loc -> string list list -> term list -> cmd
+    val total : ?fc:loc -> order list -> term list -> cmd
     (** [%total hyps modes] — declare a totality check. *)
-    
-    val terminates : ?fc:loc -> string list list -> term list -> cmd
+
+    val terminates : ?fc:loc -> order list -> term list -> cmd
     (** [%terminates hyps modes] — declare a termination check. *)
-    
+
     val covers : ?fc:loc -> modeDec -> cmd
     (** [%covers hyps modes] — declare a coverage check. *)
-    
+
     val name : ?fc:loc -> string -> cmd
     (** [%name id] — declare a name for the next definition. *)
-    
+
+    val reduces : ?fc:loc -> string -> term list -> cmd
+    (** [%reduces pred order_out order_in call_pats] — declare a reduction
+        relation. *)
   end
- 
+
   module Thm : sig
     (*! structure Paths : PATHS  !*)
     type order
@@ -490,25 +484,28 @@ module type CST = sig
 
   val pp_term : Stdlib.Format.formatter -> term -> unit
   (** Pretty-print a term to a formatter. *)
-  module View : LENS.VIEW
-    with type Term.t = term
-    and type Decl.t = decl
-    and type ConDec.t = conDec
-    and type Mode.t = mode
-    and type Mode.Term.t = modeTerm
-    and type Mode.Dec.t = modeDec
-    and type Struct.StrExp.t = strexp
-    and type Struct.Inst.t = inst
-    and type Struct.SigExp.t = sigexp
-    and type Struct.SigDef.t = sigdef
-    and type Struct.StructDec.t = structDec 
-    and type Query.t = query
-    and type Solve.t = solve
-    and type Define.t = define
-    and type Fixity.t = fixity
-    and type Cmd.t = cmd
-          
-  
- 
+
+  (** {2 Views} *)
+
+  (** Views should eventually supplant the rest of this module *)
+  module View : sig
+    include
+      LENS.VIEW
+        with type Term.t = term
+         and type Decl.t = decl
+         and type ConDec.t = conDec
+         and type Mode.t = mode
+         and type Mode.Term.t = modeTerm
+         and type Mode.Dec.t = modeDec
+         and type Struct.StrExp.t = strexp
+         and type Struct.Inst.t = inst
+         and type Struct.SigExp.t = sigexp
+         and type Struct.SigDef.t = sigdef
+         and type Struct.StructDec.t = structDec
+         and type Query.t = query
+         and type Solve.t = solve
+         and type Define.t = define
+         and type Fixity.t = fixity
+         and type Cmd.t = cmd
+  end
 end
-   

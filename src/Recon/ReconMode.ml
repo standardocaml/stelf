@@ -58,8 +58,8 @@ module Make_ReconMode (M : S.S) : RECON_MODE with module M = M = struct
                       Modes.Mapp
                         (Modes.Marg (convert_mode m, name_opt), build_spine rest)
                 in
-                let mS = build_spine spine in
-                ModeDec.checkFull (cid, mS, ghost_region);
+                let mS_short = build_spine spine in
+                let mS = ModeDec.shortToFull (cid, mS_short, ghost_region) in
                 ((cid, mS), Paths.Reg (0, 0))
               end
           end

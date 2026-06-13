@@ -5,7 +5,7 @@ open Tomega
 
 (* Abstraction *)
 (* Author: Frank Pfenning, Carsten Schuermann *)
-include Abstract_intf
+include ABSTRACT
 (* signature ABSTRACT *)
 
 (* # 1 "src/lambda/Abstract.fun.ml" *)

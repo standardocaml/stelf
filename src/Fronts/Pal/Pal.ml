@@ -1,30 +1,36 @@
 let version = "0.1.0"
 
+module type PAL = PAL.PAL
+module type PAL' = PAL.PAL'
+
 module Pal : PAL.PAL = struct
-  module M = Impl.Impl
+  module M = Impl.Impl ()
+
+  module type S = module type of M
 
   let status_to_exit : M.status -> int = function M.Ok -> 0 | M.Abort -> 1
 
   exception Error of exn
 
-  class pal =
-    object (self)
-      val ns = ref (M.Cmd.Modern.Names.newNamespace ())
-      val mutable loc = M.Cst.ghost
-      method install (cmd : M.Cst.cmd) : unit = M.Install.install1 cmd
+  module Start () = struct
+    module M = M
 
-      method parse (s : string) : M.Cst.cmd list =
-        M.Cmd.Modern.run (M.Cmd.parse ()) ns loc s
+    let ns = ref (M.Cmd.Modern.Names.newNamespace ())
+    let loc = ref M.Cst.ghost
+    let install (cmd : M.Cst.cmd) : unit = M.Install.install1 cmd
 
-      method exec (s : string) : unit = List.iter self#install (self#parse s)
-    end
+    let parse (s : string) : M.Cst.cmd list =
+      M.Cmd.Modern.run (M.Cmd.parse ()) ns !loc s
+
+    let exec (s : string) : unit = List.iter install (parse s)
+  end
 
   let top (module N : Tui.REPL.S) =
-    let pi = new pal in
+    let module Pal = Start () in
     let module R = Tui.Repl.Repl (N) in
-    Impl.Impl.mode := `Repl;
+    M.mode := `Repl;
     R.read (fun l ->
-        pi#exec l;
+        Pal.exec l;
         Lwt.return R.Continue)
 
   let run () : unit =
@@ -90,6 +96,49 @@ module Pal : PAL.PAL = struct
             const (fun () ->
                 let module Twelf_server = Server.Server_.Server in
                 Twelf_server.server ("stelf", []))
+            $ const ())
+      in
+      let version_cmd : int Cmd.t =
+        Cmd.v
+          (Cmd.info "version" ~doc:"Display version information")
+          Term.(
+            const (fun () ->
+                print_endline
+                  {|                                                                
+                 ..........                                     
+              ...............                                   
+                      ........                                  
+                       ........                                 
+                        .......                                 
+                         .......                                
+                         ........                               
+                          .......                               
+                          ........                              
+                           ........                             
+                          .........                             
+                          ..........                            
+                         ...........                            
+                        ....  .......                           
+                       ....   ........                          
+                      .....    .......                          
+                      ....     ........                         
+                     .....      ........                        
+                    .....       ........                        
+                   ......      ..........                       
+                   .....       ..........                       
+                  .....       ...  .......                      
+                 ......       ...  ........                     
+                ......       ....   .......                     
+               .......       ....   ........                    
+              .......        ...     .......                    
+              .......       ....      .......                   
+            ........       ....        .......     ...          
+          ..........       ....         ............            
+                                             .                  
+                                                                
+|};
+                print_endline ("STELF version " ^ version);
+                0)
             $ const ())
       in
       let main_cmd =

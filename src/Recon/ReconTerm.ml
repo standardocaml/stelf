@@ -14,7 +14,7 @@ module Make_ReconTerm
       module Print : PRINT
       module StringTree : TABLE with type key = string
       module Msg : MSG
-      module CsManager : Solvers.CsManager_intf.CS_MANAGER
+      module CsManager : Solvers.CSMANAGER.CS_MANAGER
     end) =
 struct
   module M = M
@@ -56,7 +56,7 @@ struct
 
   let errorCount = ref 0
   let errorFileName = ref "no file"
-  let errorThreshold = ref (Some 20)
+  let errorThreshold = ref (Some 200)
   let exceeds = function i, None -> false | i, Some j -> i > j
 
   let rec resetErrors fileName =
@@ -110,21 +110,9 @@ struct
       end
     end
 
-  let withConstPath show f =
-    let old = !Print.showConstPath in
-    Print.showConstPath := show;
-    try
-      let result = f () in
-      Print.showConstPath := old;
-      result
-    with exn ->
-      Print.showConstPath := old;
-      raise exn
-
   let rec formatExp (g_, u_) =
-    withConstPath false (fun () ->
-        try Print.formatExp (g_, u_)
-        with unprintable_ -> F.string "%_unprintable_%")
+    try Print.formatExp (g_, u_)
+    with Names.Unprintable -> F.string "%_unprintable_%"
 
   (* this is a hack, i know *)
   let queryMode = ref false
@@ -835,18 +823,16 @@ struct
     | g_, e_, vs_, i -> addImplicit1W (g_, e_, Whnf.whnfExpandDef vs_, i)
 
   let rec reportConstraints xnames_ =
-    withConstPath false (fun () ->
-        try
-          begin match Print.evarCnstrsToStringOpt xnames_ with
-          | None -> ()
-          | Some constr -> print (("Constraints:\n" ^ constr) ^ "\n")
-          end
-        with unprintable_ -> print "%_constraints unprintable_%\n")
+    try
+      begin match Print.evarCnstrsToStringOpt xnames_ with
+      | None -> ()
+      | Some constr -> Msg.message (("Constraints:\n" ^ constr) ^ "\n")
+      end
+    with Names.Unprintable -> Msg.message "%_constraints unprintable_%\n"
 
   let rec reportInst xnames_ =
-    withConstPath false (fun () ->
-        try Msg.message (Print.evarInstToString xnames_ ^ "\n")
-        with unprintable_ -> Msg.message "%_unifier unprintable_%\n")
+    try Msg.message (Print.evarInstToString xnames_ ^ "\n")
+    with Names.Unprintable -> Msg.message "%_unifier unprintable_%\n"
 
   let rec delayMismatch (g_, v1_, v2_, r2, location_msg, problem_msg) =
     addDelayed (function () ->
@@ -890,10 +876,13 @@ struct
         let amb =
           F.hVbox [ F.string "Inferred:"; F.space; formatExp (g_, u_) ]
         in
-        error
-          ( r,
-            (("Ambiguous reconstruction\n" ^ F.makestring_fmt amb) ^ "\n") ^ msg
-          ))
+        let fstr = F.makestring_fmt amb in
+        Display.debug
+          Display.Form.(
+            nl ()
+            ++ string "Ambiguous reconstruction of term: "
+            ++ string fstr ++ nl ());
+        error (r, (("Ambiguous reconstruction\n" ^ fstr) ^ "\n") ^ msg))
 
   let rec unifyIdem x =
     let _ = Unify.reset () in
@@ -1093,13 +1082,23 @@ struct
         let s = IntSyn.Shift (IntSyn.ctxLength g_) in
         (tm, Elim (elimSub (evarElim x_, s)), eClo_ (v_, s))
     | g_, (Fvar_ (name, r) as tm) ->
-        Logs.debug (fun m -> m "inferring FVar %s" name);
+        Display.debug
+          Display.Form.(
+            nl ()
+            ++ string "Inferring exact type of FVar"
+            ++ string name ++ nl ());
         let v_ =
           try getFVarType (name, false)
           with Apx.Ambiguous ->
             let v_ = getFVarType (name, true) in
             begin
-              Logs.debug (fun m -> m "ambiguous type for FVar %s" name);
+              Display.debug
+                Display.Form.(
+                  string "Type of FVar" ++ string name
+                  ++ string
+                       " is ambiguous, but continuing with one of the \
+                        possibilities"
+                  ++ nl ());
               delayAmbiguous (g_, v_, r, "Free variable has ambiguous type");
               v_
             end
@@ -1132,32 +1131,35 @@ struct
     | g_, App_ (tm1, tm2) ->
         let tm1', b1_, v1_ = inferExact (g_, tm1) in
         let e1_ = toElim b1_ in
-        Debug.(
-          msg' ~src:Group.approx ~level:Level.Debug
-          @@ Fmt.concat
-               Fmt.
-                 [
-                   const string "Infering exact application of";
-                   using fst pp_term;
-                   const string "to";
-                   using snd pp_term;
-                 ])
-          (tm1, tm2);
-        let IntSyn.Pi ((IntSyn.Dec (_, va_), _), vr_), s =
-          Whnf.whnfExpandDef (v1_, IntSyn.id)
-        in
-        let tm2', b2_ =
-          checkExact
-            ( g_,
-              tm2,
-              (va_, s),
-              "Argument type did not match function domain type\n\
-               (Index object(s) did not match)" )
-        in
-        let u2_ = toIntro (b2_, (va_, s)) in
-        ( App_ (tm1', tm2'),
-          Elim (elimApp (e1_, u2_)),
-          eClo_ (vr_, Whnf.dotEta (exp_ u2_, s)) )
+        Display.(
+          debug
+            Form.(
+              nl ()
+              ++ string "Inferring exact application of"
+              ++ shown show_term tm1 ++ string "to" ++ shown show_term tm2
+              ++ nl ()));
+        let t, s = Whnf.whnfExpandDef (v1_, IntSyn.id) in
+        begin match t with
+        | IntSyn.Pi ((IntSyn.Dec (_, va_), _), vr_) -> begin
+            let tm2', b2_ =
+              checkExact
+                ( g_,
+                  tm2,
+                  (va_, s),
+                  "Argument type did not match function domain type\n\
+                   (Index object(s) did not match)" )
+            in
+            let u2_ = toIntro (b2_, (va_, s)) in
+            ( App_ (tm1', tm2'),
+              Elim (elimApp (e1_, u2_)),
+              eClo_ (vr_, Whnf.dotEta (exp_ u2_, s)) )
+          end
+        | _ -> begin
+            failwith
+              "Expected a pi type after whnf in application, but got something \
+               else"
+          end
+        end
     | g_, Hastype_ (tm1, tm2) ->
         let tm2', b2_, l_ = inferExact (g_, tm2) in
         let v_ = toIntro (b2_, (l_, IntSyn.id)) in
@@ -1188,6 +1190,12 @@ struct
           with Ambiguous ->
             let v'_ = Apx.apxToClass (g_, v_, l_, true) in
             begin
+              Display.debug
+                Display.Form.(
+                  string
+                    "Classifier of omitted term is ambiguous, but continuing \
+                     with one of the possibilities"
+                  ++ nl ());
               delayAmbiguous
                 ( g_,
                   v'_,
@@ -1206,6 +1214,12 @@ struct
           with Ambiguous ->
             let u'_ = Apx.apxToExact (g_, u_, (v'_, IntSyn.id), true) in
             begin
+              Display.debug
+                Display.Form.(
+                  string
+                    "Exact term of omitted term is ambiguous, but continuing \
+                     with one of the possibilities"
+                  ++ nl ());
               delayAmbiguous
                 ( g_,
                   u'_,
@@ -1300,6 +1314,10 @@ struct
         ((tm', b'_, v'_), unifiableIdem (g_, vhs_, (v'_, IntSyn.id)))
 
   and checkExact (g_, tm, vs_, location_msg) =
+    Display.(
+      debug
+        Form.(
+          nl () ++ string "Checking exact term" ++ shown show_term tm ++ nl ()));
     begin if not !trace then
       let (tm', b'_, v'_), ok = checkExact1 (g_, tm, vs_) in
       begin if ok then (tm', b'_)

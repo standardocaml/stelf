@@ -3,8 +3,8 @@ open Common
 
 (* Author: Frank Pfenning, Carsten Schuermann *)
 (* Modified: Roberto Virga *)
-module Make_Ast (Common : Common.COMMON) :
-  Ast_intf.AST with module Common = Common = struct
+module Make_Ast (Common : Common.COMMON) : AST.AST with module Common = Common =
+struct
   module Common = Common
   open Common
 

@@ -8,7 +8,7 @@ open Intsyn_
 (* Manipulating Constraints *)
 (* Author: Jeff Polakow, Frank Pfenning *)
 (* Modified: Roberto Virga *)
-include Constraints_intf
+include CONSTRAINTS
 (* signature CONSTRAINTS *)
 
 (* # 1 "src/lambda/Constraints.fun.ml" *)

@@ -1,3 +1,6 @@
+(** Formatting options generally
+    @author Asher Frost *)
+
 module type FORM = FORM.FORM
 
 module Form : FORM = struct
