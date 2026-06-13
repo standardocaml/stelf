@@ -47,10 +47,11 @@ let cases () =
             test "Qualified" Term "%val ( x y )";
             test "Nofix" Term "%val +";
           ] );
-        ("Explicit implicits", [
-          test "Simple" Term "{{X Y}} X Y";
-          test "Nested" Term "{{X Y}} X {{Z}} Y Z";
-        ]) ;
+        ( "Explicit implicits",
+          [
+            test "Simple" Term "{{X Y}} X Y";
+            test "Nested" Term "{{X Y}} X {{Z}} Y Z";
+          ] );
         ( "Hypotheses",
           [
             test "Simple" Decl "x nat";
@@ -147,31 +148,29 @@ let cases () =
             test "Simple" Cmd1 "%terminates N (add N _ _)";
             test "Mutual" Cmd1 ~skip:false
               "%terminates (N1 N2) (add N1 _ _) (mul N2 _ _)";
-            test "Simultaneous" Cmd1 
-              "%terminates [A B] max A B";
-            test "Lexocographic" Cmd1 
-              "%terminates {A B} max A B";
-            test "Nested" Cmd1 
-              "%terminates {A [B C] F} (max A (max B C))";
-            test "Nested (mutual)" Cmd1 "%terminates ({A [B C] G} [D E] F) (max A (max B C) max D (max E C))";
-            test "Nested (mutual, issue)" Cmd1 ~skip:true "({A [B C]} [D E]) (max A (max B C) max D (max E C))"
-          ] ); 
+            test "Simultaneous" Cmd1 "%terminates [A B] max A B";
+            test "Lexocographic" Cmd1 "%terminates {A B} max A B";
+            test "Nested" Cmd1 "%terminates {A [B C] F} (max A (max B C))";
+            test "Nested (mutual)" Cmd1
+              "%terminates ({A [B C] G} [D E] F) (max A (max B C) max D (max E \
+               C))";
+            test "Nested (mutual, issue)" Cmd1 ~skip:true
+              "({A [B C]} [D E]) (max A (max B C) max D (max E C))";
+          ] );
         ( "%query",
           [
             test "Atomic (%?)" Cmd1 "%? nat";
             test "Complex (%?)" Cmd1 "%? add zero zero zero";
             test "Atom (Full)" Cmd1 "%query _ _ 1 add zero zero zero";
           ] );
-
-        ( "%reduces", 
+        ( "%reduces",
           [
             test "Same size" Cmd1 "%reduces = X Y add X Y zero";
             test "Smaller" Cmd1 "%reduces < X Y add X Y zero";
             test "Larger" Cmd1 "%reduces > X Y add X Y zero";
             test "Same size or greater" Cmd1 "%reduces >= X Y add X Y zero";
             test "Same size or smaller" Cmd1 "%reduces <= X Y add X Y zero";
-          ] 
-          )
+          ] );
       ]
     end
     ~verbose:true

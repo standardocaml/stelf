@@ -18,5 +18,5 @@ module type COMMON = sig
   module Tag : TAG
   module Cid : CID
   module Mid : CID
-  module Global : Global.Global_intf.GLOBAL
+  module Global : Global.GLOBAL.GLOBAL
 end

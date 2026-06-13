@@ -6,7 +6,7 @@ open Intsyn_
 
 (* Termination Order *)
 (* Author: Carsten Schuermann *)
-include Order_intf
+include ORDER
 (* signature ORDER *)
 
 (* # 1 "src/lambda/Order.fun.ml" *)

@@ -1,5 +1,3 @@
-
-
 (* TODO: Thinks that will be added eventually 
 Groups (sections, list, etc)
 Math markup 

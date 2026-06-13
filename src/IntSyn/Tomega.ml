@@ -4,7 +4,7 @@ open Intsyn_
 
 (* Internal syntax for Delphin *)
 (* Author: Carsten Schuermann *)
-include Tomega_intf
+include TOMEGA
 (* Signature TOMEGA *)
 
 (* # 1 "src/lambda/Tomega.fun.ml" *)

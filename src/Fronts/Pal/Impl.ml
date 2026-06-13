@@ -23,7 +23,7 @@ module Impl () = struct
 
   (* Ascribe Paths to the bare PATHS signature so it matches what         *)
   (* Make_Cst and Make_Recon's S.S both expect.                           *)
-  module Paths : Paths.Paths_intf.PATHS = Paths.Paths_
+  module Paths : Paths.PATHS.PATHS = Paths.Paths_
 
   (* Create our own Cst from the same ascribed Paths so that              *)
   (* Cst.Paths = Paths and Recon.Cst.Paths = Paths, giving consistent     *)
@@ -159,20 +159,22 @@ module Impl () = struct
       let module TS = ThmSyn in
       let pred, swap =
         match pred_str with
-        | "="  -> (TS.Eq,   false)
-        | "<"  -> (TS.Less, false)
-        | "<=" -> (TS.Leq,  false)
-        | ">"  -> (TS.Less, true)
-        | ">=" -> (TS.Leq,  true)
-        | s    -> failwith ("%reduces: unknown predicate " ^ s)
+        | "=" -> (TS.Eq, false)
+        | "<" -> (TS.Less, false)
+        | "<=" -> (TS.Leq, false)
+        | ">" -> (TS.Less, true)
+        | ">=" -> (TS.Leq, true)
+        | s -> failwith ("%reduces: unknown predicate " ^ s)
       in
-      let term_to_order tm =
-        TS.Varg [ term_to_head tm ]
-      in
+      let term_to_order tm = TS.Varg [ term_to_head tm ] in
       let o_out, o_in, body_rest =
         match body with
-        | out_tm :: in_tm :: rest -> (term_to_order out_tm, term_to_order in_tm, rest)
-        | _ -> failwith "%reduces: expected predicate, two order arguments, and call patterns"
+        | out_tm :: in_tm :: rest ->
+            (term_to_order out_tm, term_to_order in_tm, rest)
+        | _ ->
+            failwith
+              "%reduces: expected predicate, two order arguments, and call \
+               patterns"
       in
       let o1, o2 = if swap then (o_in, o_out) else (o_out, o_in) in
       let term_to_cp tm =
@@ -180,7 +182,9 @@ module Impl () = struct
         let name = term_to_head head in
         let cid =
           match Names.constLookup (Names.Qid ([], name)) with
-          | None -> failwith ("%reduces: undeclared identifier " ^ name ^ " in call pattern")
+          | None ->
+              failwith
+                ("%reduces: undeclared identifier " ^ name ^ " in call pattern")
           | Some c -> c
         in
         (cid, List.map term_to_name args)
@@ -194,14 +198,14 @@ module Impl () = struct
       let module TS = ThmSyn in
       let rec cst_to_thm = function
         | Cst.Varg_ (_, names) -> TS.Varg names
-        | Cst.Lex_ (_, ords)   -> TS.Lex   (List.map cst_to_thm ords)
+        | Cst.Lex_ (_, ords) -> TS.Lex (List.map cst_to_thm ords)
         | Cst.Simul_ (_, ords) -> TS.Simul (List.map cst_to_thm ords)
       in
       let order =
         match orders with
-        | []    -> TS.Varg []
+        | [] -> TS.Varg []
         | [ o ] -> cst_to_thm o
-        | many  -> TS.Simul (List.map cst_to_thm many)
+        | many -> TS.Simul (List.map cst_to_thm many)
       in
       let term_to_cp tm =
         let head, args = unfold_app tm in
@@ -250,11 +254,12 @@ module Impl () = struct
               let condec =
                 Cst.ConDec.constant_decl (Cst.Decl.decl1 [ Some id ] kind)
               in
-              (match
-                Recon.ReconConDec.condecToConDec (condec, loc_of Cst.ghost, false)
+              match
+                Recon.ReconConDec.condecToConDec
+                  (condec, loc_of Cst.ghost, false)
               with
               | Some cd, _ -> install_condec cd
-              | None, _ -> ()))
+              | None, _ -> ())
             ids
       | Cst.TermCmd_ decl -> (
           Debug.(
@@ -635,8 +640,10 @@ module Impl () = struct
              loop ()
            with Done -> ());
           if !solutions = 0 && !chatter >= 3 then msg "No tabled solution.\n"
-      | Cst.OpenCmd_ (id, ids) ->
-          let se = Cst.Struct.str_exp (ids, id) in
+      | Cst.Open_ id ->
+          failwith
+            "%module: module definitions not yet implemented in this frontend"
+          (* let se = Cst.Struct.str_exp (ids, id) in
           let mid = Recon.ReconModule.strexpToStrexp se in
           let ns = ModSyn.Names.getComponents mid in
           let module_ = ModSyn.abstractModule (ns, Some mid) in
@@ -647,11 +654,11 @@ module Impl () = struct
             Subordinate.Subordinate_.Subordinate.install cid;
             Subordinate.Subordinate_.Subordinate.installDef cid
           in
-          ModSyn.installSig (module_, None, action, true)
-      | Cst.ModuleCmd_ _ ->
+          ModSyn.installSig (module_, None, action, true) *)
+      | Cst.Scope_ _ ->
           failwith
             "%module: module definitions not yet implemented in this frontend"
-      | Cst.UseCmd_ _ ->
+      | Cst.Use_ _ ->
           failwith
             "%use: module instantiation not yet implemented in this frontend"
 

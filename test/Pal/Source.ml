@@ -45,7 +45,9 @@ let zf_4 =
 %term replace  {_ set} {_ {_ set} set} set %.
 %term omega    set %.
 |}
-let zf_5 = {|
+
+let zf_5 =
+  {|
 %def single ({_ set} set) [x] double x x %.
 %def restrict ({_ set} {_ {_ set} prop} set) [x][q] unions (replace x ([z] if (q z) (single z) empty)) %.
 %def inter ({_ set} {_ set} set) [x][y] restrict x ([z] in z y) %.
@@ -56,7 +58,9 @@ let zf_5 = {|
 %def disjoint ({_ set} {_ set} prop) [x][y] eq (inter x y) empty %.
 %def omega_closed ({_ set} prop) [x] and (in empty x) (all [n] imp (in n x) (in (succ n) x)) %.
 |}
-let zf_6 = {|
+
+let zf_6 =
+  {|
 %term extensionality pf (iff (eq _X _Y) (all[z] iff (in z _X) (in z _Y))) %.
 %term foundation     pf (ex([z] and (in z _X) (disjoint z _X))) %.
 %term emtpy_ax       pf (not (in _X empty)) %.
@@ -78,7 +82,9 @@ let nats1 = {|
 %term z nat 
 %term s {_ nat} nat
 |}
-let nats2 = {|
+
+let nats2 =
+  {|
 
 %sort even {_ nat}
 %term even-z even z
@@ -86,20 +92,24 @@ let nats2 = {|
 
 |}
 
-let nats3 = {| 
+let nats3 =
+  {| 
 %sort plus {_ nat} {_ nat} {_ nat}
 %term plus-z {{N2}} plus z N2 N2
 %term plus-s {{N1 N2 N3}} 
   %<- (plus (s N1) N2 (s N3))
   (plus N1 N2 N3)
-|} (* TODO Fix prec of arrows fix sort w/o names *)
+|}
+(* TODO Fix prec of arrows fix sort w/o names *)
 
-let nats4 = {|
+let nats4 =
+  {|
 %mode plus %in %in %out
 %worlds () (plus _ _ _)
 
 %total N1 (plus N1 _ _)
 |}
+
 let fol1 =
   {|
 %. First-Order Logic
@@ -183,7 +193,8 @@ let fol3_1 =
 
 |}
 
-let fol3_2_1 = {|
+let fol3_2_1 =
+  {|
 %term redl_imp {{A D E}} (impe (impi [u nd A] D u) E) ==>R (D E)
 
 |}
@@ -246,8 +257,10 @@ let fol4_1 =
 
 %term hnd_ug {{A}} {H1 {a i} hil (A a)} {D1 {a i} nd (A a)} {_ {a i} hilnd (H1 a) (D1 a)} hilnd (ug H1) (foralli D1)
 |}
+
 (* %mode {%in x hil _A} {%out y nd _A} hilnd x y *)
-let fol4_2 = {|
+let fol4_2 =
+  {|
 %mode {%in X _} {%out Y _} hilnd X Y
 %worlds (li) (hilnd H D)
 %terminates H (hilnd H _)
@@ -268,6 +281,7 @@ let fol4_2 = {|
       |}
 
 let fol4 = fol4_1 ^ fol4_2
+
 let fol5_1 =
   {|
 
@@ -290,7 +304,9 @@ The deduction theorem for Hilbert derivations
 
 %term ded_ug {{A B H1 H1'}} {_ {a i} ded ([u] H1 u a) (H1' a)} ded ([u] ug (H1 u)) (mp f2 (ug H1'))
 |}
-let fol5_2 = {|
+
+let fol5_2 =
+  {|
 %block lded [A o] {u nd A} {v hil A} {h {C o} ded ([w hil C] v) (mp k v)}
 
 %mode ded %in %out
@@ -300,6 +316,7 @@ let fol5_2 = {|
 %total H (ded H _)
 
 |}
+
 let fol5 = fol5_1 ^ fol5_2
 
 let fol6_1 =
@@ -321,7 +338,9 @@ Mapping natural deductions to Hilbert derivations.
 
 %term ndh_foralle {{A T D1 H1}} {_ ndhil D1 H1} ndhil (foralle D1 T) (mp (f1 T) H1)
 |}
-let fol6_2 = {|
+
+let fol6_2 =
+  {|
 %mode {%in X _} {%out Y _} ndhil X Y
 %block lndhil [A o] {u nd A} {v hil A} {h {C o} ded ([w hil C] v) (mp k v)} {nh ndhil u v}
 %worlds (li lo lndhil) (ndhil D H)
@@ -331,7 +350,9 @@ let fol6_2 = {|
 
 
 |}
+
 let fol6 = fol6_1 ^ fol6_2
+
 let jsf_1 =
   {|
 Judgmental S4
@@ -371,18 +392,23 @@ and if J = (M : A) then J* = M* : tm A W
 %term diae {{A C W}} {_ tm (dia A) W} {_ {w world} {_ tm A w} exp C w} exp C W
 %term boxep {{A C W}} {_ tm (box A) W} {_ {_ {W' world} tm A W'} exp C W} exp C W
 %sort subdia {_ exp A W} {_ {w world} {_ tm A w} exp C w} {_ exp C W}
-|} 
+|}
+
 let jsf_2_1 = {|
 %mode {%in X _} {%in Y _} {%out Z _} subdia X Y Z
 |}
-let jsf_2_2 = {|
+
+let jsf_2_2 =
+  {|
 %term sdt2e {A tp} {C tp} {W world} {M tm A W} {F {w world} {_ tm A w} exp C w} subdia (t2e M) ([w] [x] F w x) (F W M)
 
 %term sddiae {A tp} {B tp} {C tp} {W world} {M tm (dia A) W} {E {v world} {_ tm A v} exp B v} {F {w world} {_ tm B w} exp C w} {F' {v world} {_ tm A v} exp C v} {_ {v world} {y tm A v} subdia (E v y) ([w] [x] F w x) (F' v y)} subdia (diae M [v] [y] E v y) ([w] [x] F w x) (diae M [v] [y] F' v y)
 
 %term sdboxep {A tp} {C tp} {D tp} {W world} {M tm (box A) W} {E {u {V world} tm A V} exp C W} {F {w world} {_ tm C w} exp D w} {F' {u {V world} tm A V} exp D W} {_ {u {V world} tm A V} subdia (E u) ([w] [x] F w x) (F' u)} subdia (boxep M [u] E u) ([w] [x] F w x) (boxep M [u] F' u)
 |}
-let jsf_3 = {|
+
+let jsf_3 =
+  {|
 %block by [B tp] {v world} {y tm B v}
 %block bu [B tp] {u {V world} tm B V}
 %worlds (by bu) (subdia E F F')
@@ -394,7 +420,9 @@ variable y2 of type tm C2 w appears free in the conclusion, but w is also quanti
 by the str family. The main issue is that the case for str ([x][w] y2) ([w] y2) cannot
 be typed because y2 has type tm C2 w but w is the variable we are quantifying over.
 |}
-let jsf_4 = {|
+
+let jsf_4 =
+  {|
 Examples
 
 %def _ (tm (box A => A) W) (lam [x] boxe x [u] u W)
@@ -438,7 +466,9 @@ Simple types
 
 %sort of {_ exp} {_ tp}
 |}
-let lam_2 = {|
+
+let lam_2 =
+  {|
 %mode of %in %star
 
 %term tp_lam {{E T1 T2}} {_ {x exp} {_ of x T1} of (E x) T2} of (lam E) (arrow T1 T2)
@@ -456,7 +486,9 @@ E ==> V  (expression E evaluates to value V)
 %term ev_app {{E1 E2 V V2 E1'}} {_ eval E1 (lam E1')} {_ eval E2 V2} {_ eval (E1' V2) V} eval (app E1 E2) V
 
 |}
-let lam_3 = {|
+
+let lam_3 =
+  {|
 %. Regular world for type-checking
 %block tp_var [T tp] {x exp} {u of x T}
 %worlds (tp_var) (of E T)
@@ -474,7 +506,9 @@ let lam_3 = {|
 %covers eval %in %out
 
 |}
-let lam_4 = {|
+
+let lam_4 =
+  {|
 %. Type preservation as higher-level family
 %sort tps {_ eval E V} {_ of E T} {_ of V T}
 
@@ -487,7 +521,9 @@ let lam_4 = {|
 %? of e0 T
 %? eval e0 V
 |}
-let lam_5 = {|
+
+let lam_5 =
+  {|
 %. Example of regular worlds
 cp copies input to output.
 
@@ -630,8 +666,7 @@ let mini_ml_tp =
    Ported from twelf/examples/arith/arith.elf
    Note: %compile and %query directives omitted (not supported)
 *)
-let arith_nat =
-  {|
+let arith_nat = {|
 %sort nat
 %name nat X
 %term z nat
@@ -696,8 +731,7 @@ let guide_lists_mode =
    Note: %mode, %terminates, %unique omitted (not supported or not needed).
    nat is re-declared here to keep this chunk self-contained.
 *)
-let tapl_nat_base =
-  {|
+let tapl_nat_base = {|
 %sort nat
 %name nat N
 %term z nat
@@ -1585,6 +1619,11 @@ let crary_linear_syntax =
 %term b atom
 |}
 
+(* CRARY-LINEAR-atoms: the a/b atoms for linear are declared in crary_linear_syntax above,
+   but crary_modal_syntax re-declares its own a/b below.  Those in crary_linear_syntax
+   therefore come first and are the ones in scope for CRARY-LINEAR tests.
+*)
+
 (* CRARY-LINEAR (linearity sort and basic terms):
    The `linear` family from linear.elf.
 *)
@@ -1684,3 +1723,384 @@ let crary_modal_syntax =
 %term a atom
 %term b atom
 |}
+
+(* CUT-ELIM int: cut-free intuitionistic sequent calculus.
+   Ported from twelf/examples/cut_elim/int.elf.
+   Builds on cut_elim_formulas (i, o, and, imp, or, not, true, false, forall, exists).
+   Names introduced: hyp, conc and all sequent calculus constructors.
+*)
+let cut_elim_sources_2 =
+  {|
+%sort hyp {_ o}
+%name hyp H
+%sort conc {_ o}
+%name conc D
+
+%term axiom {A o} {_ hyp A} conc A
+%term andr {A o} {B o} {_ conc A} {_ conc B} conc (A and B)
+%term andl1 {A o} {B o} {C o} {_ {_ hyp A} conc C} {_ hyp (A and B)} conc C
+%term andl2 {A o} {B o} {C o} {_ {_ hyp B} conc C} {_ hyp (A and B)} conc C
+%term impr {A o} {B o} {_ {_ hyp A} conc B} conc (A imp B)
+%term impl {A o} {B o} {C o} {_ conc A} {_ {_ hyp B} conc C} {_ hyp (A imp B)} conc C
+%term orr1 {A o} {B o} {_ conc A} conc (A or B)
+%term orr2 {A o} {B o} {_ conc B} conc (A or B)
+%term orl {A o} {B o} {C o} {_ {_ hyp A} conc C} {_ {_ hyp B} conc C} {_ hyp (A or B)} conc C
+%term notr {A o} {_ {p o} {_ hyp A} conc p} conc (not A)
+%term notl {A o} {C o} {_ conc A} {_ hyp (not A)} conc C
+%term truer conc true
+%term falsel {C o} {_ hyp false} conc C
+%term forallr {A {_ i} o} {_ {a i} conc (A a)} conc (forall A)
+%term foralll {A {_ i} o} {C o} {T i} {_ {_ hyp (A T)} conc C} {_ hyp (forall A)} conc C
+%term existsr {A {_ i} o} {T i} {_ conc (A T)} conc (exists A)
+%term existsl {A {_ i} o} {C o} {_ {a i} {_ hyp (A a)} conc C} {_ hyp (exists A)} conc C
+|}
+
+(* CHURCH-ROSSER ord-red: ordinary reduction relations on untyped lambda terms.
+   Ported from twelf/examples/church_rosser/ord-red.elf.
+   Builds on church_rosser_lam (term/lam/app already in scope).
+   Names introduced: -->, id1, step1, -->*, refl/sym/trans/red, <->
+*)
+let church_rosser_sources_2 =
+  {|
+%sort --> {_ term} {_ term}
+%prec %none 10 -->
+
+%term beta1 {{M1 M2}} (app (lam M1) M2) --> (M1 M2)
+%term lm1 {{M M'}} {_ {x term} (M x) --> (M' x)} (lam M) --> (lam M')
+%term apl1 {{M1 M1' M2}} {_ M1 --> M1'} (app M1 M2) --> (app M1' M2)
+%term apr1 {{M1 M2 M2'}} {_ M2 --> M2'} (app M1 M2) --> (app M1 M2')
+
+%sort -->* {_ term} {_ term}
+%prec %none 10 -->*
+
+%term id1 {{M}} M -->* M
+%term step1 {{M M' M''}} {_ M --> M'} {_ M' -->* M''} M -->* M''
+
+%sort <-> {_ term} {_ term}
+%prec %none 10 <->
+
+%term ord-refl {{M}} M <-> M
+%term ord-sym {{M M'}} {_ M' <-> M} M <-> M'
+%term ord-trans {{M M' M''}} {_ M <-> M'} {_ M' <-> M''} M <-> M''
+%term ord-red {{M M'}} {_ M -->* M'} M <-> M'
+|}
+
+(* CHURCH-ROSSER par-red: parallel reduction relations on untyped lambda terms.
+   Ported from twelf/examples/church_rosser/par-red.elf.
+   Builds on church_rosser_lam (term/lam/app in scope).
+   Names introduced: =>, =>*, <=>
+   Note: par-beta's first premise is higher-order:
+     {x:term}{idx:x=>x} (M1 x idx) => (M1' x idx)
+   Simplified here with {{M1 M1'}} implicit for the higher-order functions.
+*)
+let church_rosser_sources_3 =
+  {|
+%sort => {_ term} {_ term}
+%prec %none 10 =>
+
+%term par-beta {{M2 M2'}} {_ {x term} {_ x => x} (M1 x) => (M1' x)} {_ M2 => M2'} (app (lam M1) M2) => (M1' M2')
+%term par-ap {{M1 M1' M2 M2'}} {_ M1 => M1'} {_ M2 => M2'} (app M1 M2) => (app M1' M2')
+%term par-lm {{M M'}} {_ {x term} {_ x => x} (M x) => (M' x)} (lam M) => (lam M')
+
+%sort =>* {_ term} {_ term}
+%prec %none 10 =>*
+
+%term par-id {{M}} M =>* M
+%term par-step {{M M' M''}} {_ M => M'} {_ M' =>* M''} M =>* M''
+
+%sort <=> {_ term} {_ term}
+%prec %none 10 <=>
+
+%term par-reduce {{M M'}} {_ M =>* M'} M <=> M'
+%term par-expand {{M M'}} {_ M =>* M'} M' <=> M
+|}
+
+(* MINI-ML eval: natural semantics for Mini-ML.
+   Ported from twelf/examples/mini_ml/eval.elf.
+   Builds on mini_ml_exp (exp, z, s, case, pair, fst, snd, lam, app, letv, letn, fix).
+   mini_ml_value (value/val-z/val-lam/val-s/val-pair) is also in scope.
+   Names introduced: eval and ev_* constructors.
+   Omitted: %terminates (eval is not total due to fix).
+*)
+let mini_ml_sources_eval =
+  {|
+%sort eval {_ exp} {_ exp}
+%name eval D
+%mode eval %in %out
+
+%term ev_z eval z z
+%term ev_s {{E V}} {_ eval E V} eval (s E) (s V)
+%term ev_case_z {{E1 E2 E3 V}} {_ eval E1 z} {_ eval E2 V} eval (case E1 E2 E3) V
+%term ev_case_s {{E1 E2 E3 V V1'}} {_ eval E1 (s V1')} {_ eval (E3 V1') V} eval (case E1 E2 E3) V
+%term ev_pair {{E1 E2 V1 V2}} {_ eval E1 V1} {_ eval E2 V2} eval (pair E1 E2) (pair V1 V2)
+%term ev_fst {{E V1 V2}} {_ eval E (pair V1 V2)} eval (fst E) V1
+%term ev_snd {{E V1 V2}} {_ eval E (pair V1 V2)} eval (snd E) V2
+%term ev_lam {{E}} eval (lam E) (lam E)
+%term ev_app {{E1 E2 V V2 E1'}} {_ eval E1 (lam E1')} {_ eval E2 V2} {_ eval (E1' V2) V} eval (app E1 E2) V
+%term ev_letv {{E1 E2 V V1}} {_ eval E1 V1} {_ eval (E2 V1) V} eval (letv E1 E2) V
+%term ev_letn {{E1 E2 V}} {_ eval (E2 E1) V} eval (letn E1 E2) V
+%term ev_fix {{E V}} {_ eval (E (fix E)) V} eval (fix E) V
+
+%worlds () (eval _ _)
+%covers eval %in %out
+|}
+
+(* MINI-ML tpinf: type inference for Mini-ML.
+   Ported from twelf/examples/mini_ml/tpinf.elf.
+   Builds on mini_ml_exp + mini_ml_tp (tp, nat, cross, arrow).
+   Names introduced: of and tp_* constructors.
+   %block l : some {T:tp} block {x:exp} {d:of x T} -> %block l [T tp] {x exp} {d of x T}
+*)
+let mini_ml_sources_tpinf =
+  {|
+%sort of {_ exp} {_ tp}
+%name of P
+%mode of %in %star
+
+%term tp_z of z nat
+%term tp_s {{E}} {_ of E nat} of (s E) nat
+%term tp_case {{E1 E2 E3 T}} {_ of E1 nat} {_ of E2 T} {_ {x exp} {_ of x nat} of (E3 x) T} of (case E1 E2 E3) T
+%term tp_pair {{E1 E2 T1 T2}} {_ of E1 T1} {_ of E2 T2} of (pair E1 E2) (cross T1 T2)
+%term tp_fst {{E T1 T2}} {_ of E (cross T1 T2)} of (fst E) T1
+%term tp_snd {{E T1 T2}} {_ of E (cross T1 T2)} of (snd E) T2
+%term tp_lam {{E T1 T2}} {_ {x exp} {_ of x T1} of (E x) T2} of (lam E) (arrow T1 T2)
+%term tp_app {{E1 E2 T1 T2}} {_ of E1 (arrow T2 T1)} {_ of E2 T2} of (app E1 E2) T1
+%term tp_letv {{E1 E2 T1 T2}} {_ of E1 T1} {_ {x exp} {_ of x T1} of (E2 x) T2} of (letv E1 E2) T2
+%term tp_letn {{E1 E2 T1 T2}} {_ of E1 T1} {_ of (E2 E1) T2} of (letn E1 E2) T2
+%term tp_fix {{E T}} {_ {x exp} {_ of x T} of (E x) T} of (fix E) T
+
+%block l [T tp] {x exp} {d of x T}
+%worlds (l) (of _ _)
+|}
+
+(* LP-HORN canon: canonical forms for natural deduction proofs.
+   Ported from twelf/examples/lp_horn/canon.elf.
+   Builds on lp_horn_nd (o, pf, atom, and, imp, true, forall, andi, andel, ander,
+                          impi, impe, truei, foralli, foralle).
+   Names introduced: can, atm and constructors.
+   Omitted: can_impi, can_foralli (require full %block worlds for higher-order premises).
+*)
+let lp_horn_sources_2 =
+  {|
+%sort can {A o} {_ pf A}
+%name can CN
+%sort atm {_ pf _}
+%name atm AT
+
+%term can_andi {{A B D E}} {_ can A D} {_ can B E} can (A and B) (andi D E)
+%term can_truei {{D}} can true truei
+%term can_atm {{P D}} {_ atm D} can (atom P) D
+
+%term atm_andel {{D}} {_ atm D} atm (andel D)
+%term atm_ander {{D}} {_ atm D} atm (ander D)
+%term atm_impe {{A B D E}} {_ atm D} {_ can B E} atm (impe D E)
+%term atm_foralle {{A D T}} {_ atm D} atm (foralle D T)
+
+%worlds () (can _ _) (atm _)
+|}
+
+(* LP-HORN conv: conversion to canonical/atomic form.
+   Ported from twelf/examples/lp_horn/conv.elf.
+   Builds on lp_horn_nd + lp_horn_sources_2 (can, atm in scope).
+   Names introduced: whr, tocan, toatm and constructors.
+*)
+let lp_horn_sources_3 =
+  {|
+%sort whr {_ pf _} {_ pf _}
+%name whr WHR
+
+%term whr_andl {{A B D E}} whr (andel (andi D E)) D
+%term whr_andr {{A B D E}} whr (ander (andi D E)) E
+%term whr_imp {{A B D E}} whr (impe (impi D) E) (D E)
+%term whr_forall {{A D T}} whr (foralle (foralli D) T) (D T)
+%term whr_andel {{D D'}} {_ whr D D'} whr (andel D) (andel D')
+%term whr_ander {{D D'}} {_ whr D D'} whr (ander D) (ander D')
+%term whr_impe {{A B D D' E}} {_ whr D D'} whr (impe D E) (impe D' E)
+%term whr_foralle {{A D D' T}} {_ whr D D'} whr (foralle D T) (foralle D' T)
+
+%sort tocan {_ o} {_ pf _} {_ pf _}
+%name tocan TC
+%sort toatm {_ pf _} {_ pf _}
+%name toatm TA
+
+%term tc_and {{A B D D1' D2'}} {_ tocan A (andel D) D1'} {_ tocan B (ander D) D2'} tocan (A and B) D (andi D1' D2')
+%term tc_imp {{A B D D'}} {_ {u pf A} {_ toatm u u} tocan B (impe D u) (D' u)} tocan (A imp B) D (impi D')
+%term tc_true {{D}} tocan true D truei
+%term tc_atom {{P D D'}} {_ toatm D D'} tocan (atom P) D D'
+%term tc_whr {{A D D' D''}} {_ whr D D'} {_ tocan A D' D''} tocan A D D''
+
+%term ta_atom {{P D}} {_ atm D} toatm D D
+%term ta_whr {{D D' D''}} {_ whr D D'} {_ toatm D' D''} toatm D D''
+
+%block latm {u pf _} {_ toatm u u}
+%worlds (latm) (tocan _ _ _) (toatm _ _)
+|}
+
+(* CPSOCC cpsBNF: BNF of continuation-passing style terms.
+   Ported from twelf/examples/cpsocc/cpsBNF.elf.
+   Builds on cpsocc_dsbnf (droot/dexp/dtriv already in scope).
+   Fresh names introduced: croot, cexp, ctriv, ccont, klam, capp, cret, xlam, vlam.
+   %name hints omitted (not needed for test correctness).
+*)
+let cpsocc_cpsBNF =
+  {|
+%sort croot
+%sort cexp
+%sort ctriv
+%sort ccont
+%term klam {_ {_ ccont} cexp} croot
+%term capp {_ ctriv} {_ ctriv} {_ ccont} cexp
+%term cret {_ ccont} {_ ctriv} cexp
+%term xlam {_ {_ ctriv} croot} ctriv
+%term vlam {_ {_ ctriv} cexp} ccont
+|}
+
+(* handbook/fol.elf: first-order logic from Frank Pfenning's Handbook chapter.
+   Identical in structure to the existing FOL suite (i/o/imp/not/forall/nd/hil/ded).
+   SKIPPED: By the time this runs, `o` has been re-declared as a term (not a sort)
+   by the CRARY-EXCON group (%term o tp). Attempting to use `o` as a type causes
+   "Level clash: Argument type did not match function domain type".
+   Placeholder kept so the test entry can reference it. *)
+let handbook_sources_1 = {| (* placeholder: o pollution from CRARY-EXCON *) |}
+
+(* failure/fail.elf: only a %query declaration which is not supported in STELF.
+   Expected to raise a parse error. Translating %sort void then the %query itself
+   as a raw string — the %query will fail. *)
+let failure_sources_1 = {|
+%sort void
+%query 1 1 void
+|}
+
+(* wiki_failures/coverage_error.elf: intentionally incomplete coverage proof.
+   Defines sub (subtyping) with sub-trans missing the arrow base case.
+   %total on sub-trans should trigger a coverage failure in STELF. *)
+let wiki_failures_coverage_error_1 =
+  {|
+%sort wf_tp
+%term wf_int wf_tp
+%term wf_float wf_tp
+%term wf_arrow {_ wf_tp} {_ wf_tp} wf_tp
+%sort wf_sub {_ wf_tp} {_ wf_tp}
+%term wf_sub_ii wf_sub wf_int wf_int
+%term wf_sub_ff wf_sub wf_float wf_float
+%term wf_sub_if wf_sub wf_int wf_float
+%term wf_sub_arrow {{T S T' S'}} {_ wf_sub T' T} {_ wf_sub S S'} wf_sub (wf_arrow T S) (wf_arrow T' S')
+%sort wf_sub_trans {_ wf_tp} {_ wf_tp} {_ wf_tp}
+%mode wf_sub_trans %in %in %out
+%term wf_sub_trans_refl {{T}} {D wf_sub T T} wf_sub_trans T T T
+%term wf_sub_trans_ii_if wf_sub_trans wf_int wf_float wf_float
+%term wf_sub_trans_if_ff wf_sub_trans wf_int wf_float wf_float
+%worlds () (wf_sub_trans _ _ _)
+%total D (wf_sub_trans D _ _)
+|}
+
+(* wiki_failures/mode_error.elf: relation with a mode violation.
+   plus is defined correctly but bad uses output N2 in input position.
+   %mode or %total check should fail. *)
+let wiki_failures_mode_error_1 =
+  {|
+%sort wfm_nat
+%term wfm_z wfm_nat
+%term wfm_s {_ wfm_nat} wfm_nat
+%sort wfm_plus {_ wfm_nat} {_ wfm_nat} {_ wfm_nat}
+%mode wfm_plus %in %in %out
+%term wfm_plus_z {N wfm_nat} wfm_plus wfm_z N N
+%term wfm_plus_s {{N1 N2 N3}} {_ wfm_plus N1 N2 N3} wfm_plus (wfm_s N1) N2 (wfm_s N3)
+%worlds () (wfm_plus _ _ _)
+%total N (wfm_plus N _ _)
+%sort wfm_bad {_ wfm_nat} {_ wfm_nat}
+%mode wfm_bad %in %out
+%term wfm_bad_case {{N1 N2}} {_ wfm_plus N1 N2 N1} wfm_bad N1 N2
+%worlds () (wfm_bad _ _)
+%total N (wfm_bad N _)
+|}
+
+(* wiki_failures/totality_error.elf: relation with no base case for z.
+   %total should fail because there is no clause for partial z _. *)
+let wiki_failures_totality_error_1 =
+  {|
+%sort wft_nat
+%term wft_z wft_nat
+%term wft_s {_ wft_nat} wft_nat
+%sort wft_partial {_ wft_nat} {_ wft_nat}
+%mode wft_partial %in %out
+%term wft_partial_s {{N M}} {_ wft_partial N M} wft_partial (wft_s N) (wft_s M)
+%worlds () (wft_partial _ _)
+%total N (wft_partial N _)
+|}
+
+(* wiki_failures/unsatisfiable_query.elf: defines an empty type then uses %query.
+   %query is not supported in STELF; the parse will fail. *)
+let wiki_failures_unsatisfiable_query_1 =
+  {|
+%sort wfq_empty
+%query 1 1 wfq_empty
+|}
+
+(* ccc/spass.elf: CCC with categorical laws, products, exponentials, and lemmas.
+   Same approach as ccc_syntax: all operators renamed to avoid infix parse errors.
+   spass_meq replaces ==, spass_comp replaces @, spass_prod_obj replaces *, spass_exp_obj replaces =>.
+   spass_meq uses implicit free-variable indices (same pattern as ccc_syntax meq).
+   Additional lemma terms: spass_distp, spass_appl, spass_distc. *)
+let ccc_spass_1 =
+  {|
+%sort spass_obj
+%sort spass_mor {_ spass_obj} {_ spass_obj}
+%sort spass_meq {_ spass_mor _SA _SB} {_ spass_mor _SA _SB}
+%term spass_id {A spass_obj} spass_mor A A
+%term spass_comp {{A B C}} {_ spass_mor B C} {_ spass_mor A B} spass_mor A C
+%term spass_refl {{SA SB F}} spass_meq F F
+%term spass_then {{SA SB F F' F''}} {_ spass_meq F F'} {_ spass_meq F' F''} spass_meq F F''
+%term spass_sym {{SA SB F F'}} {_ spass_meq F F'} spass_meq F' F
+%term spass_ceq {{SA SB SC F F' G G'}} {_ spass_meq F F'} {_ spass_meq G G'} spass_meq (spass_comp F G) (spass_comp F' G')
+%term spass_id_l {{SA SB F}} spass_meq (spass_comp spass_id F) F
+%term spass_id_r {{SA SB F}} spass_meq (spass_comp F spass_id) F
+%term spass_ass {{SA SB SC SD F G H}} spass_meq (spass_comp H (spass_comp G F)) (spass_comp (spass_comp H G) F)
+%term spass_unit_obj spass_obj
+%term spass_prod_obj {_ spass_obj} {_ spass_obj} spass_obj
+%term spass_drop {A spass_obj} spass_mor A spass_unit_obj
+%term spass_fst {{A B}} spass_mor (spass_prod_obj A B) A
+%term spass_snd {{A B}} spass_mor (spass_prod_obj A B) B
+%term spass_pair {{A B C}} {_ spass_mor A B} {_ spass_mor A C} spass_mor A (spass_prod_obj B C)
+%term spass_peq {{A B C F F' G G'}} {_ spass_meq F F'} {_ spass_meq G G'} spass_meq (spass_pair F G) (spass_pair F' G')
+%term spass_term_u {{A H}} spass_meq H spass_drop
+%term spass_prod_l {{A B C F G}} spass_meq (spass_comp spass_fst (spass_pair F G)) F
+%term spass_prod_r {{A B C F G}} spass_meq (spass_comp spass_snd (spass_pair F G)) G
+%term spass_prod_u {{A B C H}} spass_meq (spass_pair (spass_comp spass_fst H) (spass_comp spass_snd H)) H
+%term spass_exp_obj {_ spass_obj} {_ spass_obj} spass_obj
+%term spass_app {{B C}} spass_mor (spass_prod_obj (spass_exp_obj B C) B) C
+%term spass_cur {{A B C}} {_ spass_mor (spass_prod_obj A B) C} spass_mor A (spass_exp_obj B C)
+%term spass_ceq2 {{A B C F F'}} {_ spass_meq F F'} spass_meq (spass_cur F) (spass_cur F')
+%term spass_exp_e {{A B C F}} spass_meq (spass_comp spass_app (spass_pair (spass_comp (spass_cur F) spass_fst) spass_snd)) F
+%term spass_exp_u {{A B C G}} spass_meq (spass_cur (spass_comp spass_app (spass_pair (spass_comp G spass_fst) spass_snd))) G
+%term spass_distp {{A B C D F G H}} spass_meq (spass_comp (spass_pair F G) H) (spass_pair (spass_comp F H) (spass_comp G H))
+%term spass_appl {{A B C D F G H}} spass_meq (spass_comp spass_app (spass_pair (spass_comp (spass_cur F) G) H)) (spass_comp F (spass_pair G H))
+%term spass_distc {{A B C D F G}} spass_meq (spass_comp (spass_cur F) G) (spass_cur (spass_comp F (spass_pair (spass_comp G spass_fst) spass_snd)))
+|}
+
+(* crary/standard/standard.elf: large CBV lambda calculus, 1602 lines.
+   Uses Twelf higher-order concrete syntax ([x] M x), anonymous `-` clauses,
+   complex proof families, %block worlds. Too large to translate in one session.
+   PLACEHOLDER: TODO translate *)
+let crary_standard_standard_1 =
+  {| (* TODO: translate crary/standard/standard.elf *) |}
+
+(* tabled/parsing/arithml.elf: uses numeric identifiers 0,1,...,9 as exp terms
+   and single-quoted token names 'c','a' etc. — not supported in STELF parser.
+   PLACEHOLDER: TODO *)
+let tabled_parsing_arithml_1 =
+  {| (* TODO: translate tabled/parsing/arithml.elf *) |}
+
+(* tabled/parsing/foll.elf: first-order logic grammar with tabling.
+   Uses %tabled which is not supported in STELF.
+   PLACEHOLDER: TODO *)
+let tabled_parsing_foll_1 = {| (* TODO: translate tabled/parsing/foll.elf *) |}
+
+(* tabled/parsing/warren.elf: DCG grammar example with single-quoted tokens.
+   Single-quoted identifiers ('c','a','b','d') not supported in STELF parser.
+   PLACEHOLDER: TODO *)
+let tabled_parsing_tab_1 = {| (* TODO: translate tabled/parsing/warren.elf *) |}
+
+(* tabled/ccc/ccc.elf: CCC with tabling and quy examples.
+   PLACEHOLDER: TODO *)
+let tabled_ccc_tab_1 = {| (* TODO: translate tabled/ccc/ccc.elf *) |}

@@ -22,26 +22,31 @@ let test ?(skip = false) ?(failure = false) (name : string) (f : form)
   let () = Fmt_tty.setup_std_outputs () in
   let () =
     Display.register (fun m ->
-        let _ = (Display.fmt Fmt.stderr m.msg ) in 
+        let _ = Display.fmt Fmt.stderr m.msg in
         Lwt.return ())
-
   in
   Alcotest.test_case name `Slow (fun () ->
       let bad () =
-        Display.warning (
-          Display.Form.(concat [
-            style Style.bold @@ style Style.Fore.red @@ string "Test input>>";
-            nl () ;
-            (string input);
-            nl () ;
-            style Style.bold @@ style Style.Fore.red @@ string "<<Test input";
-            nl ();
-          ])
-        )      in
+        Display.warning
+          Display.Form.(
+            concat
+              [
+                style Style.bold @@ style Style.Fore.red
+                @@ string "Test input>>";
+                nl ();
+                string input;
+                nl ();
+                style Style.bold @@ style Style.Fore.red
+                @@ string "<<Test input";
+                nl ();
+              ])
+      in
       if skip then Alcotest.skip ()
       else
         match test_value f input with
-        | None when failure -> bad () ; Alcotest.fail "Expected failure, but test passed"
+        | None when failure ->
+            bad ();
+            Alcotest.fail "Expected failure, but test passed"
         | Some e when not failure ->
             bad ();
             Alcotest.failf

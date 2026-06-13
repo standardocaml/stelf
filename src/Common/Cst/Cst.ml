@@ -2,7 +2,7 @@ open Basis
 
 module type CST = CST.CST
 
-module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
+module Make_Cst (Paths : Paths.PATHS.PATHS) = struct
   module Paths = Paths
 
   (* Location type for source tracking - use simple int-based representation *)
@@ -40,6 +40,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     | Evar_ of string * loc
     | Fvar_ of string * loc
     | Typ_ of loc
+    | MacroParam_ of loc * int option * int
   [@@deriving show { with_path = false }, eq]
 
   (* Constant/block declarations *)
@@ -128,9 +129,6 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     | UnionCmd_ of string * string list
     | WorldsCmd_ of string list * term
     | DeterministicCmd_ of string list
-    | ModuleCmd_ of string * string list * cmd list
-    | UseCmd_ of string * string * string list
-    | OpenCmd_ of string * string list
     | EvalCmd_ of cmd list
     | PrecCmd_ of fixity * int * string list
     | SolveCmd_ of solve
@@ -145,6 +143,13 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     | CoversCmd_ of modeDec
     | NameCmd_ of string
     | ReducesCmd_ of string * term list
+          | Macro_ of int * string * cmd (** Defines a macro, taking its location, number of params, name, and the body *)
+      | Seq_ of item list (** A sequence of commands, for use withthe module system*)
+      | Require_ of string list (** Ensure that the given path is loaded *)
+      | Open_ of string list (** Open a scope into the scope *)
+      | Scope_ of string * cmd (** Enter into a new scope *)
+      | Use_ of string list * term list (** Apply a macro *)
+    and item = Outer of string | Cmd of cmd
   [@@deriving show { with_path = false }, eq]
 
   (* Term constructor module *)
@@ -324,13 +329,13 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
     let union ?fc:(_ = ghost) id ids = UnionCmd_ (id, ids)
     let worlds ?fc:(_ = ghost) ids tm = WorldsCmd_ (ids, tm)
     let deterministic ?fc:(_ = ghost) ids = DeterministicCmd_ ids
-    let module_cmd ?fc:(_ = ghost) id params cmds = ModuleCmd_ (id, params, cmds)
-    let use ?fc:(_ = ghost) id1 id2 ps = UseCmd_ (id1, id2, ps)
-    let open_cmd ?fc:(_ = ghost) id ids = OpenCmd_ (id, ids)
+    
+   
     let eval ?fc:(_ = ghost) cmds = EvalCmd_ cmds
     let prec ?fc:(_ = ghost) fix n ids = PrecCmd_ (fix, n, ids)
     let solve ?fc:(_ = ghost) s = SolveCmd_ s
     let stop ?fc:(_ = ghost) () = StopCmd_
+    
 
     module Repl = struct
       let quit ?fc:(_ = ghost) () = QuitCmd_
@@ -515,6 +520,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | BackArrow of Loc.t * t * t
         | Foreign of Loc.t * t
         | Internal of int
+        | MacroParam of Loc.t * int option * int
 
       val view : t -> u
       val review : u -> t
@@ -540,7 +546,7 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | BackArrow of Loc.t * t * t
         | Foreign of Loc.t * t
         | Internal of int
-
+        | MacroParam of Loc.t * int option * int
       let view (x : t) : u =
         let rec collect_pis = function
           | Pi_ (_, d, body) ->
@@ -1002,9 +1008,6 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | Union of Loc.t * string * string list
         | Worlds of Loc.t * string list * Term.t
         | Deterministic of Loc.t * string list
-        | ModuleCmd of Loc.t * string * string list * t list
-        | Use of Loc.t * string * string * string list
-        | OpenCmd of Loc.t * string * string list
         | Eval of Loc.t * t list
         | Prec of Loc.t * Fixity.t * int * string list
         | Solve of Loc.t * Solve.t
@@ -1019,7 +1022,13 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | Covers of Loc.t * Mode.Dec.t
         | Name of Loc.t * string
         | Reduces of Loc.t * string * Term.t list
-
+              | Macro of Loc.t * int * string * t (** Defines a macro, taking its location, number of params, name, and the body *)
+      | Seq of Loc.t * item list (** A sequence of commands, for use withthe module system*)
+      | Require of Loc.t * string list (** Ensure that the given path is loaded *)
+      | Open of Loc.t * string list (** Open a scope into the scope *)
+      | Scope of Loc.t * string * t (** Enter into a new scope *)
+      | Use of Loc.t * string list * Term.t list (** Apply a macro *)
+    and item = Outer of string | Cmd of t
       let view (x : t) : u =
         match x with
         | QueryCmd_ (n, b, d, q) -> Query (ghost, n, b, d, q)
@@ -1039,9 +1048,6 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | UnionCmd_ (id, ids) -> Union (ghost, id, ids)
         | WorldsCmd_ (ids, tm) -> Worlds (ghost, ids, tm)
         | DeterministicCmd_ ids -> Deterministic (ghost, ids)
-        | ModuleCmd_ (id, params, cmds) -> ModuleCmd (ghost, id, params, cmds)
-        | UseCmd_ (id1, id2, ps) -> Use (ghost, id1, id2, ps)
-        | OpenCmd_ (id, ids) -> OpenCmd (ghost, id, ids)
         | EvalCmd_ cmds -> Eval (ghost, cmds)
         | PrecCmd_ (fix, n, ids) -> Prec (ghost, fix, n, ids)
         | SolveCmd_ s -> Solve (ghost, s)
@@ -1076,9 +1082,6 @@ module Make_Cst (Paths : Paths.Paths_intf.PATHS) = struct
         | Union (loc, id, ids) -> UnionCmd_ (id, ids)
         | Worlds (loc, ids, tm) -> WorldsCmd_ (ids, tm)
         | Deterministic (loc, ids) -> DeterministicCmd_ ids
-        | ModuleCmd (loc, id, params, cmds) -> ModuleCmd_ (id, params, cmds)
-        | Use (loc, id1, id2, ps) -> UseCmd_ (id1, id2, ps)
-        | OpenCmd (loc, id, ids) -> OpenCmd_ (id, ids)
         | Eval (loc, cmds) -> EvalCmd_ cmds
         | Prec (loc, fix, n, ids) -> PrecCmd_ (fix, n, ids)
         | Solve (loc, s) -> SolveCmd_ s

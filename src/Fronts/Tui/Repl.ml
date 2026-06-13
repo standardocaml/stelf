@@ -7,10 +7,14 @@ module Repl (M : REPL.S) : REPL.REPL = struct
       ()
 
   let msgs : Display.Info.t list ref = ref []
-  let add_msg (m : Display.Info.t) = let r = if Display.Info.to_int M.verbosity >= Display.Info.to_int m.level then
-  m :: !msgs
-  else !msgs in
-  msgs := r 
+
+  let add_msg (m : Display.Info.t) =
+    let r =
+      if Display.Info.to_int M.verbosity >= Display.Info.to_int m.level then
+        m :: !msgs
+      else !msgs
+    in
+    msgs := r
 
   let flush_msgs () : Display.Info.t array Lwt.t =
     let pending = Array.of_list (List.rev !msgs) in
@@ -134,7 +138,7 @@ module Repl (M : REPL.S) : REPL.REPL = struct
     in
     Lwt.catch
       (fun () ->
-        let* r0 = read_line !term' "Π∀λ> " in
+        let* r0 = read_line !term' "λΠ> " in
         let* continue =
           try f r0 with
           | Sys.Break -> Lwt.return Stop
@@ -162,5 +166,5 @@ module Repl (M : REPL.S) : REPL.REPL = struct
                 @@ Printexc.to_string exn))
               (seq_l (flush ()) (read f)))
 
-  let show fmt = () (* Format.pp_print_string fmt "Π∀λ> "*)
+  let show fmt = () (* Format.pp_print_string fmt "λΠ> "*)
 end

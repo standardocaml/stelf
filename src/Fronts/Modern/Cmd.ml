@@ -18,18 +18,41 @@ module Make_Cmd (Modern : MODERN.MODERN) = struct
   (* Defer a thunk-parser to prevent infinite recursion at construction time.
      Used for %module and %eval which recursively embed cmd lists. *)
   let defer p = return () >>= fun () -> p ()
-  let parse_order () : Cst.View.Thm.Order.t t = fix (fun self -> begin choice ~failure_msg: "order" [
-  (let+ ids = Modern.parse_id_list () in Cst.View.(Thm.Order.(review @@ Varg (Cst.View.Loc.(review Ghost), ids))));
-  inside "[" "]" (commit *> let+ orders = many1 (self <* commit) in Cst.View.(Thm.Order.(review @@ Simul (Cst.View.Loc.(review Ghost), orders))));
-  inside "{" "}" (commit *> let+ orders = many1 (self <* commit) in Cst.View.(Thm.Order.(review @@ Lex (Cst.View.Loc.(review Ghost), orders))))
-  ] end)
-  let order_list () : Cst.View.Thm.Order.t list t = inside "(" ")" (many1 (parse_order ())) <|> (let+ x = parse_order () in [x])
+
+  let parse_order () : Cst.View.Thm.Order.t t =
+    fix (fun self ->
+        begin
+          choice ~failure_msg:"order"
+            [
+              (let+ ids = Modern.parse_id_list () in
+               Cst.View.(
+                 Thm.Order.(review @@ Varg (Cst.View.Loc.(review Ghost), ids))));
+              inside "[" "]"
+                (commit
+                *> let+ orders = many1 (self <* commit) in
+                   Cst.View.(
+                     Thm.Order.(
+                       review @@ Simul (Cst.View.Loc.(review Ghost), orders))));
+              inside "{" "}"
+                (commit
+                *> let+ orders = many1 (self <* commit) in
+                   Cst.View.(
+                     Thm.Order.(
+                       review @@ Lex (Cst.View.Loc.(review Ghost), orders))));
+            ]
+        end)
+
+  let order_list () : Cst.View.Thm.Order.t list t =
+    inside "(" ")" (many1 (parse_order ()))
+    <|> let+ x = parse_order () in
+        [ x ]
+
   let rec parse_cmd_list () : Cst.cmd list t =
     keyword "{" *> commit *> skip_outer *> many (defer parse1 <* skip_outer)
-    <* keyword "}" *> commit 
-  
-  and parse1 () : Cst.cmd t =   
-    choice ~failure_msg:"command"  
+    <* keyword "}" *> commit
+
+  and parse1 () : Cst.cmd t =
+    choice ~failure_msg:"command"
       [
         begin
           whitespace *> (keyword "." *> commit *> return (Cst.Cmd.stop ()))
@@ -65,13 +88,11 @@ module Make_Cmd (Modern : MODERN.MODERN) = struct
           <?> "unique"
         end;
         begin
-          (keyword "module" *> commit
+          keyword "scope" *> commit
           *>
           let* id = Modern.parse_var () in
-          let* params = Modern.parse_params () in
-          let+ cmds = parse_cmd_list () in
-          Cst.Cmd.module_cmd id params cmds)
-          <?> "module"
+          let+ cmds = parse1 () in
+          Cst.View.Cmd.(review @@ Scope (Cst.View.Loc.(review Ghost), id, cmds))
         end;
         begin
           (keyword "mode" *> commit
@@ -174,18 +195,17 @@ module Make_Cmd (Modern : MODERN.MODERN) = struct
         begin
           (keyword "use" *> commit
           *>
-          let* id1 = Modern.parse_var () in
-          let* id2 = Modern.parse_var () in
-          let+ iparams = inside "(" ")" (many (Modern.parse_var ())) in
-          Cst.Cmd.use id1 id2 iparams)
+          let* id1 = Modern.parse_id_list () in
+          let+ iparams = inside "(" ")" (many (Modern.parse_expr ())) in
+          Cst.View.Cmd.(
+            review @@ Use (Cst.View.Loc.(review Ghost), id1, iparams)))
           <?> "use"
         end;
         begin
           (keyword "open" *> commit
           *>
-          let* id = Modern.parse_var () in
-          let+ ids = Modern.parse_id_list () in
-          Cst.Cmd.open_cmd id ids)
+          let+ id = Modern.parse_id_list () in
+          Cst.View.Cmd.(review @@ Open (Cst.View.Loc.(review Ghost), id)))
           <?> "open"
         end;
         begin
@@ -250,7 +270,8 @@ module Make_Cmd (Modern : MODERN.MODERN) = struct
           *>
           let* order = order_list () in
           let+ body = many1 (Modern.parse_expr1 ()) in
-          Cst.View.Cmd.(review (Total (Cst.View.Loc.(review Ghost), order, body))))
+          Cst.View.Cmd.(
+            review (Total (Cst.View.Loc.(review Ghost), order, body))))
           <?> "total"
         end;
         begin
@@ -258,8 +279,9 @@ module Make_Cmd (Modern : MODERN.MODERN) = struct
           *>
           let* order = order_list () in
           let+ body = many1 (Modern.parse_expr1 ()) in
-          Cst.View.Cmd.(review (Terminates (Cst.View.Loc.(review Ghost), order, body))))
-          <?> "terminates" 
+          Cst.View.Cmd.(
+            review (Terminates (Cst.View.Loc.(review Ghost), order, body))))
+          <?> "terminates"
         end;
         begin
           (keyword "covers" *> commit
@@ -275,14 +297,15 @@ module Make_Cmd (Modern : MODERN.MODERN) = struct
           Cst.Cmd.name id)
           <?> "name"
         end;
-        begin 
-          (keyword "reduces" *> commit 
+        begin
+          (keyword "reduces" *> commit
           *>
           let* rel = Modern.parse_reduces_rel () in
           let+ body = many1 (Modern.parse_expr1 ()) in
-          Cst.View.Cmd.(review (Reduces (Cst.View.Loc.(review Ghost), rel, body))))
+          Cst.View.Cmd.(
+            review (Reduces (Cst.View.Loc.(review Ghost), rel, body))))
           <?> "reduces"
-        end
+        end;
       ]
 
   let parse () : Cst.cmd list t = skip_outer *> many (parse1 () <* skip_outer)

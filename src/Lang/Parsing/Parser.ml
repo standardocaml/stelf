@@ -24,11 +24,12 @@ module Parser : PARSER = struct
     let boundary =
       peek_char >>= function
       | None -> return ()
-      | Some (' ' | '\t' | '\n'
-             | '(' | ')' | '{' | '}' | '[' | ']' | '%') -> return ()
+      | Some (' ' | '\t' | '\n' | '(' | ')' | '{' | '}' | '[' | ']' | '%') ->
+          return ()
       | _ -> fail ("keyword " ^ s' ^ " not at word boundary")
     in
     string s' *> boundary *> whitespace
+
   let keywords ss = choice (List.map keyword ss)
 
   let ident =
@@ -36,6 +37,7 @@ module Parser : PARSER = struct
       | ' ' | '\t' | '\n' | '(' | ')' | '{' | '}' | '[' | ']' | '%' -> true
       | _ -> false)
     <* whitespace
+
   let ident1 =
     take_while1 (function
       | ' ' | '\t' | '\n' | '(' | ')' | '{' | '}' | '[' | ']' | '%' -> false
@@ -66,7 +68,6 @@ module Parser : PARSER = struct
 
   let given b p = if b then p else fail "failed test"
   let inside x y p = token x *> p <* token y
-
   let extend _p _q = assert false
   let forget p = p *> return ()
 end

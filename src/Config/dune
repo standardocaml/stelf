@@ -1,4 +1,4 @@
 (library
  (name config)
  (public_name stelf.config)
- (libraries ))
+ (libraries))

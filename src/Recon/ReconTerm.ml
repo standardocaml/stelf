@@ -14,7 +14,7 @@ module Make_ReconTerm
       module Print : PRINT
       module StringTree : TABLE with type key = string
       module Msg : MSG
-      module CsManager : Solvers.CsManager_intf.CS_MANAGER
+      module CsManager : Solvers.CSMANAGER.CS_MANAGER
     end) =
 struct
   module M = M
@@ -877,17 +877,12 @@ struct
           F.hVbox [ F.string "Inferred:"; F.space; formatExp (g_, u_) ]
         in
         let fstr = F.makestring_fmt amb in
-        Display.debug Display.Form.(
-          nl () ++
-          string "Ambiguous reconstruction of term: " ++
-          string fstr ++
-
-          nl ()
-        );
-        error
-          ( r,
-            (("Ambiguous reconstruction\n" ^ fstr) ^ "\n") ^ msg
-          ))
+        Display.debug
+          Display.Form.(
+            nl ()
+            ++ string "Ambiguous reconstruction of term: "
+            ++ string fstr ++ nl ());
+        error (r, (("Ambiguous reconstruction\n" ^ fstr) ^ "\n") ^ msg))
 
   let rec unifyIdem x =
     let _ = Unify.reset () in
@@ -1087,23 +1082,23 @@ struct
         let s = IntSyn.Shift (IntSyn.ctxLength g_) in
         (tm, Elim (elimSub (evarElim x_, s)), eClo_ (v_, s))
     | g_, (Fvar_ (name, r) as tm) ->
-        Display.debug Display.Form.(
-          nl () ++
-          string "Inferring exact type of FVar" ++
-          string name ++
-          nl ()
-        ) ;
+        Display.debug
+          Display.Form.(
+            nl ()
+            ++ string "Inferring exact type of FVar"
+            ++ string name ++ nl ());
         let v_ =
           try getFVarType (name, false)
           with Apx.Ambiguous ->
             let v_ = getFVarType (name, true) in
             begin
-              Display.debug Display.Form.(
-                string "Type of FVar" ++
-                string name ++
-                string " is ambiguous, but continuing with one of the possibilities" ++
-                nl ()
-              ) ;
+              Display.debug
+                Display.Form.(
+                  string "Type of FVar" ++ string name
+                  ++ string
+                       " is ambiguous, but continuing with one of the \
+                        possibilities"
+                  ++ nl ());
               delayAmbiguous (g_, v_, r, "Free variable has ambiguous type");
               v_
             end
@@ -1136,14 +1131,13 @@ struct
     | g_, App_ (tm1, tm2) ->
         let tm1', b1_, v1_ = inferExact (g_, tm1) in
         let e1_ = toElim b1_ in
-        Display.(debug Form.(
-          nl () ++
-          string "Inferring exact application of" ++ 
-          shown show_term tm1 ++
-          string "to" ++
-          shown show_term tm2 ++
-          nl ()
-        )) ;
+        Display.(
+          debug
+            Form.(
+              nl ()
+              ++ string "Inferring exact application of"
+              ++ shown show_term tm1 ++ string "to" ++ shown show_term tm2
+              ++ nl ()));
         let t, s = Whnf.whnfExpandDef (v1_, IntSyn.id) in
         begin match t with
         | IntSyn.Pi ((IntSyn.Dec (_, va_), _), vr_) -> begin
@@ -1196,10 +1190,12 @@ struct
           with Ambiguous ->
             let v'_ = Apx.apxToClass (g_, v_, l_, true) in
             begin
-              Display.debug Display.Form.(
-                string "Classifier of omitted term is ambiguous, but continuing with one of the possibilities" ++
-                nl ()
-              ) ;
+              Display.debug
+                Display.Form.(
+                  string
+                    "Classifier of omitted term is ambiguous, but continuing \
+                     with one of the possibilities"
+                  ++ nl ());
               delayAmbiguous
                 ( g_,
                   v'_,
@@ -1218,10 +1214,12 @@ struct
           with Ambiguous ->
             let u'_ = Apx.apxToExact (g_, u_, (v'_, IntSyn.id), true) in
             begin
-              Display.debug Display.Form.(
-                string "Exact term of omitted term is ambiguous, but continuing with one of the possibilities" ++
-                nl ()
-              ) ;
+              Display.debug
+                Display.Form.(
+                  string
+                    "Exact term of omitted term is ambiguous, but continuing \
+                     with one of the possibilities"
+                  ++ nl ());
               delayAmbiguous
                 ( g_,
                   u'_,
@@ -1316,13 +1314,10 @@ struct
         ((tm', b'_, v'_), unifiableIdem (g_, vhs_, (v'_, IntSyn.id)))
 
   and checkExact (g_, tm, vs_, location_msg) =
-    Display.(debug Form.(
-      nl () ++
-      string "Checking exact term" ++
-      shown show_term tm ++
-      
-      nl ()
-    )) ;
+    Display.(
+      debug
+        Form.(
+          nl () ++ string "Checking exact term" ++ shown show_term tm ++ nl ()));
     begin if not !trace then
       let (tm', b'_, v'_), ok = checkExact1 (g_, tm, vs_) in
       begin if ok then (tm', b'_)

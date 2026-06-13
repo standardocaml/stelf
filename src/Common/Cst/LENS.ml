@@ -53,7 +53,7 @@ end
 module type VIEW = sig
   exception Lacking
 
-  module Paths : Paths.Paths_intf.PATHS
+  module Paths : Paths.PATHS.PATHS
   (** Module of paths and regions, which we allow to be shared *)
 
   (** Abstract syntax tree type. (for internals) *)
@@ -116,6 +116,7 @@ module type VIEW = sig
       | BackArrow of Loc.t * t * t
       | Foreign of Loc.t * t
       | Internal of int
+      | MacroParam of Loc.t * int option * int
 
     include LENS with type t := t and type u := u
   end
@@ -407,9 +408,6 @@ module type VIEW = sig
       | Union of Loc.t * string * string list
       | Worlds of Loc.t * string list * Term.t
       | Deterministic of Loc.t * string list
-      | ModuleCmd of Loc.t * string * string list * t list
-      | Use of Loc.t * string * string * string list
-      | OpenCmd of Loc.t * string * string list
       | Eval of Loc.t * t list
       | Prec of Loc.t * Fixity.t * int * string list
       | Solve of Loc.t * Solve.t
@@ -424,6 +422,18 @@ module type VIEW = sig
       | Covers of Loc.t * Mode.Dec.t
       | Name of Loc.t * string
       | Reduces of Loc.t * string * Term.t list
+      | Macro of Loc.t * int * string * t
+          (** Defines a macro, taking its location, number of params, name, and
+              the body *)
+      | Seq of Loc.t * item list
+          (** A sequence of commands, for use withthe module system*)
+      | Require of Loc.t * string list
+          (** Ensure that the given path is loaded *)
+      | Open of Loc.t * string list  (** Open a scope into the scope *)
+      | Scope of Loc.t * string * t  (** Enter into a new scope *)
+      | Use of Loc.t * string list * Term.t list  (** Apply a macro *)
+
+    and item = Outer of string | Cmd of t
 
     include LENS with type t := t and type u := u
   end

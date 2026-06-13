@@ -4,7 +4,7 @@ open Intsyn_
 
 (* Weak Head-Normal Forms *)
 (* Authors: Frank Pfenning, Carsten Schuermann *)
-include Whnf_intf
+include WHNF
 (* signature WHNF *)
 
 (* # 1 "src/lambda/Whnf.fun.ml" *)

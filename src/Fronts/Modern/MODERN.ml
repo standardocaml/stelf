@@ -1,7 +1,7 @@
 module type MODERN = sig
-  module Paths : Paths.Paths_intf.PATHS
+  module Paths : Paths.PATHS.PATHS
   module Cst : Cst.CST
-  module Names : Names.Names_intf.NAMES
+  module Names : Names.NAMES.NAMES
   module N := Names
   module FX := N.Fixity
   module Parser : Parsing.PARSER.PARSER

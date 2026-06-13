@@ -6,7 +6,7 @@ open Intsyn_
 
 (* Convertibility Modulo Beta and Eta *)
 (* Author: Frank Pfenning, Carsten Schuermann *)
-include Conv_intf
+include CONV
 (* signature CONV *)
 
 (* # 1 "src/lambda/Conv.fun.ml" *)
