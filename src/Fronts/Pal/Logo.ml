@@ -1637,7 +1637,7 @@ let[@inline] colored (r : int) (g : int) (b : int) : form =
   if Stdlib.( < ) (r + g + b) 10 then string " "
   else
     Style.Fore.rgb (amplify r) (amplify g) (amplify b)
-    @@ string @@ Stdlib.String.of_char
+    @@ string @@ Stdlib.String.make 1
     @@ fill_chars_nth (light r g b)
 
 (* [Display.nl] is Format.pp_print_newline, which RESETS the pretty-printer —

@@ -2,30 +2,21 @@ TARGET         ?= stelf
 DUNE_LOCK      ?= ./dune.lock/
 OPAM_FILE      ?= ./stelf.opam
 DUNE_BUILD_DIR ?= _build/default
-# Must match the (dune (>= ...)) constraint in $(DUNE_PROJECT). If this is
-# lower, phase 2 installs a dune that cannot build the project at all and the
-# failure surfaces much later, as a lang-version error from dune itself.
-DUNE_MIN_VERSION ?= 3.24
 DUNE_PROJECT   ?= ./dune-project
 SWITCH         ?= .
 OPAM           ?= opam
 OPAM_EXEC      := $(OPAM) exec --switch $(SWITCH) --
 DUNE           ?= dune
+DOCKER         ?= docker
 
-# Standard GNU-ish install knobs, so packagers can stage into a build root:
-#   make install PREFIX=/usr
-#   make install DESTDIR=/tmp/stage PREFIX=/usr
-PREFIX         ?= $(HOME)/.local
-DESTDIR        ?=
-# Where `dune build @install` stages the package: bin/, lib/ and doc/, with the
-# executable already under its public name.
-INSTALL_TREE   ?= _build/install/default
+# Where `make install` puts the executable -- the only thing it installs.
+BINDIR         ?= /usr/bin
 
 SWITCH_SENTINEL := _opam/.opam-switch/switch-config
 DUNE_SENTINEL   := _opam/lib/dune/META
 DEPS_SENTINEL   := .deps-installed
 
-.PHONY: all build test install uninstall docs clean check lock js
+.PHONY: all build test install uninstall docs clean check lock js ci
 
 all: build
 
@@ -35,10 +26,11 @@ $(SWITCH_SENTINEL):
 	@$(OPAM) switch create $(SWITCH) --empty --yes 2>/dev/null || true
 	@test -f $@ || (echo "ERROR: opam switch creation failed"; exit 1)
 
-# Phase 2: install OCaml compiler + dune >= $(DUNE_MIN_VERSION) into the switch
+OPAM_DEPS = $(OPAM) install --switch $(SWITCH) --deps-only --with-test --with-doc --yes . ./basis
+
 $(DUNE_SENTINEL): $(SWITCH_SENTINEL)
-	@$(OPAM) install --switch $(SWITCH) --yes \
-	    "ocaml>=5.0.0" "dune>=$(DUNE_MIN_VERSION)"
+	@git submodule update --init --recursive
+	@$(OPAM_DEPS)
 
 # Phase 3: ensure submodules are present, then generate stelf.opam from dune-project
 # dune.lock/ is committed — re-locking is done explicitly via `make lock`
@@ -46,41 +38,37 @@ $(OPAM_FILE): $(DUNE_PROJECT) $(DUNE_SENTINEL)
 	@git submodule update --init --recursive
 	$(OPAM_EXEC) $(DUNE) build $(OPAM_FILE)
 
-# Phase 4: install all package dependencies into the local switch
+# Phase 4: install whatever phase 2 did not. On a fresh switch that is nothing,
+# and this is a quick no-op solve. It matters when a dune-project edit adds a
+# dependency (phase 3 carries it into stelf.opam), and when phase 2 was cut
+# short after dune itself went in -- dune's META is all its sentinel checks.
 $(DEPS_SENTINEL): $(OPAM_FILE)
-	@$(OPAM) install --switch $(SWITCH) . --deps-only --yes
+	@$(OPAM_DEPS)
 	@touch $@
 
-# NOT `dune install`: this project uses Dune package management (dune.lock/ is
-# committed), and dune refuses `install`/`uninstall` in that mode --
-# "dune install is not supported with Dune package management". What it does
-# still produce is a complete, correctly-named install tree under
-# $(INSTALL_TREE), so copy that.
+# Only the executable, straight into $(BINDIR): no lib/, no doc/, and no
+# `dune build @install` tree to copy out of. `build` has already left a regular
+# file at ./$(TARGET), so that is what gets copied.
 #
-# This replaces a bare `cp ./stelf ~/.local/bin/`, which ignored PREFIX and
-# DESTDIR, installed only the executable, failed if the target directory did
-# not exist, and had no inverse.
-# -L, not plain -a: dune stages the executable as a RELATIVE symlink
-# (bin/stelf -> ../../../default/bin/main.exe). Preserving the link would
-# install a dangling pointer that resolves to nothing outside _build, so the
-# copy must dereference.
+# mkdir -p: on a fresh account ~/.local/bin need not exist, and cp will not
+# create it.
+#
+# -f: dune's artifacts are read-only, and ./$(TARGET) and the installed copy
+# inherit that 555. Without -f the FIRST install succeeds and every one after it
+# dies with "cp: cannot create regular file ...: Permission denied", because cp
+# cannot reopen what the previous install left. Same reason `build` below
+# copies ./$(TARGET) with -f.
 install: build
-	@$(OPAM_EXEC) $(DUNE) build @install
-	@mkdir -p "$(DESTDIR)$(PREFIX)"
-	@sudo cp -RL $(INSTALL_TREE)/. "$(DESTDIR)$(PREFIX)/"
-	@echo "Installed $(TARGET) to $(DESTDIR)$(PREFIX)/bin/$(TARGET)"
+	@sudo cp -f ./$(TARGET) "$(BINDIR)/$(TARGET)"
+	@echo "Installed $(TARGET) to $(BINDIR)/$(TARGET)"
 
-# Removes exactly what `install` places. Kept in sync by hand: the sections
-# below are the ones $(INSTALL_TREE) actually contains.
+# Removes exactly what `install` places.
 uninstall:
-	@rm -f  "$(DESTDIR)$(PREFIX)/bin/$(TARGET)"
-	@rm -rf "$(DESTDIR)$(PREFIX)/lib/stelf" "$(DESTDIR)$(PREFIX)/lib/basis"
-	@rm -rf "$(DESTDIR)$(PREFIX)/doc/stelf" "$(DESTDIR)$(PREFIX)/doc/basis"
-	@echo "Removed $(TARGET) from $(DESTDIR)$(PREFIX)"
+	@rm -f "$(BINDIR)/$(TARGET)"
+	@echo "Removed $(TARGET) from $(BINDIR)"
 
-# Deliberately NOT dependent on `lock`: dune.lock/ is committed, so a normal
-# build must work offline and must not silently move dependency versions.
-# Re-locking is explicit, via `make lock`.
+# Deliberately NOT dependent on `lock`: a normal build must not silently move
+# dependency versions. Re-locking is explicit, via `make lock`.
 build: $(DEPS_SENTINEL)
 	$(OPAM_EXEC) $(DUNE) build
 	@echo "Copying built executable to $(TARGET)"
@@ -103,3 +91,14 @@ lock: $(DUNE_SENTINEL) $(DUNE_PROJECT)
 clean:
 	$(OPAM_EXEC) $(DUNE) clean
 	@rm -f ./$(TARGET) $(DEPS_SENTINEL)
+CI_DOCKERFILES := $(sort $(wildcard tools/ci/*.Dockerfile))
+CI_TARGETS     := $(patsubst tools/ci/%.Dockerfile,ci-%,$(CI_DOCKERFILES))
+.PHONY: $(CI_TARGETS)
+
+ci: $(CI_TARGETS)
+
+$(CI_TARGETS): ci-%: tools/ci/%.Dockerfile
+	$(DOCKER) build --output type=cacheonly -f $< .
+
+.NOTPARALLEL: ci
+
