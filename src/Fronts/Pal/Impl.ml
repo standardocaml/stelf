@@ -28,10 +28,15 @@ module Impl () = struct
 
   (* Capture the concrete Paths instance before the alias shadows Paths.   *)
   module PathsConcrete = Paths.Paths_.Paths
+  module Origins = Paths.Origins.Origins
 
   (* Ascribe Paths to the bare PATHS signature so it matches what         *)
-  (* Make_Cst and Make_Recon's S.S both expect.                           *)
-  module Paths : Paths.PATHS.PATHS = Paths.Paths_
+  (* Make_Cst and Make_Recon's S.S both expect. occConDec stays visible  *)
+  (* so recon's occurrence trees can be recorded in Origins, which is how *)
+  (* the %total / %terminates checkers locate their errors.              *)
+  module Paths :
+    Paths.PATHS.PATHS with type occConDec = PathsConcrete.occConDec =
+    PathsConcrete
 
   (* Create our own Cst from the same ascribed Paths so that              *)
   (* Cst.Paths = Paths and Recon.Cst.Paths = Paths, giving consistent     *)
@@ -425,13 +430,19 @@ module Impl () = struct
       in
       let families = List.map resolve_family tms in
       List.app (fun a -> WorldSyn.install a w) families;
-      List.app (fun a -> WorldSyn.worldcheck w a) families
+      List.app (fun a -> WorldSyn.worldcheck w a) families;
+      if !auto_freeze then
+        ignore (Subordinate.Subordinate_.Subordinate.freeze families)
 
     let install_condec_cmd ?(inline = false)
         ?(scope_installs : Intsyn.IntSyn.cid list ref option = None) ns condec
         loc : Intsyn.IntSyn.cid option =
+      let (Paths.Loc (filename, _)) = loc in
       match Recon.ReconConDec.condecToConDec condec loc inline with
-      | Some cd, _ -> Some (install_condec ~scope_installs ns cd)
+      | Some cd, oc ->
+          let cid = install_condec ~scope_installs ns cd in
+          Origins.installOrigin cid (filename, oc);
+          Some cid
       | None, _ -> None
 
     let name_to_cid ns label id =
@@ -691,11 +702,15 @@ module Impl () = struct
           let la = ThmInst.installTotal t rrs in
           List.app ThmTotal.install la;
           List.app ThmTotal.checkFam la;
+          if !auto_freeze then
+            ignore (Subordinate.Subordinate_.Subordinate.freeze la);
           []
       | Cst.TerminatesCmd_ (intros, body) ->
           let t, rrs = build_thm_tdecl "%terminates" intros body in
           let la = ThmInst.installTerminates t rrs in
-          ignore la;
+          List.app Terminate.Terminate_.Reduces.checkFam la;
+          if !auto_freeze then
+            ignore (Subordinate.Subordinate_.Subordinate.freeze la);
           []
       | Cst.CoversCmd_ md ->
           let (cid__, ms__), _r = Recon.ReconMode.modeToMode md in
@@ -918,8 +933,44 @@ module Impl () = struct
       match Printexc.get_backtrace () with "" -> base | bt -> base ^ "\n" ^ bt
     else base
 
-  let load_string ?(path = None) ?(ns_init = None) (str : string) :
+  (* Fill the Paths line table for [str] so regions print as line.column,
+     following the legacy lexer's convention (Lexer.ml): [newLine] gets the
+     start offset of every line, including line 0, but not the EOF position. *)
+  let fill_lines (str : string) =
+    let len = Stdlib.String.length str in
+    PathsConcrete.resetLines ();
+    if len > 0 then PathsConcrete.newLine 0;
+    Stdlib.String.iteri
+      (fun i c -> if c = '\n' && i + 1 < len then PathsConcrete.newLine (i + 1))
+      str
+
+  (* The line table is global and a %require loads another file part way
+     through this one, so when a load finishes, put back the table of the
+     file that was being loaded around it. *)
+  let current_source : string option ref = ref None
+
+  let with_lines_info filename (str : string) (f : unit -> 'a) : 'a =
+    let outer = !current_source in
+    current_source := Some str;
+    fill_lines str;
+    Origins.installLinesInfo filename (PathsConcrete.getLinesInfo ());
+    Fun.protect f ~finally:(fun () ->
+        current_source := outer;
+        Stdlib.Option.iter fill_lines outer)
+
+  (* Prefix [msg] with the file it came from, unless the checker already
+     located it. *)
+  let in_file path msg =
+    let file = source_to_string path in
+    if Stdlib.String.starts_with ~prefix:(file ^ ":") msg then msg
+    else file ^ " Error: \n" ^ msg
+
+  let rec load_string ?(path = None) ?(ns_init = None) (str : string) :
       Reply.outcome =
+    with_lines_info (source_to_string path) str (fun () ->
+        load_string' ~path ~ns_init str)
+
+  and load_string' ~path ~ns_init (str : string) : Reply.outcome =
     dbg ("load_string: " ^ source_to_string path);
     let ns =
       match ns_init with Some r -> r | None -> ref (Names.newNamespace ())
@@ -941,6 +992,22 @@ module Impl () = struct
       | Typecheck.Typecheck_.TypeCheck.Error msg ->
           Error.Error.err ~stage:Error.Error.Check
             Display.Form.(string ("Double-check failed (internal bug): " ^ msg))
+      (* Theorem checkers. Errors the checkers could trace to a clause are
+         already wrapped as "file:region Error: ..." (via Origins); the rest,
+         e.g. input coverage, only know the file. *)
+      | ThmTotal.Error msg
+      | Terminate.Terminate_.Reduces.Error msg
+      | Cover.Error msg
+      | WorldSyn.Error msg
+      | Worldcheck.Worldcheck_.Worldify.Error msg
+      | ThmInst.Error msg
+      | ThmSyn.Error msg
+      | Unique.Error msg ->
+          Error.Error.err ~stage:Error.Error.Total
+            (Display.Form.string (in_file path msg))
+      | ModeCheck.Error msg | ModeTable.Error msg | ModeDec.Error msg ->
+          Error.Error.err ~stage:Error.Error.Check
+            (Display.Form.string (in_file path msg))
       | Failure msg ->
           Error.Error.err ~stage:Error.Error.Unknown (Display.Form.string msg)
       | exn ->

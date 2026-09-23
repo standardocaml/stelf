@@ -40,14 +40,13 @@ module MakeModeDec () : MODEDEC = struct
       | M.Mapp (M.Marg (_, Some name), mS) ->
           let rec checkName' = function
             | M.Mnil -> ()
-            | M.Mapp (M.Marg (_, Some name'), mS) ->
-                begin if name = name' then
-                  raise
-                    (Error (("Variable name clash: " ^ name) ^ " is not unique"))
-                else checkName' mS
-                end
+            | M.Mapp (M.Marg (_, Some name'), _) when name = name' ->
+                raise
+                  (Error (("Variable name clash: " ^ name) ^ " is not unique"))
+            | M.Mapp (_, mS) -> checkName' mS
           in
-          checkName' mS
+          checkName' mS;
+          checkName mS
       | M.Mapp (M.Marg (_, None), mS) -> checkName mS
 
     let modeConsistent = function
@@ -73,9 +72,12 @@ module MakeModeDec () : MODEDEC = struct
           I.Decl (ms, (M.Marg (M.Minus1, nameOpt), Implicit))
       | (I.Decl (_, (_, Implicit)) as ms), _, 1 -> ms
       | (I.Decl (_, (_, Local)) as ms), _, 1 -> ms
-      | (I.Decl (_, (M.Marg (mode', Some name), Explicit)) as ms), mode, 1 ->
+      | (I.Decl (_, (M.Marg (mode', nameOpt), Explicit)) as ms), mode, 1 ->
           begin if modeConsistent (mode', mode) then ms
           else
+            let name =
+              match nameOpt with Some name -> name | None -> "argument"
+            in
             raise
               (Error
                  ((("Mode declaration for " ^ name) ^ " expected to be ")
@@ -211,7 +213,7 @@ module MakeModeDec () : MODEDEC = struct
   (* checkname mS = ()
 
        Invariant:
-       mS modeSpine, all modes are named.
+       mS modeSpine; modes may be named or unnamed (STELF mixes them).
        If mS contains two entries with the same name
        then Error is raised
     *)
@@ -304,7 +306,7 @@ module MakeModeDec () : MODEDEC = struct
   (* shortToFull (cid, mS, r) = mS'
 
        Invariant:
-       mS modeSpine, all modes are named.
+       mS modeSpine; modes may be named or unnamed (STELF mixes them).
        r is the text region of the mode declaration
        if mS is a mode spine in short form (implicit parameters are not moded),
        then mS' is a mode spine in full form (all parameters are moded)
@@ -316,7 +318,7 @@ module MakeModeDec () : MODEDEC = struct
   (* checkFull (a, mS, r) = ()
 
        Invariant:
-       mS modeSpine, all modes are named.
+       mS modeSpine; modes may be named or unnamed (STELF mixes them).
        r is the text region of the mode declaration
        if mS is not a valid mode spine in full form then
        exception Error is raised.

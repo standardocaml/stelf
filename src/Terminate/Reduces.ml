@@ -529,10 +529,9 @@ end) : REDUCES = struct
                 checkRClause (I.Null, I.Null, [], (I.constType b, I.id), P.top)
               with
               | Error' (occ, msg) -> error (b, occ, msg)
-              | R.Error msg ->
-                  raise (Error msg);
-                  checkFam' bs
-              end
+              | R.Error msg -> raise (Error msg)
+              end;
+              checkFam' bs
             end
           end
         | I.Def d :: bs -> begin
@@ -551,10 +550,9 @@ end) : REDUCES = struct
                 checkRClause (I.Null, I.Null, [], (I.constType d, I.id), P.top)
               with
               | Error' (occ, msg) -> error (d, occ, msg)
-              | R.Error msg ->
-                  raise (Error msg);
-                  checkFam' bs
-              end
+              | R.Error msg -> raise (Error msg)
+              end;
+              checkFam' bs
             end
           end
       in
@@ -587,10 +585,9 @@ end) : REDUCES = struct
               end;
               begin try checkClause' ((I.constType b, I.id), P.top) with
               | Error' (occ, msg) -> error (b, occ, msg)
-              | R.Error msg ->
-                  raise (Error msg);
-                  checkFam' bs
-              end
+              | R.Error msg -> raise (Error msg)
+              end;
+              checkFam' bs
             end
           end
         | I.Def d :: bs -> begin
@@ -607,10 +604,9 @@ end) : REDUCES = struct
               end;
               begin try checkClause' ((I.constType d, I.id), P.top) with
               | Error' (occ, msg) -> error (d, occ, msg)
-              | R.Error msg ->
-                  raise (Error msg);
-                  checkFam' bs
-              end
+              | R.Error msg -> raise (Error msg)
+              end;
+              checkFam' bs
             end
           end
       in
