@@ -1,3 +1,4 @@
+open! Timing
 include module type of MTPSTRATEGY
 
 module MTPStrategy (MTPStrategy__0 : sig

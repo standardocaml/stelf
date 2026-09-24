@@ -1,3 +1,4 @@
+open! Global.Global_
 include module type of COMPRESS
 
 module Compress (Compress__0 : sig

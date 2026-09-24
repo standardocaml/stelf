@@ -1,3 +1,7 @@
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Paths.Paths_
+
 (* # 1 "src/modules/Modsyn.sig.ml" *)
 open! Basis
 
@@ -11,7 +15,7 @@ module type MODSYN = sig
   (*! structure Paths : PATHS !*)
   exception Error of string
 
-  val abbrevify : IntSyn.cid * IntSyn.conDec -> IntSyn.conDec
+  val abbrevify : IntSyn.cid -> IntSyn.conDec -> IntSyn.conDec
   val strictify : IntSyn.conDec -> IntSyn.conDec
 
   type module_
@@ -21,30 +25,30 @@ module type MODSYN = sig
   type transform = IntSyn.cid * IntSyn.ConDec -> IntSyn.ConDec
   *)
   val installStruct :
-    IntSyn.strDec
-    * module_
-    * Names.namespace option
-    * (IntSyn.cid * (string * Paths.occConDec option) -> unit)
-    * bool ->
-    unit (* action *)
+    IntSyn.strDec ->
+    module_ ->
+    Names.namespace option ->
+    (IntSyn.cid * (string * Paths.occConDec option) -> unit) (* action *) ->
+    bool ->
+    unit
 
   val installSig :
-    module_
-    * Names.namespace option
-    * (IntSyn.cid * (string * Paths.occConDec option) -> unit)
-    * bool ->
-    unit (* action *)
+    module_ ->
+    Names.namespace option ->
+    (IntSyn.cid * (string * Paths.occConDec option) -> unit) (* action *) ->
+    bool ->
+    unit
 
   val instantiateModule :
-    module_ * (Names.namespace -> IntSyn.cid * IntSyn.conDec -> IntSyn.conDec) ->
+    module_ -> (Names.namespace -> IntSyn.cid * IntSyn.conDec -> IntSyn.conDec) ->
     module_ (* Names.namespace -> transform *)
 
   (* Extract some entries of the current global signature table in order
      to create a self-contained module.
   *)
-  val abstractModule : Names.namespace * IntSyn.mid option -> module_
+  val abstractModule : Names.namespace -> IntSyn.mid option -> module_
   val reset : unit -> unit
-  val installSigDef : string * module_ -> unit
+  val installSigDef : string -> module_ -> unit
 
   (* Error if would shadow *)
   val lookupSigDef : string -> module_ option

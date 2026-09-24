@@ -1,3 +1,4 @@
+open! Global.Global_
 include module type of QED
 
 module Qed (Qed__0 : sig

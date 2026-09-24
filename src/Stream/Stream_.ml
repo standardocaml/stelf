@@ -18,7 +18,7 @@ module BasicStream : BASIC_STREAM = struct
   let delay d = Stream d
   let expose (Stream d) = d ()
   let empty = Stream (function () -> Empty)
-  let cons (x, s) = Stream (function () -> Cons (x, s))
+  let cons x s = Stream (function () -> Cons (x, s))
 end
 
 (* Note that this implementation is NOT semantically *)
@@ -51,23 +51,19 @@ module BasicMemoStream : BASIC_STREAM = struct
     let memoFun () =
       try
         let r = d () in
-        begin
-          (memo := function () -> r);
-          r
-        end
+        (memo := function () -> r);
+        r
       with exn ->
         begin
           (memo := function () -> raise exn);
           raise exn
         end
     in
-    begin
-      memo := memoFun;
-      Stream (function () -> !memo ())
-    end
+    memo := memoFun;
+    Stream (function () -> !memo ())
 
   let empty = Stream (function () -> Empty)
-  let cons (x, s) = Stream (function () -> Cons (x, s))
+  let cons x s = Stream (function () -> Cons (x, s))
 end
 
 (* STREAM extends BASIC_STREAMS by operations *)
@@ -116,26 +112,26 @@ module MakeStream (BasicStream : BASIC_STREAM) : STREAM = struct
 
   let rec takePos = function _s, 0 -> [] | s, n -> take' (expose s, n)
 
-  and take' = function
-    | Empty, _ -> []
-    | Cons (x, s), n -> x :: takePos (s, n - 1)
+  and take' (a, n) = match a with
+    | Empty -> []
+    | Cons (x, s) -> x :: takePos (s, n - 1)
 
-  let take (s, n) =
+  let take s n =
     begin if n < 0 then raise Subscript else takePos (s, n)
     end
 
-  let rec fromList = function [] -> empty | x :: l -> cons (x, fromList l)
+  let rec fromList = function [] -> empty | x :: l -> cons x (fromList l)
 
   let rec toList s = toList' (expose s)
   and toList' = function Empty -> [] | Cons (x, s) -> x :: toList s
 
-  let rec dropPos = function s, 0 -> s | s, n -> drop' (expose s, n)
+  let rec dropPos (s, n) = match n with 0 -> s | n -> drop' (expose s, n)
 
-  and drop' = function
-    | Empty, _ -> empty
-    | Cons (_x, s), n -> dropPos (s, n - 1)
+  and drop' (a, n) = match a with
+    | Empty -> empty
+    | Cons (_x, s) -> dropPos (s, n - 1)
 
-  let drop (s, n) =
+  let drop s n =
     begin if n < 0 then raise Subscript else dropPos (s, n)
     end
 

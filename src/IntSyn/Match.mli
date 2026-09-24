@@ -1,3 +1,4 @@
+open! Trail.Trail_
 open WHNF
 open UNIFY
 include module type of MATCH

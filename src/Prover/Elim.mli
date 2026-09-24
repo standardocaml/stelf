@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+open! Typecheck.Typecheck_
 include module type of ELIM
 
 module Elim (Elim__0 : sig

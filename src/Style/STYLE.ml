@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/style/Style_.sig.ml" *)
 open! Basis
 

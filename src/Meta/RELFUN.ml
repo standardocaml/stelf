@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+open! Modes
 open! Basis
 open Modetable
 open Funweaken

@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/terminate/Reduces.sig.ml" *)
 open! Basis
 

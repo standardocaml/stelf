@@ -1,3 +1,8 @@
+open! Intsyn.Lambda_
+open! Global.Global_
+open! Print.Print_
+open! Index.Index_
+open! Typecheck.Typecheck_
 include module type of SPLIT
 
 module Split (Split__0 : sig

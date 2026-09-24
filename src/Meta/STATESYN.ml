@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/meta/Statesyn.sig.ml" *)
 open! Basis
 open Funsyn
@@ -44,10 +46,10 @@ module type STATESYN = sig
 
   (* S = <n, (G, B), (IH, OH), d, O, H, F> *)
   (* Formula *)
-  val orderSub : order * IntSyn.sub -> order
+  val orderSub : order -> IntSyn.sub -> order
   val decrease : tag -> tag
   val splitDepth : info -> int
   val normalizeOrder : order -> order
-  val convOrder : order * order -> bool
-  val normalizeTag : tag * IntSyn.sub -> tag
+  val convOrder : order -> order -> bool
+  val normalizeTag : tag -> IntSyn.sub -> tag
 end

@@ -1,7 +1,8 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/solvers/CsEqBools.sig.ml" *)
 
 (* # 1 "src/solvers/CsEqBools.fun.ml" *)
-open! Basis
 
 module CsEqBools (CSEqBools__0 : sig
   (* Booleans Equation Solver *)

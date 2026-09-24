@@ -1,3 +1,7 @@
+open! Basis
+open! Table.Table_
+open! Global.Global_
+open! Intsyn.Lambda_
 include module type of NAMES
 
 module MakeNames

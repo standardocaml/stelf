@@ -1,5 +1,5 @@
+
 (* # 1 "src/flit/Flit_.sig.ml" *)
-open! Basis
 
 (* Flit DAG generator *)
 
@@ -9,7 +9,6 @@ include FLIT
 (* signature FLIT *)
 
 (* # 1 "src/flit/Flit_.fun.ml" *)
-open! Basis
 (* Commented out: PACK_WORD not available in basis library
 (* Flit DAG generator *);;
 (* Author: Roberto Virga *);;
@@ -594,7 +593,7 @@ module Flit(Flit__0: sig
                                   -> raise
                                      ((Error "dump(...) before init(...)"))
                          end;;
-        let rec dump (name, file) =
+        let rec dump name file =
           let rec dump' cid =
             let _ = out := ((Some (BinIO.openOut file)))
               in let stream = valOf (! out)
@@ -685,7 +684,7 @@ module Flit(Flit__0: sig
                                        -> error
                                           "setFlag() has not been called yet\n"
                               end;;
-        let rec dumpSymTable (name1, name2, file) =
+        let rec dumpSymTable name1 name2 file =
           let stream = TextIO.openOut file
             in let F.Strength nonfixLevel = F.minPrec
                  in let rec dumpFixity cid =
@@ -1148,7 +1147,7 @@ module Flit(Flit__0: sig
                                        end
                                      
                                      end;;
-        let rec dumpText (outputSemant, outputChecker) =
+        let rec dumpText outputSemant outputChecker =
           let max = (fun (r, _) -> r) (I.sgnSize ())
             in let rec correctFixities cid = begin
                  if cid < max then
@@ -1232,7 +1231,6 @@ module Flit(Flit__0: sig
 *)
 
 (* # 1 "src/flit/Flit_.sml.ml" *)
-open! Basis
 (* Commented out: PACK_WORD not available
 open! Basis;;
 module Flit = (Flit)(struct

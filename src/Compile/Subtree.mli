@@ -1,3 +1,8 @@
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Formatter__Formatter_
+open! Solvers.Solvers_
 include module type of SUBTREE
 
 module SubTree (SubTree__0 : sig

@@ -1,3 +1,4 @@
+open! Names.Names_
 include module type of PARSEFIXITY
 
 module ParseFixity (ParseFixity__0 : sig

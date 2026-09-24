@@ -1,3 +1,9 @@
+open! Basis
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+
 module type RECON_CONDEC = RECON_CONDEC.RECON_CONDEC
 
 exception Error of string
@@ -13,7 +19,7 @@ module Make_ReconConDec
 
   exception Error = Error
 
-  let error (r, msg) = raise (Error (Paths.wrap (r, msg)))
+  let error r msg = raise (Error (Paths.wrap r msg))
 
   (* Build an IntSyn context from a list of Cst.decl values. *)
   let makectx decls =
@@ -46,11 +52,11 @@ module Make_ReconConDec
     let some_part =
       match g1' with
       | IntSyn.Null -> ""
-      | _ -> "some " ^ Print.ctxToString (g0', g1') ^ "\n"
+      | _ -> "some " ^ Print.ctxToString g0' g1' ^ "\n"
     in
-    Print.ctxToString (IntSyn.Null, g0')
+    Print.ctxToString IntSyn.Null g0'
     ^ "\n" ^ some_part ^ "pi "
-    ^ Print.ctxToString (ctxAppend g0' g1', g2')
+    ^ Print.ctxToString (ctxAppend g0' g1') g2'
 
   let checkFreevars (g0, (g1, g2), r) =
     match g0 with
@@ -61,9 +67,8 @@ module Make_ReconConDec
         let g1' = Names.ctxLUName g1 in
         let g2' = Names.ctxLUName g2 in
         error
-          ( r,
-            "Free variables in context block after term reconstruction:\n"
-            ^ ctxBlockToString (g0', (g1', g2')) )
+          r ("Free variables in context block after term reconstruction:\n"
+            ^ ctxBlockToString (g0', (g1', g2')))
 
   (* Fresh names for anonymous top-level declarations: each `_` names a
      distinct constant (cf. the classic Twelf `- : A.` clause idiom, where
@@ -82,7 +87,7 @@ module Make_ReconConDec
     in
     next ()
 
-  let condecToConDec (condec, loc, abbFlag) =
+  let condecToConDec condec loc abbFlag =
     let (Paths.Loc (filename, r)) = loc in
     match Cst.View.ConDec.view condec with
     | Cst.View.ConDec.ConstantDecl (_, decl) ->
@@ -106,30 +111,26 @@ module Make_ReconConDec
         in
         ignore (Names.varReset IntSyn.Null);
         ignore (RT.resetErrors filename);
-        let (RT.JClass ((v_, oc), l_)) = RT.recon (RT.jclass tm) in
+        let (RT.JClass ((v, oc), l)) = RT.recon (RT.jclass tm) in
         ignore (RT.checkErrors r);
-        let i, v'_ =
-          try Abstract.abstractDecImp v_
+        let i, v' =
+          try Abstract.abstractDecImp v
           with Abstract.Error msg ->
-            raise (Abstract.Error (Paths.wrap (r, msg)))
+            raise (Abstract.Error (Paths.wrap r msg))
         in
         let cd =
           Names.nameConDec
-            (IntSyn.ConDec (name, None, i, IntSyn.Normal, v'_, l_))
+            (IntSyn.ConDec (name, None, i, IntSyn.Normal, v', l))
         in
         let ocd = Paths.dec (i, oc) in
-        let _ =
-          Display.chatter_s 3 ~kind:Display.Response
-            (Print.conDecToString cd ^ "\n")
-        in
-        let _ =
-          if !Global.doubleCheck then
-            begin try Typecheck.Typecheck_.TypeCheck.check (v'_, IntSyn.Uni l_)
+        ignore (Display.chatter_s 3 ~kind:Display.Response
+            (Print.conDecToString cd ^ "\n"));
+        ignore (if !Global.doubleCheck then
+            begin try Typecheck.Typecheck_.TypeCheck.check (v', IntSyn.Uni l)
             with Typecheck.Typecheck_.TypeCheck.Error msg ->
               Printf.eprintf "DOUBLE-CHECK FAIL on ConDec %s: %s\n%!" name msg;
               raise (Typecheck.Typecheck_.TypeCheck.Error msg)
-            end
-        in
+            end);
         (Some cd, Some ocd)
     | Cst.View.ConDec.ConstantDef (_, name, tm1, tm2_opt) ->
         (* Case B: constant definition / abbreviation *)
@@ -138,39 +139,36 @@ module Make_ReconConDec
         let f =
           match tm2_opt with
           | None -> RT.jterm tm1
-          | Some tm2 -> RT.jof (tm1, tm2)
+          | Some tm2 -> RT.jof tm1 tm2
         in
         let f' = RT.recon f in
-        let (u_, oc1), (v_, oc2_opt), l_ =
+        let (u, oc1), (v, oc2_opt), l =
           match f' with
-          | RT.JTerm ((u_, oc1), v_, l_) -> ((u_, oc1), (v_, None), l_)
-          | RT.JOf ((u_, oc1), (v_, oc2), l_) -> ((u_, oc1), (v_, Some oc2), l_)
+          | RT.JTerm ((u, oc1), v, l) -> ((u, oc1), (v, None), l)
+          | RT.JOf ((u, oc1), (v, oc2), l) -> ((u, oc1), (v, Some oc2), l)
           | _ -> assert false
         in
         ignore (RT.checkErrors r);
         let i, (u'', v'') =
-          try Abstract.abstractDef (u_, v_)
+          try Abstract.abstractDef u v
           with Abstract.Error msg ->
-            raise (Abstract.Error (Paths.wrap (r, msg)))
+            raise (Abstract.Error (Paths.wrap r msg))
         in
         let opt_name = if name = "_" then None else Some name in
-        let ocd = Paths.def (i, oc1, oc2_opt) in
+        let ocd = Paths.def i oc1 oc2_opt in
         let cd =
           if abbFlag then
-            Names.nameConDec (IntSyn.AbbrevDef (name, None, i, u'', v'', l_))
+            Names.nameConDec (IntSyn.AbbrevDef (name, None, i, u'', v'', l))
           else begin
             Typecheck.Typecheck_.Strict.check ((u'', v''), None);
             Names.nameConDec
-              (IntSyn.ConDef (name, None, i, u'', v'', l_, IntSyn.ancestor u''))
+              (IntSyn.ConDef (name, None, i, u'', v'', l, IntSyn.ancestor u''))
           end
         in
-        let _ =
-          Display.chatter_s 3 ~kind:Display.Response
-            (Print.conDecToString cd ^ "\n")
-        in
-        let _ =
-          if !Global.doubleCheck then begin
-            (try Typecheck.Typecheck_.TypeCheck.check (v'', IntSyn.Uni l_)
+        ignore (Display.chatter_s 3 ~kind:Display.Response
+            (Print.conDecToString cd ^ "\n"));
+        ignore (if !Global.doubleCheck then begin
+            (try Typecheck.Typecheck_.TypeCheck.check (v'', IntSyn.Uni l)
              with Typecheck.Typecheck_.TypeCheck.Error msg ->
                Printf.eprintf "DOUBLE-CHECK FAIL on ConDef %s (type): %s\n%!"
                  name msg;
@@ -180,8 +178,7 @@ module Make_ReconConDec
               Printf.eprintf "DOUBLE-CHECK FAIL on ConDef %s (term): %s\n%!"
                 name msg;
               raise (Typecheck.Typecheck_.TypeCheck.Error msg)
-          end
-        in
+          end);
         (Option.map (fun _ -> cd) opt_name, Some ocd)
     | Cst.View.ConDec.BlockDecl (_, name, lsome, lblock) ->
         (* Case C: block declaration *)
@@ -189,38 +186,34 @@ module Make_ReconConDec
         let gblock = makectx lblock in
         let r' =
           match (RT.ctxRegion gsome, RT.ctxRegion gblock) with
-          | Some r1, Some r2 -> Paths.join (r1, r2)
+          | Some r1, Some r2 -> Paths.join r1 r2
           | _, Some r2 -> r2
           | Some r1, None -> r1
           | None, None -> r
         in
         ignore (Names.varReset IntSyn.Null);
         ignore (RT.resetErrors filename);
-        let j = RT.jwithctx (gsome, RT.jwithctx (gblock, RT.jnothing)) in
-        let (RT.JWithCtx (gsome_, RT.JWithCtx (gblock_, _))) = RT.recon j in
+        let j = RT.jwithctx gsome (RT.jwithctx gblock RT.jnothing) in
+        let (RT.JWithCtx (gsome, RT.JWithCtx (gblock, _))) = RT.recon j in
         ignore (RT.checkErrors r);
-        let g0_, ctxs =
-          try Abstract.abstractCtxs [ gsome_; gblock_ ]
-          with Constraints.Error c_ ->
+        let g0, ctxs =
+          try Abstract.abstractCtxs [ gsome; gblock ]
+          with Constraints.Error c ->
             error
-              ( r',
-                "Constraints remain in context block after term \
-                 reconstruction:\n"
-                ^ ctxBlockToString (IntSyn.Null, (gsome_, gblock_))
-                ^ "\n" ^ Print.cnstrsToString c_ )
+              r' ("Constraints remain in context block after term reconstruction:\n"
+                ^ ctxBlockToString (IntSyn.Null, (gsome, gblock))
+                ^ "\n" ^ Print.cnstrsToString c)
         in
         let gsome', gblock' =
           match ctxs with [ a; b ] -> (a, b) | _ -> assert false
         in
-        ignore (checkFreevars (g0_, (gsome', gblock'), r'));
+        ignore (checkFreevars (g0, (gsome', gblock'), r'));
         let bd =
           Names.nameConDec
             (IntSyn.BlockDec (name, None, gsome', ctxToList gblock'))
         in
-        let _ =
-          Display.chatter_s 3 ~kind:Display.Response
-            (Print.conDecToString bd ^ "\n")
-        in
+        ignore (Display.chatter_s 3 ~kind:Display.Response
+            (Print.conDecToString bd ^ "\n"));
         (Some bd, None)
     | Cst.View.ConDec.BlockDef (_, name, worlds) ->
         (* Case D: block definition *)
@@ -240,10 +233,8 @@ module Make_ReconConDec
             w'
         in
         let bd = Names.nameConDec (IntSyn.BlockDef (name, None, cids)) in
-        let _ =
-          Display.chatter_s 3 ~kind:Display.Response
-            (Print.conDecToString bd ^ "\n")
-        in
+        ignore (Display.chatter_s 3 ~kind:Display.Response
+            (Print.conDecToString bd ^ "\n"));
         (Some bd, None)
     | _ -> raise (Error "condecToConDec: unrecognised conDec variant")
 end

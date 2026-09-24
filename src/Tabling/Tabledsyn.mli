@@ -1,3 +1,7 @@
+open! Basis
+open! Table.Table_
+open! Names.Names_
+open! Index.Index_
 include module type of TABLEDSYN
 
 module MakeTabledSyn

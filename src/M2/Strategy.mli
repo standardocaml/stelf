@@ -1,3 +1,4 @@
+open! Timing
 include module type of STRATEGY
 
 module StrategyFRS (StrategyFRS__0 : sig

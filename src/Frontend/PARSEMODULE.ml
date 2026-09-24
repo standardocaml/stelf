@@ -1,5 +1,5 @@
+
 (* # 1 "src/frontend/ParseModule.sig.ml" *)
-open! Basis
 open! Parsing
 
 (* Parsing modules *)

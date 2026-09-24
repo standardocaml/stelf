@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/worldcheck/WorldSyn.sig.ml" *)
 open! Basis
 
@@ -8,7 +10,7 @@ module type WORLDSYN = sig
   exception Error of string
 
   val reset : unit -> unit
-  val install : IntSyn.cid * Tomega.worlds -> unit
+  val install : IntSyn.cid -> Tomega.worlds -> unit
   val lookup : IntSyn.cid -> Tomega.worlds
 
   (* raises Error if undeclared *)

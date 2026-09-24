@@ -1,3 +1,9 @@
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Index.Index_
+open! Compile
+open! Assign
 include module type of ABSMACHINE
 
 module AbsMachine (AbsMachine__0 : sig

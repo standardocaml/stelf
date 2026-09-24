@@ -1,3 +1,11 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Subordinate
+open! Typecheck.Typecheck_
+open! Index.Index_
+open! Heuristic.Heuristic_
 include module type of MTPSPLITTING
 
 module MTPSplitting (MTPSplitting__0 : sig

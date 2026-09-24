@@ -1,3 +1,8 @@
+open! Basis
+open! Global.Global_
+open! Table.Table_
+open! Intsyn.Lambda_
+open! Names.Names_
 include module type of SUBORDINATE
 
 module MakeSubordinate

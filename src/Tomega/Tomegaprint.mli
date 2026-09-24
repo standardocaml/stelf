@@ -1,3 +1,6 @@
+open! Formatter.Formatter_
+open! Names.Names_
+open! Print.Print_
 include module type of TOMEGAPRINT
 
 module TomegaPrint (TomegaPrint__0 : sig

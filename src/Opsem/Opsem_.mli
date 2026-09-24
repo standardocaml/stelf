@@ -1,9 +1,9 @@
+
 (* # 1 "src/opsem/Opsem_.sig.ml" *)
 
 (* # 1 "src/opsem/Opsem_.fun.ml" *)
 
 (* # 1 "src/opsem/Opsem_.sml.ml" *)
-open! Basis
 module AbsMachine : Absmachine.ABSMACHINE
 module PtRecon : Ptrecon.PTRECON
 module AbsMachineSbt : AbsmachineSbt.ABSMACHINESBT

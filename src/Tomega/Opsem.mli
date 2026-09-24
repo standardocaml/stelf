@@ -1,3 +1,4 @@
+open! Intsyn.Lambda_
 include module type of OPSEM
 
 module MakeOpsem

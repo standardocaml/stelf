@@ -1,9 +1,22 @@
+open! Global.Global_
+open! Intsyn
+open! Intsyn.Lambda_
+open! Worldcheck.Worldcheck_
+open! Cover
+open! Names
+open! Names.Names_
+open! Print
+open! Print.Print_
+open! Typecheck.Typecheck_
+open! Subordinate
+open! Meta
+open! Modes.Modes_
+
 (* # 1 "src/tomega/Tomega_.sig.ml" *)
 
 (* # 1 "src/tomega/Tomega_.fun.ml" *)
 
 (* # 1 "src/tomega/Tomega_.sml.ml" *)
-open! Basis
 module Tomega = Lambda_.Tomega
 
 module TomegaAbstract = TomegaAbstract.TomegaAbstract (struct

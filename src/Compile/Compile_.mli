@@ -1,3 +1,7 @@
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Typecheck.Typecheck_
 include module type of COMPILE
 
 module MakeCompile

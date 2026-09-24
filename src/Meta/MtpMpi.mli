@@ -1,3 +1,9 @@
+open! Table
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Formatter.Formatter_
+open! Print.Print_
+open! Timing
 include module type of MTPMPI
 
 module MTPi (MTPi__0 : sig

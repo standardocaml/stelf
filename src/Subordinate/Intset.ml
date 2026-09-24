@@ -1,3 +1,4 @@
+
 (* # 1 "src/subordinate/Intset.sig.ml" *)
 
 (* # 1 "src/subordinate/Intset.fun.ml" *)
@@ -63,7 +64,7 @@ module IntSet : INTSET = struct
           Black (lre, Red (le, ll, lrl), Red (e, lrr, r))
       | dict -> dict
 
-    let insert (dict, x) =
+    let insert dict x =
       let rec ins = function
         | Empty -> Red (x, Empty, Empty)
         | Red (x1, left, right) ->
@@ -115,14 +116,14 @@ module IntSet : INTSET = struct
   type nonrec intset = rbt
 
   let empty = Empty
-  let insert (x, t) = insert (t, x)
-  let member (x, t) = lookup t x
+  let insert x t = insert t x
+  let member x t = lookup t x
 
   let foldl f a t =
-    let rec fo = function
-      | Empty, r -> r
-      | Red (x, left, right), r -> fo (right, f (x, fo (left, r)))
-      | Black (x, left, right), r -> fo (right, f (x, fo (left, r)))
+    let rec fo (a, r) = match a with
+      | Empty -> r
+      | Red (x, left, right) -> fo (right, f (x, fo (left, r)))
+      | Black (x, left, right) -> fo (right, f (x, fo (left, r)))
     in
     fo (t, a)
 end

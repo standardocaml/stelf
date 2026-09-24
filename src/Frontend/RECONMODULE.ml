@@ -1,3 +1,7 @@
+open! Intsyn.Lambda_
+open! Paths.Paths_
+open! Modules
+
 (* # 1 "src/frontend/ReconModule.sig.ml" *)
 open! Basis
 
@@ -10,30 +14,30 @@ module type MODEXTSYN = sig
   (*! structure Paths : PATHS !*)
   type strexp
 
-  val strexp : string list * string * Paths.region -> strexp
+  val strexp : string list -> string -> Paths.region -> strexp
 
   type inst
 
   val coninst :
-    (string list * string * Paths.region) * ExtSyn.term * Paths.region -> inst
+    string list -> string -> Paths.region -> ExtSyn.term -> Paths.region -> inst
 
   val strinst :
-    (string list * string * Paths.region) * strexp * Paths.region -> inst
+    string list -> string -> Paths.region -> strexp -> Paths.region -> inst
 
   type sigexp
 
   val thesig : sigexp
-  val sigid : string * Paths.region -> sigexp
-  val wheresig : sigexp * inst list -> sigexp
+  val sigid : string -> Paths.region -> sigexp
+  val wheresig : sigexp -> inst list -> sigexp
 
   type sigdef
 
-  val sigdef : string option * sigexp -> sigdef
+  val sigdef : string option -> sigexp -> sigdef
 
   type structdec
 
-  val structdec : string option * sigexp -> structdec
-  val structdef : string option * strexp -> structdec
+  val structdec : string option -> sigexp -> structdec
+  val structdef : string option -> strexp -> structdec
 end
 
 module type RECON_MODULE = sig
@@ -51,12 +55,12 @@ module type RECON_MODULE = sig
   val strexpToStrexp : strexp -> IntSyn.mid
 
   val sigexpToSigexp :
-    sigexp * ModSyn.module_ option -> ModSyn.module_ * whereclause list
+    sigexp -> ModSyn.module_ option -> ModSyn.module_ * whereclause list
 
   val sigdefToSigdef :
-    sigdef * ModSyn.module_ option ->
+    sigdef -> ModSyn.module_ option ->
     string option * ModSyn.module_ * whereclause list
 
-  val structdecToStructDec : structdec * ModSyn.module_ option -> structDec
-  val moduleWhere : ModSyn.module_ * whereclause -> ModSyn.module_
+  val structdecToStructDec : structdec -> ModSyn.module_ option -> structDec
+  val moduleWhere : ModSyn.module_ -> whereclause -> ModSyn.module_
 end

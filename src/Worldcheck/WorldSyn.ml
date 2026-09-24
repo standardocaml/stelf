@@ -1,5 +1,16 @@
+open! Global.Global_
+open! Timing
+open! Table
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Paths
+open! Paths.Paths_
+open! Print.Print_
+open! Index.Index_
+open! Subordinate
+open! Solvers.Solvers_
+
 (* # 1 "src/worldcheck/WorldSyn.sig.ml" *)
-open! Basis
 
 (* World Checking *)
 (* Author: Carsten Schuermann *)
@@ -80,11 +91,9 @@ end) : WORLDSYN = struct
     | fileName, None -> (fileName ^ ":") ^ msg
     | fileName, Some occDec ->
         P.wrapLoc'
-          ( P.Loc (fileName, P.occToRegionDec occDec occ),
-            Origins.linesInfoLookup fileName,
-            (("While checking constant " ^ Names.qidToString (Names.constQid c))
+          (P.Loc (fileName, P.occToRegionDec occDec occ)) (Origins.linesInfoLookup fileName) ((("While checking constant " ^ Names.qidToString (Names.constQid c))
             ^ ":\n")
-            ^ msg )
+            ^ msg)
     end
 
   type nonrec dlist = IntSyn.dec list
@@ -92,7 +101,7 @@ end) : WORLDSYN = struct
   open! struct
     let worldsTable : T.worlds Table.table = Table.new_ 0
     let reset () = Table.clear worldsTable
-    let insert (cid, w_) = Table.insert worldsTable (cid, w_)
+    let insert cid w = Table.insert worldsTable (cid, w)
 
     let getWorlds b =
       begin match Table.lookup worldsTable b with
@@ -125,8 +134,8 @@ end) : WORLDSYN = struct
 
     let rec formatReg r =
       begin match r with
-      | Block (g_, dl) -> Print.formatDecList (g_, dl)
-      | Seq (dl, s) -> Print.formatDecList' (I.Null, (dl, s))
+      | Block (g, dl) -> Print.formatDecList g dl
+      | Seq (dl, s) -> Print.formatDecList' I.Null (dl, s)
       | Star r -> F.hbox [ F.string "("; formatReg r; F.string ")*" ]
       | Plus (r1, r2) ->
           F.hVbox
@@ -144,7 +153,7 @@ end) : WORLDSYN = struct
       | One -> F.string "1"
       end
 
-    let formatSubsump msg (g_, dl, rb, b) =
+    let formatSubsump msg (g, dl, rb, b) =
       F.hVbox
         [
           F.string msg;
@@ -153,87 +162,87 @@ end) : WORLDSYN = struct
           F.space;
           F.string (Names.qidToString (Names.constQid b) ^ ":");
           F.break_;
-          Print.formatDecList (g_, dl);
+          Print.formatDecList g dl;
           F.break_;
           F.string "</:";
           F.space;
           formatReg rb;
         ]
 
-    let rec createEVarSub = function
-      | g_, I.Null -> I.Shift (I.ctxLength g_)
-      | g_, I.Decl (g'_, (I.Dec (_, v_) as d_)) ->
-          let s = createEVarSub (g_, g'_) in
-          let v'_ = I.EClo (v_, s) in
-          let x_ = I.newEVar (g_, v'_) in
-          I.Dot (I.Exp x_, s)
+    let rec createEVarSub (g, a) = match a with
+      | I.Null -> I.Shift (I.ctxLength g)
+      | I.Decl (g', (I.Dec (_, v) as d)) ->
+          let s = createEVarSub (g, g') in
+          let v' = I.EClo (v, s) in
+          let x = I.newEVar g v' in
+          I.Dot (I.Exp x, s)
 
     let rec collectConstraints = function
       | [] -> []
-      | I.EVar (_, _, _, { contents = [] }) :: xs_ -> collectConstraints xs_
-      | I.EVar (_, _, _, { contents = constrs }) :: xs_ ->
-          Constraints.simplify constrs @ collectConstraints xs_
+      | I.EVar (_, _, _, { contents = [] }) :: xs -> collectConstraints xs
+      | I.EVar (_, _, _, { contents = constrs }) :: xs ->
+          Constraints.simplify constrs @ collectConstraints xs
 
-    let rec collectEVars = function
-      | g_, I.Dot (I.Exp x_, s), xs_ ->
-          collectEVars (g_, s, Abstract.collectEVars (g_, (x_, I.id), xs_))
-      | g_, I.Shift _, xs_ -> xs_
+    let rec collectEVars a2 b2 c2 = match a2, b2, c2 with
+      | g, I.Dot (I.Exp x, s), xs ->
+          collectEVars g s (Abstract.collectEVars g (x, I.id) xs)
+      | g, I.Shift _, xs -> xs
 
-    let noConstraints (g_, s) =
-      begin match collectConstraints (collectEVars (g_, s, [])) with
+    let noConstraints (g, s) =
+      begin match collectConstraints (collectEVars g s []) with
       | [] -> true
       | _ -> false
       end
 
-    let formatD (g_, d_) =
-      F.hbox [ F.string "{"; Print.formatDec (g_, d_); F.string "}" ]
+    let formatD (g, d) =
+      F.hbox [ F.string "{"; Print.formatDec g d; F.string "}" ]
 
-    let rec formatDList = function
-      | g_, [], t -> []
-      | g_, d_ :: [], t ->
-          let d'_ = I.decSub (d_, t) in
-          [ formatD (g_, d'_) ]
-      | g_, d_ :: l_, t ->
-          let d'_ = I.decSub (d_, t) in
-          formatD (g_, d'_)
+    let rec formatDList (g, a, t) = match a with
+      | [] -> []
+      | d :: [] ->
+          let d' = I.decSub d t in
+          [ formatD (g, d') ]
+      | d :: l ->
+          let d' = I.decSub d t in
+          formatD (g, d')
           :: F.break_
-          :: formatDList (I.Decl (g_, d'_), l_, I.dot1 t)
+          :: formatDList (I.Decl (g, d'), l, I.dot1 t)
 
-    let wGoalToString ((g_, l_), Seq (piDecs, t)) =
+    let wGoalToString ((g, l), Seq (piDecs, t)) =
       F.makestring_fmt
         (F.hVbox
            [
-             F.hVbox (formatDList (g_, l_, I.id));
+             F.hVbox (formatDList (g, l, I.id));
              F.break_;
              F.string "<|";
              F.break_;
-             F.hVbox (formatDList (g_, piDecs, t));
+             F.hVbox (formatDList (g, piDecs, t));
            ])
 
-    let worldToString (g_, Seq (piDecs, t)) =
-      F.makestring_fmt (F.hVbox (formatDList (g_, piDecs, t)))
+    let worldToString (g, Seq (piDecs, t)) =
+      F.makestring_fmt (F.hVbox (formatDList (g, piDecs, t)))
 
-    let hypsToString (g_, l_) =
-      F.makestring_fmt (F.hVbox (formatDList (g_, l_, I.id)))
+    let hypsToString (g, l) =
+      F.makestring_fmt (F.hVbox (formatDList (g, l, I.id)))
 
-    let mismatchToString (g_, (v1_, s1), (v2_, s2)) =
+    let mismatchToString (g, (v1, s1), (v2, s2)) =
       F.makestring_fmt
         (F.hVbox
            [
-             Print.formatExp (g_, I.EClo (v1_, s1));
+             Print.formatExp g (I.EClo (v1, s1));
              F.break_;
              F.string "<>";
              F.break_;
-             Print.formatExp (g_, I.EClo (v2_, s2));
+             Print.formatExp g (I.EClo (v2, s2));
            ])
 
     module Trace : sig
       val clause : I.cid -> unit
       val constraintsRemain : unit -> unit
       val matchBlock : (I.dctx * dlist) * reg -> unit
-      val unmatched : I.dctx * dlist -> unit
-      val missing : I.dctx * reg -> unit
-      val mismatch : I.dctx * I.eclo * I.eclo -> unit
+      val unmatched : I.dctx -> dlist -> unit
+      val missing : I.dctx -> reg -> unit
+      val mismatch : I.dctx -> I.eclo -> I.eclo -> unit
       val success : unit -> unit
     end = struct
       let clause c =
@@ -248,27 +257,28 @@ end) : WORLDSYN = struct
         else ()
         end
 
-      let matchBlock (gl_, r_) =
+      let matchBlock (gl, r) =
         begin if !Global.chatter > 7 then
-          print (("Matching:\n" ^ wGoalToString (gl_, r_)) ^ "\n")
+          print (("Matching:\n" ^ wGoalToString (gl, r)) ^ "\n")
         else ()
         end
 
-      let unmatched gl_ =
+      let unmatched g l =
+        let gl = (g, l) in
         begin if !Global.chatter > 7 then
-          print (("Unmatched hypotheses:\n" ^ hypsToString gl_) ^ "\n")
+          print (("Unmatched hypotheses:\n" ^ hypsToString gl) ^ "\n")
         else ()
         end
 
-      let missing (g_, r_) =
+      let missing g r =
         begin if !Global.chatter > 7 then
-          print (("Missing hypotheses:\n" ^ worldToString (g_, r_)) ^ "\n")
+          print (("Missing hypotheses:\n" ^ worldToString (g, r)) ^ "\n")
         else ()
         end
 
-      let mismatch (g_, vs1, vs2) =
+      let mismatch g vs1 vs2 =
         begin if !Global.chatter > 7 then
-          print (("Mismatch:\n" ^ mismatchToString (g_, vs1, vs2)) ^ "\n")
+          print (("Mismatch:\n" ^ mismatchToString (g, vs1, vs2)) ^ "\n")
         else ()
         end
 
@@ -277,11 +287,11 @@ end) : WORLDSYN = struct
         end
     end
 
-    let decUName (g_, d_) = I.Decl (g_, Names.decUName (g_, d_))
-    let decEName (g_, d_) = I.Decl (g_, Names.decEName (g_, d_))
+    let decUName g d = I.Decl (g, Names.decUName g d)
+    let decEName g d = I.Decl (g, Names.decEName g d)
 
     let rec subGoalToDList = function
-      | I.Pi ((d_, _), v_) -> d_ :: subGoalToDList v_
+      | I.Pi ((d, _), v) -> d :: subGoalToDList v
       | I.Root _ -> []
 
     let rec worldsToReg = function
@@ -298,90 +308,84 @@ end) : WORLDSYN = struct
           Trace.success ();
           raise Success
         end
-      | b, (g_, ((I.Dec (_, v1_) as d1_) :: l2_ as l_)) ->
-          begin if Subordinate.belowEq (I.targetFam v1_, b) then begin
-            Trace.unmatched (g_, l_);
+      | b, (g, ((I.Dec (_, v1) as d1) :: l2 as l)) ->
+          begin if Subordinate.belowEq (I.targetFam v1) b then begin
+            Trace.unmatched g l;
             ()
           end
-          else init b (decUName (g_, d1_), l2_)
+          else init b (decUName g d1, l2)
           end
       end
 
-    let rec accR = function
-      | gl_, One, b, k -> k gl_
-      | ((g_, l_) as gl_), Block (someDecs, piDecs), b, k ->
-          let t = createEVarSub (g_, someDecs) in
-          ignore (Trace.matchBlock (gl_, Seq (piDecs, t)));
+    let rec accR (a, c, b, k) = match a, c with
+      | gl, One -> k gl
+      | ((g, l) as gl), Block (someDecs, piDecs) ->
+          let t = createEVarSub (g, someDecs) in
+          ignore (Trace.matchBlock (gl, Seq (piDecs, t)));
           let k' = function
             | gl' ->
-                begin if noConstraints (g_, t) then k gl'
+                begin if noConstraints (g, t) then k gl'
                 else begin
                   Trace.constraintsRemain ();
                   ()
                 end
                 end
           in
-          accR (gl_, Seq (piDecs, t), b, k')
-      | ( (g_, ((I.Dec (_, v1_) as d_) :: l2_ as l_)),
-          (Seq ((I.Dec (_, v1') :: l2'_ as b'_), t) as l'_),
-          b,
-          k ) ->
-          begin if Unify.unifiable (g_, (v1_, I.id), (v1', t)) then
-            accR ((decUName (g_, d_), l2_), Seq (l2'_, I.dot1 t), b, k)
+          accR (gl, Seq (piDecs, t), b, k')
+      | (g, ((I.Dec (_, v1) as d) :: l2 as l)), (Seq ((I.Dec (_, v1') :: l2' as b'), t) as l') ->
+          begin if Unify.unifiable g (v1, I.id) (v1', t) then
+            accR ((decUName g d, l2), Seq (l2', I.dot1 t), b, k)
           else
-            begin if Subordinate.belowEq (I.targetFam v1_, b) then begin
-              Trace.mismatch (g_, (v1_, I.id), (v1', t));
+            begin if Subordinate.belowEq (I.targetFam v1) b then begin
+              Trace.mismatch g (v1, I.id) (v1', t);
               ()
             end
             else
               accR
-                ((decUName (g_, d_), l2_), Seq (b'_, I.comp (t, I.shift)), b, k)
+                ((decUName g d, l2), Seq (b', I.comp t I.shift), b, k)
             end
           end
-      | gl_, Seq ([], t), b, k -> k gl_
-      | ((g_, []) as gl_), (Seq (l'_, t) as r_), b, k -> begin
-          Trace.missing (g_, r_);
+      | gl, Seq ([], t) -> k gl
+      | ((g, []) as gl), (Seq (l', t) as r) -> begin
+          Trace.missing g r;
           ()
         end
-      | gl_, Plus (r1, r2), b, k -> begin
-          CsManager.trail (function () -> accR (gl_, r1, b, k));
-          accR (gl_, r2, b, k)
+      | gl, Plus (r1, r2) -> begin
+          CsManager.trail (function () -> accR (gl, r1, b, k));
+          accR (gl, r2, b, k)
         end
-      | gl_, Star One, b, k -> k gl_
-      | gl_, (Star r' as r), b, k -> begin
-          CsManager.trail (function () -> k gl_);
-          accR (gl_, r', b, function gl' -> accR (gl', r, b, k))
+      | gl, Star One -> k gl
+      | gl, (Star r' as r) -> begin
+          CsManager.trail (function () -> k gl);
+          accR (gl, r', b, function gl' -> accR (gl', r, b, k))
         end
 
-    let checkSubsumedBlock (g_, l'_, rb, b) =
+    let checkSubsumedBlock (g, l', rb, b) =
       try
         begin
-          accR ((g_, l'_), rb, b, init b);
+          accR ((g, l'), rb, b, init b);
           raise
             (Error
                (F.makestring_fmt
-                  (formatSubsump "World subsumption failure" (g_, l'_, rb, b))))
+                  (formatSubsump "World subsumption failure" (g, l', rb, b))))
         end
       with Success -> ()
 
-    let rec checkSubsumedWorlds = function
-      | [], rb, b -> ()
-      | cid :: cids, rb, b ->
+    let rec checkSubsumedWorlds (a, rb, b) = match a with
+      | [] -> ()
+      | cid :: cids ->
           let someDecs, piDecs = I.constBlock cid in
-          begin
-            checkSubsumedBlock (Names.ctxName someDecs, piDecs, rb, b);
-            checkSubsumedWorlds (cids, rb, b)
-          end
+          checkSubsumedBlock (Names.ctxName someDecs, piDecs, rb, b);
+          checkSubsumedWorlds (cids, rb, b)
 
-    let checkBlocks (T.Worlds cids) (g_, v_, occ) =
+    let checkBlocks (T.Worlds cids) (g, v, occ) =
       try
-        let b = I.targetFam v_ in
+        let b = I.targetFam v in
         let wb =
           try getWorlds b with Error msg -> raise (Error' (occ, msg))
         in
         let rb = worldsToReg wb in
-        let _ =
-          begin if subsumedLookup b then ()
+        ignore begin if subsumedLookup b then ()
           else
             try
               begin
@@ -389,49 +393,44 @@ end) : WORLDSYN = struct
                 subsumedInsert b
               end
             with Error msg -> raise (Error' (occ, msg))
-          end
-        in
-        let l_ = subGoalToDList v_ in
-        begin
-          accR ((g_, l_), rb, b, init b);
-          raise
-            (Error'
-               ( occ,
-                 F.makestring_fmt
-                   (formatSubsump "World violation" (g_, l_, rb, b)) ))
-        end
+          end;
+        let l = subGoalToDList v in
+        accR ((g, l), rb, b, init b);
+        raise
+          (Error'
+             ( occ,
+               F.makestring_fmt
+                 (formatSubsump "World violation" (g, l, rb, b)) ))
       with Success -> ()
 
-    let rec checkClause = function
-      | g_, I.Root (a, s_), w_, occ -> ()
-      | g_, I.Pi (((I.Dec (_, v1_) as d_), Maybe), v2_), w_, occ -> begin
-          checkClause (decEName (g_, d_), v2_, w_, P.body occ);
-          checkGoal (g_, v1_, w_, P.label occ)
+    let rec checkClause (g, b, w, occ) = match b with
+      | I.Root (a, s) -> ()
+      | I.Pi (((I.Dec (_, v1) as d), Maybe), v2) -> begin
+          checkClause (decEName g d, v2, w, P.body occ);
+          checkGoal (g, v1, w, P.label occ)
         end
-      | g_, I.Pi (((I.Dec (_, v1_) as d_), No), v2_), w_, occ -> begin
-          checkBlocks w_ (g_, v1_, P.label occ);
+      | I.Pi (((I.Dec (_, v1) as d), No), v2) -> begin
+          checkBlocks w (g, v1, P.label occ);
           begin
-            checkClause (decEName (g_, d_), v2_, w_, P.body occ);
-            checkGoal (g_, v1_, w_, P.label occ)
+            checkClause (decEName g d, v2, w, P.body occ);
+            checkGoal (g, v1, w, P.label occ)
           end
         end
 
-    and checkGoal = function
-      | g_, I.Root (a, s_), w_, occ -> ()
-      | g_, I.Pi (((I.Dec (_, v1_) as d_), _), v2_), w_, occ -> begin
-          checkGoal (decUName (g_, d_), v2_, w_, P.body occ);
-          checkClause (g_, v1_, w_, P.label occ)
+    and checkGoal (g, b, w, occ) = match b with
+      | I.Root (a, s) -> ()
+      | I.Pi (((I.Dec (_, v1) as d), _), v2) -> begin
+          checkGoal (decUName g d, v2, w, P.body occ);
+          checkClause (g, v1, w, P.label occ)
         end
 
-    let worldcheck w_ a =
-      let _ =
-        begin if !Global.chatter > 3 then
+    let worldcheck w a =
+      ignore begin if !Global.chatter > 3 then
           print
             (("World checking family " ^ Names.qidToString (Names.constQid a))
             ^ ":\n")
         else ()
-        end
-      in
+        end;
       ignore (subsumedReset ());
       let rec checkAll = function
         | [] -> ()
@@ -440,7 +439,7 @@ end) : WORLDSYN = struct
               print (Names.qidToString (Names.constQid c) ^ " ")
             else ();
             if !Global.chatter > 4 then Trace.clause c else ();
-            (try checkClause (I.Null, I.constType c, w_, P.top)
+            (try checkClause (I.Null, I.constType c, w, P.top)
              with Error' (occ, msg) -> raise (Error (wrapMsg (c, occ, msg))));
             checkAll clist
         | I.Def d :: clist ->
@@ -448,37 +447,35 @@ end) : WORLDSYN = struct
               print (Names.qidToString (Names.constQid d) ^ " ")
             else ();
             if !Global.chatter > 4 then Trace.clause d else ();
-            (try checkClause (I.Null, I.constType d, w_, P.top)
+            (try checkClause (I.Null, I.constType d, w, P.top)
              with Error' (occ, msg) -> raise (Error (wrapMsg (d, occ, msg))));
             checkAll clist
       in
       ignore (checkAll (Index.lookup a));
-      let _ =
-        begin if !Global.chatter = 4 then print "\n" else ()
-        end
-      in
+      ignore begin if !Global.chatter = 4 then print "\n" else ()
+        end;
       ()
 
-    let rec ctxAppend = function
-      | g_, I.Null -> g_
-      | g_, I.Decl (g'_, d_) -> I.Decl (ctxAppend (g_, g'_), d_)
+    let rec ctxAppend (g, a) = match a with
+      | I.Null -> g
+      | I.Decl (g', d) -> I.Decl (ctxAppend (g, g'), d)
 
-    let rec checkSubordBlock (g_, g'_, l_) =
-      checkSubordBlock' (ctxAppend (g_, g'_), l_)
+    let rec checkSubordBlock (g, g', l) =
+      checkSubordBlock' (ctxAppend (g, g'), l)
 
-    and checkSubordBlock' = function
-      | g_, (I.Dec (_, v_) as d_) :: l'_ -> begin
-          Subordinate.respectsN (g_, v_);
-          checkSubordBlock' (I.Decl (g_, d_), l'_)
+    and checkSubordBlock' (g, a) = match a with
+      | (I.Dec (_, v) as d) :: l' -> begin
+          Subordinate.respectsN g v;
+          checkSubordBlock' (I.Decl (g, d), l')
         end
-      | g_, [] -> ()
+      | [] -> ()
 
     let conDecBlock = function
-      | I.BlockDec (_, _, gsome_, lpi) -> (gsome_, lpi)
-      | condec_ ->
+      | I.BlockDec (_, _, gsome, lpi) -> (gsome, lpi)
+      | condec ->
           raise
             (Error
-               (("Identifier " ^ I.conDecName condec_) ^ " is not a block label"))
+               (("Identifier " ^ I.conDecName condec) ^ " is not a block label"))
 
     let constBlock cid = conDecBlock (I.sgnLookup cid)
 
@@ -486,16 +483,14 @@ end) : WORLDSYN = struct
       | [] -> ()
       | cid :: cids ->
           let someDecs, piDecs = constBlock cid in
-          begin
-            checkSubordBlock (I.Null, someDecs, piDecs);
-            checkSubordWorlds cids
-          end
+          checkSubordBlock (I.Null, someDecs, piDecs);
+          checkSubordWorlds cids
 
-    let install (a, (T.Worlds cids as w_)) =
+    let install a (T.Worlds cids as w) =
       begin
         (try checkSubordWorlds cids
          with Subordinate.Error msg -> raise (Error msg));
-        insert (a, w_)
+        insert a w
       end
 
     let uninstall a =
@@ -511,8 +506,8 @@ end) : WORLDSYN = struct
 
     let ctxToList gin =
       let rec ctxToList' = function
-        | I.Null, g_ -> g_
-        | I.Decl (g_, d_), g'_ -> ctxToList' (g_, d_ :: g'_)
+        | I.Null, g -> g
+        | I.Decl (g, d), g' -> ctxToList' (g, d :: g')
       in
       ctxToList' (gin, [])
 

@@ -1,3 +1,7 @@
+open! Global.Global_
+open! Formatter.Formatter_
+open! Print
+open! Print.Print_
 include module type of METAPRINT
 
 module MetaPrint (MetaPrint__0 : sig

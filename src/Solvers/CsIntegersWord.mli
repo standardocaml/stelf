@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/solvers/CsIntegersWord.sig.ml" *)
 
 (* # 1 "src/solvers/CsIntegersWord.fun.ml" *)

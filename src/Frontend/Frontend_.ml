@@ -1,9 +1,36 @@
+open! Timing
+open! Stream.Stream_
+open! Global.Global_
+open! Table
+open! Tabling
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Paths
+open! Paths.Paths_
+open! Print.Print_
+open! Typecheck.Typecheck_
+open! Style.Style_
+open! Modes.Modes_
+open! Terminate.Terminate_
+open! Index.Index_
+open! Thm
+open! M2
+open! M2.M2_
+open! Compile.Compile_
+open! Opsem.Opsem_
+open! Modules.Modules_
+open! Solvers.Solvers_
+open! Worldcheck.Worldcheck_
+open! Unique.Unique_
+open! Cover.Cover_
+open! Tomega_lib.Tomega_
+open! Msg.Msg_
+
 (* # 1 "src/frontend/Frontend_.sig.ml" *)
 
 (* # 1 "src/frontend/Frontend_.fun.ml" *)
 
 (* # 1 "src/frontend/Frontend_.sml.ml" *)
-open! Basis
 
 (* Front End Interface *)
 (* Author: Frank Pfenning *)

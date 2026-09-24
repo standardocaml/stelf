@@ -1,7 +1,9 @@
+open! Table
+open! Global.Global_
+
 (* # 1 "src/index/IndexSkolem.sig.ml" *)
 
 (* # 1 "src/index/IndexSkolem.fun.ml" *)
-open! Basis
 open Queue
 
 (* Indexing (Constants and Skolem constants) *)

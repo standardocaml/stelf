@@ -1,5 +1,9 @@
+open! Table.Table_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Index.Index_
+
 (* # 1 "src/tabling/Tabledsyn.sig.ml" *)
-open! Basis
 
 (* Tabled Syntax *)
 (* Author: Brigitte Pientka *)

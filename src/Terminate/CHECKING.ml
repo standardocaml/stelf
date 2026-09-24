@@ -1,3 +1,6 @@
+open! Intsyn.Lambda_
+open! Paths.Paths_
+
 (* # 1 "src/terminate/Checking.sig.ml" *)
 open! Basis
 
@@ -35,5 +38,5 @@ module type CHECKING = sig
   val shiftPred :
     order predicate -> (IntSyn.sub -> IntSyn.sub) -> order predicate
 
-  val deduce : IntSyn.dctx * qctx * rctx * order predicate -> bool
+  val deduce : IntSyn.dctx -> qctx -> rctx -> order predicate -> bool
 end

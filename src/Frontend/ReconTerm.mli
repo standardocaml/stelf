@@ -1,3 +1,9 @@
+open! Basis
+open! Table.Table_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Msg.Msg_
 include module type of RECONTERM
 
 module ReconTerm (ReconTerm__0 : sig

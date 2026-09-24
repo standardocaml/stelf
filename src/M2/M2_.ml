@@ -1,9 +1,21 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Modes.Modes_
+open! Print.Print_
+open! Typecheck.Typecheck_
+open! Index
+open! Index.Index_
+open! Compile
+open! Compile.Compile_
+open! Table
+open! Timing
+
 (* # 1 "src/m2/M2_.sig.ml" *)
 
 (* # 1 "src/m2/M2_.fun.ml" *)
 
 (* # 1 "src/m2/M2_.sml.ml" *)
-open! Basis
 open MetaPrint
 open Init
 open Search

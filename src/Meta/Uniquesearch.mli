@@ -1,3 +1,10 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Index.Index_
+open! Compile
+open! Compile.Compile_
 include module type of UNIQUESEARCH
 
 module UniqueSearch (UniqueSearch__0 : sig

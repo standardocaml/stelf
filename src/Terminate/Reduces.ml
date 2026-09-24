@@ -1,5 +1,13 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Formatter__Formatter_
+open! Index.Index_
+open! Paths
+open! Paths.Paths_
+
 (* # 1 "src/terminate/Reduces.sig.ml" *)
-open! Basis
 
 (* Reduction and Termination checker *)
 (* Author: Brigitte Pientka *)
@@ -70,81 +78,79 @@ end) : REDUCES = struct
           raise
             (Error
                (P.wrapLoc'
-                  ( P.Loc (fileName, P.occToRegionDec occDec occ),
-                    Origins.linesInfoLookup fileName,
-                    msg )))
+                  (P.Loc (fileName, P.occToRegionDec occDec occ)) (Origins.linesInfoLookup fileName) msg))
       end
 
-    let rec concat = function
-      | g'_, I.Null -> g'_
-      | g'_, I.Decl (g_, d_) -> I.Decl (concat (g'_, g_), d_)
+    let rec concat (g', a) = match a with
+      | I.Null -> g'
+      | I.Decl (g, d) -> I.Decl (concat (g', g), d)
 
-    let fmtOrder (g_, o_) =
+    let fmtOrder (g, o) =
       let rec fmtOrder' = function
-        | R.Arg (((u_, s) as us_), ((v_, s') as vs_)) ->
+        | R.Arg (((u, s) as us), ((v, s') as vs)) ->
             F.hbox
               [
                 F.string "(";
-                Print.formatExp (g_, I.EClo (fst us_, snd us_));
+                Print.formatExp g (I.EClo (fst us, snd us));
                 F.string ")";
               ]
-        | R.Lex l_ ->
+        | R.Lex l ->
             F.hbox
-              [ F.string "{"; F.hOVbox0 1 0 1 (fmtOrders l_); F.string "}" ]
-        | R.Simul l_ ->
+              [ F.string "{"; F.hOVbox0 1 0 1 (fmtOrders l); F.string "}" ]
+        | R.Simul l ->
             F.hbox
-              [ F.string "["; F.hOVbox0 1 0 1 (fmtOrders l_); F.string "]" ]
+              [ F.string "["; F.hOVbox0 1 0 1 (fmtOrders l); F.string "]" ]
       and fmtOrders = function
         | [] -> []
-        | o_ :: [] -> [ fmtOrder' o_ ]
-        | o_ :: l_ -> fmtOrder' o_ :: F.break :: fmtOrders l_
+        | o :: [] -> [ fmtOrder' o ]
+        | o :: l -> fmtOrder' o :: F.break :: fmtOrders l
       in
-      fmtOrder' o_
+      fmtOrder' o
 
-    let fmtComparison (g_, o_, comp, o'_) =
+    let fmtComparison (g, o, comp, o') =
       F.hOVbox0 1 0 1
         [
-          fmtOrder (g_, o_); F.break; F.string comp; F.break; fmtOrder (g_, o'_);
+          fmtOrder (g, o); F.break; F.string comp; F.break; fmtOrder (g, o');
         ]
 
-    let rec fmtPredicate = function
-      | g_, C.Less (o_, o'_) -> fmtComparison (g_, o_, "<", o'_)
-      | g_, C.Leq (o_, o'_) -> fmtComparison (g_, o_, "<=", o'_)
-      | g_, C.Eq (o_, o'_) -> fmtComparison (g_, o_, "=", o'_)
-      | g_, C.Pi (d_, p_) ->
-          F.hbox [ F.string "Pi "; fmtPredicate (I.Decl (g_, d_), p_) ]
+    let rec fmtPredicate (g, a) = match a with
+      | C.Less (o, o') -> fmtComparison (g, o, "<", o')
+      | C.Leq (o, o') -> fmtComparison (g, o, "<=", o')
+      | C.Eq (o, o') -> fmtComparison (g, o, "=", o')
+      | C.Pi (d, p) ->
+          F.hbox [ F.string "Pi "; fmtPredicate (I.Decl (g, d), p) ]
 
-    let rec rlistToString' = function
-      | g_, [] -> ""
-      | g_, p_ :: [] -> F.makestring_fmt (fmtPredicate (g_, p_))
-      | g_, p_ :: rl_ ->
-          (F.makestring_fmt (fmtPredicate (g_, p_)) ^ " ,")
-          ^ rlistToString' (g_, rl_)
+    let rec rlistToString' (g, a) = match a with
+      | [] -> ""
+      | p :: [] -> F.makestring_fmt (fmtPredicate (g, p))
+      | p :: rl ->
+          (F.makestring_fmt (fmtPredicate (g, p)) ^ " ,")
+          ^ rlistToString' (g, rl)
 
-    let rlistToString (g_, rl_) = rlistToString' (Names.ctxName g_, rl_)
+    let rlistToString (g, rl) = rlistToString' (Names.ctxName g, rl)
 
-    let orderToString (g_, p_) =
-      F.makestring_fmt (fmtPredicate (Names.ctxName g_, p_))
+    let orderToString (g, p) =
+      F.makestring_fmt (fmtPredicate (Names.ctxName g, p))
 
     let select (c, (s_, s)) =
-      let so_ = R.selLookup c in
-      let vid_ : I.eclo = (I.constType c, I.id) in
-      let rec select'' (n, (ss'_, vs'')) : I.eclo * I.eclo =
-        select''W (n, (ss'_, Whnf.whnf vs''))
+      let so = R.selLookup c in
+      let vid : I.eclo = (I.constType c, I.id) in
+      let rec select'' (n, (ss', vs'')) : I.eclo * I.eclo =
+        select''W (n, (ss', Whnf.whnf vs''))
       and select''W = function
-        | 1, ((I.App (u'_, s'_), s'), (I.Pi ((I.Dec (_, v''), _), _), s'')) ->
-            ((u'_, s'), (v'', s''))
-        | n, ((I.SClo (s'_, s1'), s2'), vs'') ->
-            select''W (n, ((s'_, I.comp (s1', s2')), vs''))
-        | n, ((I.App (u'_, s'_), s'), (I.Pi ((I.Dec (_, v1''), _), v2''), s''))
+        | 1, ((I.App (u', s'_), s'), (I.Pi ((I.Dec (_, v''), _), _), s'')) ->
+            ((u', s'), (v'', s''))
+        | n, ((I.SClo (s', s1'), s2'), vs'') ->
+            select''W (n, ((s', I.comp s1' s2'), vs''))
+        | n, ((I.App (u', s'_), s'), (I.Pi ((I.Dec (_, v1''), _), v2''), s''))
           ->
             select''
-              (n - 1, ((s'_, s'), (v2'', I.Dot (I.Exp (I.EClo (u'_, s')), s''))))
+              (n - 1, ((s'_, s'), (v2'', I.Dot (I.Exp (I.EClo (u', s')), s''))))
       in
       let rec select' = function
-        | R.Arg n -> R.Arg (select'' (n, ((s_, s), vid_)))
-        | R.Lex l_ -> R.Lex (map select' l_)
-        | R.Simul l_ -> R.Simul (map select' l_)
+        | R.Arg n -> R.Arg (select'' (n, ((s_, s), vid)))
+        | R.Lex l -> R.Lex (map select' l)
+        | R.Simul l -> R.Simul (map select' l)
       in
       select' (R.selLookup c)
 
@@ -158,74 +164,72 @@ end) : REDUCES = struct
                ^ N.qidToString (N.constQid c) ))
 
     let selectROrder (c, (s_, s)) =
-      let vid_ : I.eclo = (I.constType c, I.id) in
-      let rec select'' (n, (ss'_, vs'')) : I.eclo * I.eclo =
-        select''W (n, (ss'_, Whnf.whnf vs''))
+      let vid : I.eclo = (I.constType c, I.id) in
+      let rec select'' (n, (ss', vs'')) : I.eclo * I.eclo =
+        select''W (n, (ss', Whnf.whnf vs''))
       and select''W = function
-        | 1, ((I.App (u'_, s'_), s'), (I.Pi ((I.Dec (_, v''), _), _), s'')) ->
-            ((u'_, s'), (v'', s''))
-        | n, ((I.SClo (s'_, s1'), s2'), vs'') ->
-            select''W (n, ((s'_, I.comp (s1', s2')), vs''))
-        | n, ((I.App (u'_, s'_), s'), (I.Pi ((I.Dec (_, v1''), _), v2''), s''))
+        | 1, ((I.App (u', s'_), s'), (I.Pi ((I.Dec (_, v''), _), _), s'')) ->
+            ((u', s'), (v'', s''))
+        | n, ((I.SClo (s', s1'), s2'), vs'') ->
+            select''W (n, ((s', I.comp s1' s2'), vs''))
+        | n, ((I.App (u', s'_), s'), (I.Pi ((I.Dec (_, v1''), _), v2''), s''))
           ->
             select''
-              (n - 1, ((s'_, s'), (v2'', I.Dot (I.Exp (I.EClo (u'_, s')), s''))))
+              (n - 1, ((s'_, s'), (v2'', I.Dot (I.Exp (I.EClo (u', s')), s''))))
       in
       let rec select' = function
-        | R.Arg n -> R.Arg (select'' (n, ((s_, s), vid_)))
-        | R.Lex l_ -> R.Lex (map select' l_)
-        | R.Simul l_ -> R.Simul (map select' l_)
+        | R.Arg n -> R.Arg (select'' (n, ((s_, s), vid)))
+        | R.Lex l -> R.Lex (map select' l)
+        | R.Simul l -> R.Simul (map select' l)
       in
       let selectP = function
-        | R.Less (o1_, o2_) -> C.Less (select' o1_, select' o2_)
-        | R.Leq (o1_, o2_) -> C.Leq (select' o1_, select' o2_)
-        | R.Eq (o1_, o2_) -> C.Eq (select' o1_, select' o2_)
+        | R.Less (o1, o2) -> C.Less (select' o1, select' o2)
+        | R.Leq (o1, o2) -> C.Leq (select' o1, select' o2)
+        | R.Eq (o1, o2) -> C.Eq (select' o1, select' o2)
       in
       try Some (selectP (R.selLookupROrder c)) with R.Error s -> None
 
-    let abstractRO (g_, d_, o_) = C.Pi (d_, o_)
+    let abstractRO (g, d, o) = C.Pi (d, o)
 
-    let rec getROrder (g_, q_, vs_, occ) =
-      getROrderW (g_, q_, Whnf.whnf vs_, occ)
+    let rec getROrder (g, q, vs, occ) =
+      getROrderW (g, q, Whnf.whnf vs, occ)
 
-    and getROrderW = function
-      | g_, q_, ((I.Root (I.Const a, s_), s) as vs_), occ ->
-          let o_ = selectROrder (a, (s_, s)) in
-          let _ =
-            begin match o_ with
+    and getROrderW (g, q, b, occ) = match b with
+      | ((I.Root (I.Const a, s_), s) as vs) ->
+          let o = selectROrder (a, (s_, s)) in
+          ignore begin match o with
             | None -> ()
-            | Some o_ ->
+            | Some o ->
                 begin if !Global.chatter > 5 then
                   print
                     (((("Reduction predicate for "
                        ^ N.qidToString (N.constQid a))
                       ^ " added : ")
-                     ^ orderToString (g_, o_))
+                     ^ orderToString (g, o))
                     ^ "\n")
                 else ()
                 end
-            end
-          in
-          o_
-      | g_, q_, (I.Pi ((d_, Maybe), v_), s), occ ->
-          let o_ =
+            end;
+          o
+      | (I.Pi ((d, Maybe), v), s) ->
+          let o =
             getROrder
-              ( I.Decl (g_, N.decLUName (g_, I.decSub (d_, s))),
-                I.Decl (q_, C.All),
-                (v_, I.dot1 s),
+              ( I.Decl (g, N.decLUName g (I.decSub d s)),
+                I.Decl (q, C.All),
+                (v, I.dot1 s),
                 P.body occ )
           in
-          begin match o_ with
+          begin match o with
           | None -> None
-          | Some o'_ -> Some (abstractRO (g_, I.decSub (d_, s), o'_))
+          | Some o' -> Some (abstractRO (g, I.decSub d s, o'))
           end
-      | g_, q_, (I.Pi (((I.Dec (_, v1_) as d_), No), v2_), s), occ ->
-          let o_ =
-            getROrder (g_, q_, (v2_, I.comp (I.invShift, s)), P.body occ)
+      | (I.Pi (((I.Dec (_, v1) as d), No), v2), s) ->
+          let o =
+            getROrder (g, q, (v2, I.comp I.invShift s), P.body occ)
           in
-          begin match o_ with None -> None | Some o'_ -> Some o'_
+          begin match o with None -> None | Some o' -> Some o'
           end
-      | g_, q_, ((I.Root (I.Def a, s_), s) as vs_), occ ->
+      | ((I.Root (I.Def a, s_), s) as vs) ->
           raise
             (Error'
                ( occ,
@@ -234,41 +238,36 @@ end) : REDUCES = struct
                  ^ N.qidToString (N.constQid a))
                  ^ "." ))
 
-    let rec checkGoal (g0_, q0_, rl_, vs_, vs'_, occ) =
-      checkGoalW (g0_, q0_, rl_, Whnf.whnf vs_, vs'_, occ)
+    let rec checkGoal (g0, q0, rl, vs, vs', occ) =
+      checkGoalW (g0, q0, rl, Whnf.whnf vs, vs', occ)
 
-    and checkGoalW = function
-      | g0_, q0_, rl_, (I.Pi (((I.Dec (_, v1_) as d_), No), v2_), s), vs'_, occ
+    and checkGoalW (g0, q0, rl, b, c, occ) = match b, c with
+      | (I.Pi (((I.Dec (_, v1) as d), No), v2), s), vs'
         -> begin
-          checkClause ((g0_, q0_, rl_), I.Null, I.Null, (v1_, s), P.label occ);
+          checkClause ((g0, q0, rl), I.Null, I.Null, (v1, s), P.label occ);
           checkGoal
-            (g0_, q0_, rl_, (v2_, I.comp (I.invShift, s)), vs'_, P.body occ)
+            (g0, q0, rl, (v2, I.comp I.invShift s), vs', P.body occ)
         end
-      | g0_, q0_, rl_, (I.Pi ((d_, Maybe), v_), s), (v'_, s'), occ ->
+      | (I.Pi ((d, Maybe), v), s), (v', s') ->
           checkGoal
-            ( I.Decl (g0_, N.decLUName (g0_, I.decSub (d_, s))),
-              I.Decl (q0_, C.All),
-              C.shiftRCtx rl_ (function s -> I.comp (s, I.shift)),
-              (v_, I.dot1 s),
-              (v'_, I.comp (s', I.shift)),
+            ( I.Decl (g0, N.decLUName g0 (I.decSub d s)),
+              I.Decl (q0, C.All),
+              C.shiftRCtx rl (function s -> I.comp s I.shift),
+              (v, I.dot1 s),
+              (v', I.comp s' I.shift),
               P.body occ )
-      | ( g0_,
-          q0_,
-          rl_,
-          ((I.Root (I.Const a, s_), s) as vs_),
-          ((I.Root (I.Const a', s'_), s') as vs'_),
-          occ ) ->
-          let rec lookup = function
-            | R.Empty, f -> R.Empty
-            | (R.Le (a, a's') as a's), f ->
+      | ((I.Root (I.Const a, s_), s) as vs), ((I.Root (I.Const a', s'_), s') as vs') ->
+          let rec lookup (b, f) = match b with
+            | R.Empty -> R.Empty
+            | (R.Le (a, a's') as a's) ->
                 begin if f a then a's else lookup (a's', f)
                 end
-            | (R.Lt (a, a's') as a's), f ->
+            | (R.Lt (a, a's') as a's) ->
                 begin if f a then a's else lookup (a's', f)
                 end
           in
-          let p_ : (I.eclo * I.eclo) R.order = selectOcc (a, (s_, s), occ) in
-          let p'_ : (I.eclo * I.eclo) R.order = select (a', (s'_, s')) in
+          let p : (I.eclo * I.eclo) R.order = selectOcc (a, (s_, s), occ) in
+          let p' : (I.eclo * I.eclo) R.order = select (a', (s'_, s')) in
           let a's = R.mutLookup a in
           begin match lookup (a's, function x' -> x' = a') with
           | R.Empty -> ()
@@ -276,45 +275,45 @@ end) : REDUCES = struct
               begin if !Global.chatter > 4 then begin
                 print "Verifying termination order:\n";
                 begin
-                  print (rlistToString (g0_, rl_));
+                  print (rlistToString (g0, rl));
                   print
-                    ((" ---> " ^ orderToString (g0_, C.Leq (p_, p'_))) ^ "\n")
+                    ((" ---> " ^ orderToString (g0, C.Leq (p, p'))) ^ "\n")
                 end
               end
               else ()
               end;
-              begin if C.deduce (g0_, q0_, rl_, C.Leq (p_, p'_)) then ()
+              begin if C.deduce g0 q0 rl (C.Leq (p, p')) then ()
               else
                 raise
                   (Error'
                      ( occ,
-                       (("Termination violation:\n" ^ rlistToString (g0_, rl_))
+                       (("Termination violation:\n" ^ rlistToString (g0, rl))
                        ^ " ---> ")
-                       ^ orderToString (g0_, C.Leq (p_, p'_)) ))
+                       ^ orderToString (g0, C.Leq (p, p')) ))
               end
             end
           | R.Lt _ -> begin
               begin if !Global.chatter > 4 then begin
                 print "Verifying termination order:\n";
                 begin
-                  print (rlistToString (g0_, rl_) ^ " ---> ");
-                  print (orderToString (g0_, C.Less (p_, p'_)) ^ "\n")
+                  print (rlistToString (g0, rl) ^ " ---> ");
+                  print (orderToString (g0, C.Less (p, p')) ^ "\n")
                 end
               end
               else ()
               end;
-              begin if C.deduce (g0_, q0_, rl_, C.Less (p_, p'_)) then ()
+              begin if C.deduce g0 q0 rl (C.Less (p, p')) then ()
               else
                 raise
                   (Error'
                      ( occ,
-                       (("Termination violation:\n" ^ rlistToString (g0_, rl_))
+                       (("Termination violation:\n" ^ rlistToString (g0, rl))
                        ^ " ---> ")
-                       ^ orderToString (g0_, C.Less (p_, p'_)) ))
+                       ^ orderToString (g0, C.Less (p, p')) ))
               end
             end
           end
-      | g0_, q0_, rl_, ((I.Root (I.Def a, s_), s) as vs_), vs'_, occ ->
+      | ((I.Root (I.Def a, s_), s) as vs), vs' ->
           raise
             (Error'
                ( occ,
@@ -322,7 +321,7 @@ end) : REDUCES = struct
                     available:\n" ^ "Illegal use of ")
                  ^ N.qidToString (N.constQid a))
                  ^ "." ))
-      | g0_, q0_, rl_, vs_, ((I.Root (I.Def a', s'_), s') as vs'_), occ ->
+      | vs, ((I.Root (I.Def a', s'_), s') as vs') ->
           raise
             (Error'
                ( occ,
@@ -331,54 +330,45 @@ end) : REDUCES = struct
                  ^ N.qidToString (N.constQid a'))
                  ^ "." ))
 
-    and checkSubgoals = function
-      | ( g0_,
-          q0_,
-          rl_,
-          vs_,
-          n,
-          (I.Decl (g_, (I.Dec (_, v'_) as d_)), I.Decl (q_, C.And occ)) ) ->
-          ignore (checkGoal (g0_, q0_, rl_, (v'_, I.Shift (n + 1)), vs_, occ));
-          let ro_ = getROrder (g0_, q0_, (v'_, I.Shift (n + 1)), occ) in
+    and checkSubgoals (g0, q0, rl, vs, n, a) = match a with
+      | (I.Decl (g, (I.Dec (_, v') as d)), I.Decl (q, C.And occ)) ->
+          ignore (checkGoal (g0, q0, rl, (v', I.Shift (n + 1)), vs, occ));
+          let ro = getROrder (g0, q0, (v', I.Shift (n + 1)), occ) in
           let rl' =
-            begin match ro_ with None -> rl_ | Some o_ -> o_ :: rl_
+            begin match ro with None -> rl | Some o -> o :: rl
             end
           in
-          checkSubgoals (g0_, q0_, rl', vs_, n + 1, (g_, q_))
-      | g0_, q0_, rl_, vs_, n, (I.Decl (g_, d_), I.Decl (q_, C.Exist)) ->
-          checkSubgoals (g0_, q0_, rl_, vs_, n + 1, (g_, q_))
-      | g0_, q0_, rl_, vs_, n, (I.Decl (g_, d_), I.Decl (q_, C.All)) ->
-          checkSubgoals (g0_, q0_, rl_, vs_, n + 1, (g_, q_))
-      | g0_, q0_, rl_, vs_, n, (_, _) -> ()
+          checkSubgoals (g0, q0, rl', vs, n + 1, (g, q))
+      | (I.Decl (g, d), I.Decl (q, C.Exist)) ->
+          checkSubgoals (g0, q0, rl, vs, n + 1, (g, q))
+      | (I.Decl (g, d), I.Decl (q, C.All)) ->
+          checkSubgoals (g0, q0, rl, vs, n + 1, (g, q))
+      | (_, _) -> ()
 
-    and checkClause (gqr, g_, q_, vs_, occ) =
-      checkClauseW (gqr, g_, q_, Whnf.whnf vs_, occ)
+    and checkClause (gqr, g, q, vs, occ) =
+      checkClauseW (gqr, g, q, Whnf.whnf vs, occ)
 
-    and checkClauseW = function
-      | gqr, g_, q_, (I.Pi ((d_, Maybe), v_), s), occ ->
+    and checkClauseW (b, g, q, c, occ) = match b, c with
+      | gqr, (I.Pi ((d, Maybe), v), s) ->
           checkClause
             ( gqr,
-              I.Decl (g_, N.decEName (g_, I.decSub (d_, s))),
-              I.Decl (q_, C.Exist),
-              (v_, I.dot1 s),
+              I.Decl (g, N.decEName g (I.decSub d s)),
+              I.Decl (q, C.Exist),
+              (v, I.dot1 s),
               P.body occ )
-      | gqr, g_, q_, (I.Pi (((I.Dec (_, v1_) as d_), No), v2_), s), occ ->
+      | gqr, (I.Pi (((I.Dec (_, v1) as d), No), v2), s) ->
           checkClause
             ( gqr,
-              I.Decl (g_, I.decSub (d_, s)),
-              I.Decl (q_, C.And (P.label occ)),
-              (v2_, I.dot1 s),
+              I.Decl (g, I.decSub d s),
+              I.Decl (q, C.And (P.label occ)),
+              (v2, I.dot1 s),
               P.body occ )
-      | ( ((g0_, q0_, rl_) as gqr),
-          g_,
-          q_,
-          ((I.Root (I.Const a, s_), s) as vs_),
-          occ ) ->
-          let n = I.ctxLength g_ in
-          let rl' = C.shiftRCtx rl_ (function s -> I.comp (s, I.Shift n)) in
+      | ((g0, q0, rl) as gqr), ((I.Root (I.Const a, s_), s) as vs) ->
+          let n = I.ctxLength g in
+          let rl' = C.shiftRCtx rl (function s -> I.comp s (I.Shift n)) in
           checkSubgoals
-            (concat (g0_, g_), concat (q0_, q_), rl', vs_, 0, (g_, q_))
-      | gqr, g_, q_, (I.Root (I.Def a, s_), s), occ ->
+            (concat (g0, g), concat (q0, q), rl', vs, 0, (g, q))
+      | gqr, (I.Root (I.Def a, s_), s) ->
           raise
             (Error'
                ( occ,
@@ -387,26 +377,26 @@ end) : REDUCES = struct
                  ^ N.qidToString (N.constQid a))
                  ^ "." ))
 
-    let checkClause' (vs_, occ) =
-      checkClause ((I.Null, I.Null, []), I.Null, I.Null, vs_, occ)
+    let checkClause' (vs, occ) =
+      checkClause ((I.Null, I.Null, []), I.Null, I.Null, vs, occ)
 
-    let rec checkRGoal (g_, q_, rl_, vs_, occ) =
-      checkRGoalW (g_, q_, rl_, Whnf.whnf vs_, occ)
+    let rec checkRGoal (g, q, rl, vs, occ) =
+      checkRGoalW (g, q, rl, Whnf.whnf vs, occ)
 
-    and checkRGoalW = function
-      | g_, q_, rl_, ((I.Root (I.Const a, s_), s) as vs_), occ -> ()
-      | g_, q_, rl_, (I.Pi ((d_, Maybe), v_), s), occ ->
+    and checkRGoalW (g, q, rl, b, occ) = match b with
+      | ((I.Root (I.Const a, s_), s) as vs) -> ()
+      | (I.Pi ((d, Maybe), v), s) ->
           checkRGoal
-            ( I.Decl (g_, N.decLUName (g_, I.decSub (d_, s))),
-              I.Decl (q_, C.All),
-              C.shiftRCtx rl_ (function s -> I.comp (s, I.shift)),
-              (v_, I.dot1 s),
+            ( I.Decl (g, N.decLUName g (I.decSub d s)),
+              I.Decl (q, C.All),
+              C.shiftRCtx rl (function s -> I.comp s I.shift),
+              (v, I.dot1 s),
               P.body occ )
-      | g_, q_, rl_, (I.Pi (((I.Dec (_, v1_) as d_), No), v2_), s), occ -> begin
-          checkRClause (g_, q_, rl_, (v1_, s), P.label occ);
-          checkRGoal (g_, q_, rl_, (v2_, I.comp (I.invShift, s)), P.body occ)
+      | (I.Pi (((I.Dec (_, v1) as d), No), v2), s) -> begin
+          checkRClause (g, q, rl, (v1, s), P.label occ);
+          checkRGoal (g, q, rl, (v2, I.comp I.invShift s), P.body occ)
         end
-      | g_, q_, rl_, (I.Root (I.Def a, s_), s), occ ->
+      | (I.Root (I.Def a, s_), s) ->
           raise
             (Error'
                ( occ,
@@ -415,34 +405,29 @@ end) : REDUCES = struct
                  ^ N.qidToString (N.constQid a))
                  ^ "." ))
 
-    and checkRImp (g_, q_, rl_, vs_, vs'_, occ) =
-      checkRImpW (g_, q_, rl_, Whnf.whnf vs_, vs'_, occ)
+    and checkRImp (g, q, rl, vs, vs', occ) =
+      checkRImpW (g, q, rl, Whnf.whnf vs, vs', occ)
 
-    and checkRImpW = function
-      | g_, q_, rl_, (I.Pi ((d'_, Maybe), v'_), s'), (v_, s), occ ->
+    and checkRImpW (g, q, rl, b, vs, occ) = match b, vs with
+      | (I.Pi ((d', Maybe), v'), s'), (v, s) ->
           checkRImp
-            ( I.Decl (g_, N.decEName (g_, I.decSub (d'_, s'))),
-              I.Decl (q_, C.Exist),
-              C.shiftRCtx rl_ (function s -> I.comp (s, I.shift)),
-              (v'_, I.dot1 s'),
-              (v_, I.comp (s, I.shift)),
+            ( I.Decl (g, N.decEName g (I.decSub d' s')),
+              I.Decl (q, C.Exist),
+              C.shiftRCtx rl (function s -> I.comp s I.shift),
+              (v', I.dot1 s'),
+              (v, I.comp s I.shift),
               occ )
-      | ( g_,
-          q_,
-          rl_,
-          (I.Pi (((I.Dec (_, v1_) as d'_), No), v2_), s'),
-          (v_, s),
-          occ ) ->
+      | (I.Pi (((I.Dec (_, v1) as d'), No), v2), s'), (v, s) ->
           let rl' =
-            begin match getROrder (g_, q_, (v1_, s'), occ) with
-            | None -> rl_
-            | Some o_ -> o_ :: rl_
+            begin match getROrder (g, q, (v1, s'), occ) with
+            | None -> rl
+            | Some o -> o :: rl
             end
           in
-          checkRImp (g_, q_, rl', (v2_, I.comp (I.invShift, s')), (v_, s), occ)
-      | g_, q_, rl_, ((I.Root (I.Const a, s_), s) as vs'_), vs_, occ ->
-          checkRGoal (g_, q_, rl_, vs_, occ)
-      | g_, q_, rl_, ((I.Root (I.Def a, s_), s) as vs'_), vs_, occ ->
+          checkRImp (g, q, rl', (v2, I.comp I.invShift s'), (v, s), occ)
+      | ((I.Root (I.Const a, s_), s) as vs'), vs ->
+          checkRGoal (g, q, rl, vs, occ)
+      | ((I.Root (I.Def a, s_), s) as vs'), vs ->
           raise
             (Error'
                ( occ,
@@ -451,41 +436,39 @@ end) : REDUCES = struct
                  ^ N.qidToString (N.constQid a))
                  ^ "." ))
 
-    and checkRClause (g_, q_, rl_, vs_, occ) =
-      checkRClauseW (g_, q_, rl_, Whnf.whnf vs_, occ)
+    and checkRClause (g, q, rl, vs, occ) =
+      checkRClauseW (g, q, rl, Whnf.whnf vs, occ)
 
-    and checkRClauseW = function
-      | g_, q_, rl_, (I.Pi ((d_, Maybe), v_), s), occ ->
+    and checkRClauseW (g, q, rl, b, occ) = match b with
+      | (I.Pi ((d, Maybe), v), s) ->
           checkRClause
-            ( I.Decl (g_, N.decEName (g_, I.decSub (d_, s))),
-              I.Decl (q_, C.Exist),
-              C.shiftRCtx rl_ (function s -> I.comp (s, I.shift)),
-              (v_, I.dot1 s),
+            ( I.Decl (g, N.decEName g (I.decSub d s)),
+              I.Decl (q, C.Exist),
+              C.shiftRCtx rl (function s -> I.comp s I.shift),
+              (v, I.dot1 s),
               P.body occ )
-      | g_, q_, rl_, (I.Pi (((I.Dec (_, v1_) as d_), No), v2_), s), occ ->
-          let g'_ = I.Decl (g_, I.decSub (d_, s)) in
-          let q'_ = I.Decl (q_, C.Exist) in
-          let rl' = C.shiftRCtx rl_ (function s -> I.comp (s, I.shift)) in
+      | (I.Pi (((I.Dec (_, v1) as d), No), v2), s) ->
+          let g' = I.Decl (g, I.decSub d s) in
+          let q' = I.Decl (q, C.Exist) in
+          let rl' = C.shiftRCtx rl (function s -> I.comp s I.shift) in
           let rl'' =
             begin match
-              getROrder (g'_, q'_, (v1_, I.comp (s, I.shift)), occ)
+              getROrder (g', q', (v1, I.comp s I.shift), occ)
             with
             | None -> rl'
-            | Some o_ -> o_ :: rl'
+            | Some o -> o :: rl'
             end
           in
-          begin
-            checkRClause (g'_, q'_, rl'', (v2_, I.dot1 s), P.body occ);
-            checkRImp
-              ( g'_,
-                q'_,
-                rl'',
-                (v2_, I.dot1 s),
-                (v1_, I.comp (s, I.shift)),
-                P.label occ )
-          end
-      | g_, q_, rl_, ((I.Root (I.Const a, s_), s) as vs_), occ ->
-          let ro_ =
+          checkRClause (g', q', rl'', (v2, I.dot1 s), P.body occ);
+          checkRImp
+            ( g',
+              q',
+              rl'',
+              (v2, I.dot1 s),
+              (v1, I.comp s I.shift),
+              P.label occ )
+      | ((I.Root (I.Const a, s_), s) as vs) ->
+          let ro =
             begin match selectROrder (a, (s_, s)) with
             | None ->
                 raise
@@ -494,29 +477,27 @@ end) : REDUCES = struct
                        ("No reduction order assigned for "
                        ^ N.qidToString (N.constQid a))
                        ^ "." ))
-            | Some o_ -> o_
+            | Some o -> o
             end
           in
-          let _ =
-            begin if !Global.chatter > 4 then
+          ignore begin if !Global.chatter > 4 then
               print
-                (((("Verifying reduction property:\n" ^ rlistToString (g_, rl_))
+                (((("Verifying reduction property:\n" ^ rlistToString (g, rl))
                   ^ " ---> ")
-                 ^ orderToString (g_, ro_))
+                 ^ orderToString (g, ro))
                 ^ " \n")
             else ()
-            end
-          in
-          begin if C.deduce (g_, q_, rl_, ro_) then ()
+            end;
+          begin if C.deduce g q rl ro then ()
           else
             raise
               (Error'
                  ( occ,
-                   (("Reduction violation:\n" ^ rlistToString (g_, rl_))
+                   (("Reduction violation:\n" ^ rlistToString (g, rl))
                    ^ " ---> ")
-                   ^ orderToString (g_, ro_) ))
+                   ^ orderToString (g, ro) ))
           end
-      | g_, q_, rl_, ((I.Root (I.Def a, s_), s) as vs_), occ ->
+      | ((I.Root (I.Def a, s_), s) as vs) ->
           raise
             (Error'
                ( occ,
@@ -548,10 +529,9 @@ end) : REDUCES = struct
                 checkRClause (I.Null, I.Null, [], (I.constType b, I.id), P.top)
               with
               | Error' (occ, msg) -> error (b, occ, msg)
-              | R.Error msg ->
-                  raise (Error msg);
-                  checkFam' bs
-              end
+              | R.Error msg -> raise (Error msg)
+              end;
+              checkFam' bs
             end
           end
         | I.Def d :: bs -> begin
@@ -570,21 +550,18 @@ end) : REDUCES = struct
                 checkRClause (I.Null, I.Null, [], (I.constType d, I.id), P.top)
               with
               | Error' (occ, msg) -> error (d, occ, msg)
-              | R.Error msg ->
-                  raise (Error msg);
-                  checkFam' bs
-              end
+              | R.Error msg -> raise (Error msg)
+              end;
+              checkFam' bs
             end
           end
       in
-      let _ =
-        begin if !Global.chatter > 3 then
+      ignore begin if !Global.chatter > 3 then
           print
             (("Reduction checking family " ^ N.qidToString (N.constQid a))
             ^ ":\n")
         else ()
-        end
-      in
+        end;
       checkFam' (Index.lookup a)
 
     let checkFam a =
@@ -608,10 +585,9 @@ end) : REDUCES = struct
               end;
               begin try checkClause' ((I.constType b, I.id), P.top) with
               | Error' (occ, msg) -> error (b, occ, msg)
-              | R.Error msg ->
-                  raise (Error msg);
-                  checkFam' bs
-              end
+              | R.Error msg -> raise (Error msg)
+              end;
+              checkFam' bs
             end
           end
         | I.Def d :: bs -> begin
@@ -628,21 +604,18 @@ end) : REDUCES = struct
               end;
               begin try checkClause' ((I.constType d, I.id), P.top) with
               | Error' (occ, msg) -> error (d, occ, msg)
-              | R.Error msg ->
-                  raise (Error msg);
-                  checkFam' bs
-              end
+              | R.Error msg -> raise (Error msg)
+              end;
+              checkFam' bs
             end
           end
       in
-      let _ =
-        begin if !Global.chatter > 3 then
+      ignore begin if !Global.chatter > 3 then
           print
             (("Termination checking family " ^ N.qidToString (N.constQid a))
             ^ "\n")
         else ()
-        end
-      in
+        end;
       checkFam' (Index.lookup a)
 
     let reset () =

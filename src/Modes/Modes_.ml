@@ -1,9 +1,15 @@
+open! Table
+open! Intsyn.Lambda_
+open! Print.Print_
+open! Names.Names_
+open! Paths
+open! Index.Index_
+
 (* # 1 "src/modes/Modes_.sig.ml" *)
 
 (* # 1 "src/modes/Modes_.fun.ml" *)
 
 (* # 1 "src/modes/Modes_.sml.ml" *)
-open! Basis
 
 (* structure ModeSyn  in Modesyn.sml *)
 module ModeSyn = Modesyn.ModeSyn

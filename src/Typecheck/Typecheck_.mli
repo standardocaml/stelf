@@ -1,3 +1,6 @@
+open! Intsyn.Lambda_
+open! Print.Print_
+open! Names.Names_
 include module type of TYPECHECK
 
 module MakeTypeCheck

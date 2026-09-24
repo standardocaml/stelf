@@ -1,3 +1,9 @@
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Index.Index_
+open! Compile
+open! Compile.Compile_
 include module type of SEARCH
 
 module OLDSearch (OLDSearch__0 : sig

@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/tomega/Coverage.sig.ml" *)
 open! Basis
 
@@ -7,5 +9,5 @@ module type TOMEGACOVERAGE = sig
   exception Error of string
 
   val coverageCheckPrg :
-    Tomega.worlds * Tomega.dec IntSyn.ctx * Tomega.prg -> unit
+    Tomega.worlds -> Tomega.dec IntSyn.ctx -> Tomega.prg -> unit
 end

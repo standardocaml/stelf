@@ -1,3 +1,4 @@
+open! Formatter.Formatter_
 include module type of THMPRINT
 
 module ThmPrint (ThmPrint__0 : sig

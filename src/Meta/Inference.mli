@@ -1,3 +1,6 @@
+open! Intsyn.Lambda_
+open! Print.Print_
+open! Typecheck.Typecheck_
 include module type of INFERENCE
 
 module Inference (Inference__0 : sig

@@ -1,3 +1,10 @@
+open! Timing
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Typecheck.Typecheck_
+open! Msg.Msg_
 include module type of RECONCONDEC
 
 module ReconConDec (ReconConDec__0 : sig

@@ -1,3 +1,7 @@
+open! Intsyn.Lambda_
+open! Compile
+open! CompSyn
+
 (* # 1 "src/opsem/Absmachine.sig.ml" *)
 open! Basis
 
@@ -10,5 +14,5 @@ module type ABSMACHINE = sig
   (*! structure IntSyn : INTSYN !*)
   (*! structure CompSyn : COMPSYN !*)
   val solve :
-    (CompSyn.goal * IntSyn.sub) * CompSyn.dProg * (IntSyn.exp -> unit) -> unit
+    CompSyn.goal -> IntSyn.sub -> CompSyn.dProg -> (IntSyn.exp -> unit) -> unit
 end

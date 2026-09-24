@@ -1,3 +1,5 @@
+open! Basis
+
 module type RECON_MODE = sig
   module M : S.S
   module Cst = M.Cst

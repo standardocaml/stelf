@@ -1,3 +1,4 @@
+
 (* # 1 "src/lambda/Lambda_.sig.ml" *)
 
 (** Top-level wiring for the core lambda subsystem Modules. *)
@@ -5,7 +6,6 @@
 (* # 1 "src/lambda/Lambda_.fun.ml" *)
 
 (* # 1 "src/lambda/Lambda_.sml.ml" *)
-open! Basis
 include module type of Fgnopn
 include module type of Fgnopntable
 include module type of Order

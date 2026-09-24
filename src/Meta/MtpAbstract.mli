@@ -1,3 +1,6 @@
+open! Intsyn.Lambda_
+open! Subordinate
+open! Typecheck.Typecheck_
 include module type of MTPABSTRACT
 
 module MTPAbstract (MTPAbstract__0 : sig

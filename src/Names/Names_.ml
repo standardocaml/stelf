@@ -1,5 +1,9 @@
+open! Table
+open! Table.Table_
+open! Global.Global_
+open! Intsyn.Lambda_
+
 (* # 1 "src/names/Names_.sig.ml" *)
-open! Basis
 
 (* Names of Constants and Variables *)
 (* Author: Frank Pfenning *)
@@ -12,7 +16,6 @@ include NAMES
 
 (* # 1 "src/names/Names_.fun.ml" *)
 open! Basis
-
 (* Names of Constants and Variables *)
 (* Author: Frank Pfenning *)
 (* Modified: Jeff Polakow *)
@@ -60,10 +63,10 @@ module MakeNames
     let maxPrec = Strength maxPrecInt
     let minPrecInt = 0
     let minPrec = Strength minPrecInt
-    let less (Strength p, Strength q) = p < q
-    let leq (Strength p, Strength q) = p <= q
+    let less (Strength p) (Strength q) = p < q
+    let leq (Strength p) (Strength q) = p <= q
 
-    let compare (Strength p, Strength q) =
+    let compare (Strength p) (Strength q) =
       match Int.compare (p, q) with
       | Less -> Less
       | Equal -> Equal
@@ -118,27 +121,27 @@ module MakeNames
      if V expects exactly n arguments,
      raises Error(msg) otherwise
   *)
-  let rec checkAtomic = function
-    | name, IntSyn.Pi (d_, v_), 0 -> true
-    | name, IntSyn.Pi (d_, v_), n ->
+  let rec checkAtomic (name, v, n) = match v, n with
+    | IntSyn.Pi (d, v), 0 -> true
+    | IntSyn.Pi (d, v), n ->
         Debug.msg' ~level:Debug.Level.Debug
-          (fun f (name, v_, n) ->
-            Format.fprintf f "checkAtomic: %s %s %d" name v_ n)
-          (name, IntSyn.show_exp v_, n);
-        checkAtomic (name, v_, n - 1)
-    | name, IntSyn.Uni _, 0 ->
+          (fun f (name, v, n) ->
+            Format.fprintf f "checkAtomic: %s %s %d" name v n)
+          (name, IntSyn.show_exp v, n);
+        checkAtomic (name, v, n - 1)
+    | IntSyn.Uni _, 0 ->
         Debug.msg ~level:Debug.Level.Debug
           (Debug.Fmt.shown_exact
              (fun name -> "checkAtomic: " ^ name ^ " is a universe")
              name);
         true
-    | name, IntSyn.Root _, 0 ->
+    | IntSyn.Root _, 0 ->
         Debug.msg ~level:Debug.Level.Debug
           (Debug.Fmt.shown_exact
              (fun name -> "checkAtomic: " ^ name ^ " is a root")
              name);
         true
-    | name, v, n ->
+    | v, n ->
         Debug.msg ~level:Debug.Level.Debug
           (Debug.Fmt.shown_exact
              (fun name ->
@@ -153,20 +156,20 @@ module MakeNames
      if constant c expects exactly n explicit arguments,
      raises Error (msg) otherwise
   *)
-  let checkArgNumber = function
-    | IntSyn.ConDec (name, _, i, _, v_, l_), n -> checkAtomic (name, v_, i + n)
-    | IntSyn.SkoDec (name, _, i, v_, l_), n -> checkAtomic (name, v_, i + n)
-    | IntSyn.ConDef (name, _, i, _, v_, l_, _), n ->
-        checkAtomic (name, v_, i + n)
-    | IntSyn.AbbrevDef (name, _, i, _, v_, l_), n ->
-        checkAtomic (name, v_, i + n)
+  let checkArgNumber (a, n) = match a with
+    | IntSyn.ConDec (name, _, i, _, v, l) -> checkAtomic (name, v, i + n)
+    | IntSyn.SkoDec (name, _, i, v, l) -> checkAtomic (name, v, i + n)
+    | IntSyn.ConDef (name, _, i, _, v, l, _) ->
+        checkAtomic (name, v, i + n)
+    | IntSyn.AbbrevDef (name, _, i, _, v, l) ->
+        checkAtomic (name, v, i + n)
 
   (** checkFixity (name, cidOpt, n) = () if n = 0 (no requirement on arguments)
       or name is declared and has n exactly explicit arguments, raises Error
       (msg) otherwise *)
-  let checkFixity = function
-    | name, _, 0 -> ()
-    | name, cid, n ->
+  let checkFixity (name, cid, n) = match n with
+    | 0 -> ()
+    | n ->
         begin if checkArgNumber (IntSyn.sgnLookup cid, n) then ()
         else
           raise
@@ -222,9 +225,9 @@ module MakeNames
 
   let newNamespace () = ((StringTree.new_ 0, StringTree.new_ 0) : namespace)
 
-  let insertConst ((structTable, constTable), cid) =
-    let condec_ = IntSyn.sgnLookup cid in
-    let id = IntSyn.conDecName condec_ in
+  let insertConst (structTable, constTable) cid =
+    let condec = IntSyn.sgnLookup cid in
+    let id = IntSyn.conDecName condec in
     begin match StringTree.insertShadow constTable (id, cid) with
     | None -> ()
     | Some _ ->
@@ -234,12 +237,12 @@ module MakeNames
              ^ "\nhas already been declared in this signature"))
     end
 
-  let insertConstShadow ((structTable, constTable), cid) =
-    let condec_ = IntSyn.sgnLookup cid in
-    let id = IntSyn.conDecName condec_ in
+  let insertConstShadow (structTable, constTable) cid =
+    let condec = IntSyn.sgnLookup cid in
+    let id = IntSyn.conDecName condec in
     ignore (StringTree.insertShadow constTable (id, cid))
 
-  let insertStruct ((structTable, constTable), mid) =
+  let insertStruct (structTable, constTable) mid =
     let strdec = IntSyn.sgnStructLookup mid in
     let id = IntSyn.strDecName strdec in
     begin match StringTree.insertShadow structTable (id, mid) with
@@ -323,35 +326,33 @@ module MakeNames
                to constants, taking into account shadowing
     *)
   let installConstName cid =
-    let condec_ = IntSyn.sgnLookup cid in
-    let id = IntSyn.conDecName condec_ in
+    let condec = IntSyn.sgnLookup cid in
+    let id = IntSyn.conDecName condec in
     begin match topInsert (id, cid) with
     | None -> ()
     | Some (_, cid') -> Array.update (shadowArray, cid, Some cid')
     end
 
-  let installAlias (name, cid) = ignore (topInsert (name, cid))
+  let installAlias name cid = ignore (topInsert (name, cid))
 
-  let insertConstAlias ((structTable, constTable), name, cid) =
+  let insertConstAlias (structTable, constTable) name cid =
     ignore (StringTree.insertShadow constTable (name, cid))
 
   let uninstallConst cid =
-    let condec_ = IntSyn.sgnLookup cid in
-    let id = IntSyn.conDecName condec_ in
-    begin
-      begin match Array.sub (shadowArray, cid) with
-      | None ->
-          begin if topLookup id = Some cid then topDelete id else ()
-          end
-      | Some cid' -> begin
-          ignore (topInsert (id, cid'));
-          Array.update (shadowArray, cid, None)
+    let condec = IntSyn.sgnLookup cid in
+    let id = IntSyn.conDecName condec in
+    begin match Array.sub (shadowArray, cid) with
+    | None ->
+        begin if topLookup id = Some cid then topDelete id else ()
         end
-      end;
-      begin
-        Array.update (fixityArray, cid, Fixity.Nonfix);
-        Array.update (namePrefArray, cid, None)
+    | Some cid' -> begin
+        ignore (topInsert (id, cid'));
+        Array.update (shadowArray, cid, None)
       end
+    end;
+    begin
+      Array.update (fixityArray, cid, Fixity.Nonfix);
+      Array.update (namePrefArray, cid, None)
     end
 
   let installStructName mid =
@@ -365,20 +366,18 @@ module MakeNames
   let uninstallStruct mid =
     let strdec = IntSyn.sgnStructLookup mid in
     let id = IntSyn.strDecName strdec in
-    begin
-      begin match Array.sub (structShadowArray, mid) with
-      | None ->
-          begin if topStructLookup id = Some mid then topStructDelete id else ()
-          end
-      | Some mid' -> begin
-          ignore (topStructInsert (id, mid'));
-          Array.update (structShadowArray, mid, None)
+    begin match Array.sub (structShadowArray, mid) with
+    | None ->
+        begin if topStructLookup id = Some mid then topStructDelete id else ()
         end
-      end;
-      Array.update (componentsArray, mid, dummyNamespace)
-    end
+    | Some mid' -> begin
+        ignore (topStructInsert (id, mid'));
+        Array.update (structShadowArray, mid, None)
+      end
+    end;
+    Array.update (componentsArray, mid, dummyNamespace)
 
-  let resetFrom (mark, markStruct) =
+  let resetFrom mark markStruct =
     let limit, limitStruct = IntSyn.sgnSize () in
     let rec ct f (i, j) =
       begin if j < i then ()
@@ -388,10 +387,8 @@ module MakeNames
       end
       end
     in
-    begin
-      ct uninstallConst (mark, limit - 1);
-      ct uninstallStruct (markStruct, limitStruct - 1)
-    end
+    ct uninstallConst (mark, limit - 1);
+    ct uninstallStruct (markStruct, limitStruct - 1)
 
   (* reset () = ()
        Effect: clear name tables related to constants
@@ -423,9 +420,9 @@ module MakeNames
   let structComps mid = (fun (r, _) -> r) (Array.sub (componentsArray, mid))
   let constComps mid = (fun (_, r) -> r) (Array.sub (componentsArray, mid))
 
-  let rec findStruct = function
-    | structTable, id :: [] -> StringTree.lookup structTable id
-    | structTable, id :: ids ->
+  let rec findStruct (structTable, a) = match a with
+    | id :: [] -> StringTree.lookup structTable id
+    | id :: ids ->
         begin match StringTree.lookup structTable id with
         | None -> None
         | Some mid -> findStruct (structComps mid, ids)
@@ -439,13 +436,13 @@ module MakeNames
         | Some mid -> findStruct (structComps mid, ids)
         end
 
-  let rec findUndefStruct = function
-    | structTable, id :: [], ids' ->
+  let rec findUndefStruct (structTable, a, ids') = match a with
+    | id :: [] ->
         begin match StringTree.lookup structTable id with
         | None -> Some (Qid (rev ids', id))
         | Some _ -> None
         end
-    | structTable, id :: ids, ids' ->
+    | id :: ids ->
         begin match StringTree.lookup structTable id with
         | None -> Some (Qid (rev ids', id))
         | Some mid -> findUndefStruct (structComps mid, ids, id :: ids')
@@ -463,7 +460,7 @@ module MakeNames
         | Some mid -> findUndefStruct (structComps mid, ids, [ id ])
         end
 
-  let constLookupIn = function
+  let constLookupIn a1 b1 = match a1, b1 with
     | (structTable, constTable), Qid ([], id) -> StringTree.lookup constTable id
     | (structTable, constTable), Qid (ids, id) ->
         begin match findStruct (structTable, ids) with
@@ -471,7 +468,7 @@ module MakeNames
         | Some mid -> StringTree.lookup (constComps mid) id
         end
 
-  let structLookupIn = function
+  let structLookupIn a1 b1 = match a1, b1 with
     | (structTable, constTable), Qid ([], id) ->
         StringTree.lookup structTable id
     | (structTable, constTable), Qid (ids, id) ->
@@ -480,7 +477,7 @@ module MakeNames
         | Some mid -> StringTree.lookup (structComps mid) id
         end
 
-  let constUndefIn = function
+  let constUndefIn a1 b1 = match a1, b1 with
     | (structTable, constTable), Qid ([], id) ->
         begin match StringTree.lookup constTable id with
         | None -> Some (Qid ([], id))
@@ -500,7 +497,7 @@ module MakeNames
             end
         end
 
-  let structUndefIn = function
+  let structUndefIn a1 b1 = match a1, b1 with
     | (structTable, constTable), Qid ([], id) ->
         begin match StringTree.lookup structTable id with
         | None -> Some (Qid ([], id))
@@ -567,7 +564,7 @@ module MakeNames
   let resolveQid ~shortest qid =
     match (shortest, qid) with
     | true, Qid ([], _) ->
-        begin match constLookupIn (!currentGroupNamespace, qid) with
+        begin match constLookupIn (!currentGroupNamespace) qid with
         | Some _ as found -> found
         | None -> constLookup qid
         end
@@ -622,9 +619,9 @@ module MakeNames
     | Qid ([], id), true -> Qid ([], ("%" ^ id) ^ "%")
     | Qid (id :: ids, name), true -> Qid (("%" ^ id ^ "%") :: ids, name)
 
-  let conDecQid condec_ =
-    let id = IntSyn.conDecName condec_ in
-    begin match IntSyn.conDecParent condec_ with
+  let conDecQid condec =
+    let id = IntSyn.conDecName condec in
+    begin match IntSyn.conDecParent condec with
     | None -> Qid ([], id)
     | Some mid -> Qid (structPath (mid, []), id)
     end
@@ -633,8 +630,8 @@ module MakeNames
        where `qid' is the print name of cid
     *)
   let constQid cid =
-    let condec_ = IntSyn.sgnLookup cid in
-    let qid = conDecQid condec_ in
+    let condec = IntSyn.sgnLookup cid in
+    let qid = conDecQid condec in
     maybeShadow (qid, constLookup qid <> Some cid)
 
   (* constPath (cid) = SOME qid, where qid names cid through the structure it
@@ -677,12 +674,10 @@ module MakeNames
        Effect: install fixity for constant cid,
                possibly print declaration depending on chatter level
     *)
-  let installFixity (cid, fixity) =
+  let installFixity cid fixity =
     let name = qidToString (constQid cid) in
-    begin
-      checkFixity (name, cid, argNumber fixity);
-      Array.update (fixityArray, cid, fixity)
-    end
+    checkFixity (name, cid, argNumber fixity);
+    Array.update (fixityArray, cid, fixity)
 
   (* getFixity (cid) = fixity
        fixity defaults to Fixity.Nonfix, if nothing has been declared
@@ -704,9 +699,8 @@ module MakeNames
   (* uPref is the name preference for universal variables of given type *)
   (* installNamePref' (cid, (ePref, uPref)) see installNamePref *)
   let installNamePref' (cid, (ePref, uPref)) =
-    let l_ = IntSyn.constUni cid in
-    let _ =
-      begin match l_ with
+    let l = IntSyn.constUni cid in
+    ignore begin match l with
       | Type ->
           raise
             (Error
@@ -714,22 +708,21 @@ module MakeNames
                 ^ " cannot be given name preference\n")
                ^ "Name preferences can only be established for type families"))
       | Kind -> ()
-      end
-    in
+      end;
     Array.update (namePrefArray, cid, Some (ePref, uPref))
 
   (* installNamePref (cid, (ePref, uPrefOpt)) = ()
        Effect: install name preference for type family cid
        raise Error if cid does not refer to a type family
     *)
-  let installNamePref = function
+  let installNamePref a1 b1 = match a1, b1 with
     | cid, (ePref, []) ->
         installNamePref' (cid, (ePref, [ String.map Char.toLower (hd ePref) ]))
     | cid, (ePref, uPref) -> installNamePref' (cid, (ePref, uPref))
 
   let getNamePref cid = Array.sub (namePrefArray, cid)
 
-  let installComponents (mid, namespace) =
+  let installComponents mid namespace =
     begin
       (* First writer wins: a %scope reopening installs the same components
          again, and %open copies a constant into an enclosing namespace that
@@ -779,7 +772,7 @@ module MakeNames
 
        V should be a type, but the code is robust, returning the default ""X"" or ""x""
     *)
-  let namePrefOf (role, v_) = namePrefOf' (role, IntSyn.targetHeadOpt v_)
+  let namePrefOf (role, v) = namePrefOf' (role, IntSyn.targetHeadOpt v)
 
   (* local ... *)
   (******************)
@@ -832,17 +825,17 @@ module MakeNames
     let evarList : (IntSyn.exp * string) list ref = ref []
     let evarReset () = evarList := []
 
-    let evarLookup x_ =
-      let rec evlk = function
-        | r, [] -> None
-        | r, (IntSyn.EVar (r', _, _, _), name) :: l ->
+    let evarLookup x =
+      let rec evlk (r, a) = match a with
+        | [] -> None
+        | (IntSyn.EVar (r', _, _, _), name) :: l ->
             begin if r == r' then Some name else evlk (r, l)
             end
-        | r, (IntSyn.AVar r', name) :: l ->
+        | (IntSyn.AVar r', name) :: l ->
             begin if r == r' then Some name else evlk (r, l)
             end
       in
-      begin match x_ with
+      begin match x with
       | IntSyn.EVar (r, _, _, _) -> evlk (r, !evarList)
       | IntSyn.AVar r -> evlk (r, !evarList)
       end
@@ -850,15 +843,14 @@ module MakeNames
     let evarInsert entry = evarList := entry :: !evarList
     let namedEVars () = !evarList
 
-    let rec evarCnstr' = function
-      | [], acc -> acc
-      | ( ((IntSyn.EVar ({ contents = None }, _, _, cnstrs), name) as xn_) :: l,
-          acc ) ->
+    let rec evarCnstr' (a, acc) = match a with
+      | [] -> acc
+      | ((IntSyn.EVar ({ contents = None }, _, _, cnstrs), name) as xn) :: l ->
           begin match Constraints.simplify !cnstrs with
           | [] -> evarCnstr' (l, acc)
-          | _ :: _ -> evarCnstr' (l, xn_ :: acc)
+          | _ :: _ -> evarCnstr' (l, xn :: acc)
           end
-      | _ :: l, acc -> evarCnstr' (l, acc)
+      | _ :: l -> evarCnstr' (l, acc)
 
     let evarCnstr () = evarCnstr' (!evarList, [])
     let indexTable : int StringTree.table = StringTree.new_ 0
@@ -866,12 +858,12 @@ module MakeNames
     let indexLookup = StringTree.lookup indexTable
     let indexClear () = StringTree.clear indexTable
 
-    let nextIndex' = function
-      | name, None -> begin
+    let nextIndex' (name, a) = match a with
+      | None -> begin
           indexInsert (name, 1);
           1
         end
-      | name, Some i -> begin
+      | Some i -> begin
           indexInsert (name, i + 1);
           i + 1
         end
@@ -907,14 +899,14 @@ module MakeNames
        Effect: clear variable tables
        This must be called for each declaration or query
     *)
-  let varReset g_ =
+  let varReset g =
     begin
       varClear ();
       begin
         evarReset ();
         begin
           indexClear ();
-          varContext := g_
+          varContext := g
         end
       end
     end
@@ -922,14 +914,14 @@ module MakeNames
   (* addEVar (X, name) = ()
        effect: adds (X, name) to varTable and evarList
        assumes name not already used *)
-  let addEVar (x_, name) =
+  let addEVar x name =
     begin
-      evarInsert (x_, name);
-      varInsert (name, Evar x_)
+      evarInsert (x, name);
+      varInsert (name, Evar x)
     end
 
   let getEVarOpt name =
-    begin match varLookup name with None -> None | Some (Evar x_) -> Some x_
+    begin match varLookup name with None -> None | Some (Evar x) -> Some x
     end
 
   (* varDefined (name) = true iff `name' refers to a free variable, *)
@@ -946,39 +938,39 @@ module MakeNames
     end
 
   (* ctxDefined (G, name) = true iff `name' is declared in context G *)
-  let ctxDefined (g_, name) =
+  let ctxDefined (g, name) =
     let rec cdfd = function
       | IntSyn.Null -> false
-      | IntSyn.Decl (g'_, IntSyn.Dec (Some name', _)) ->
-          name = name' || cdfd g'_
-      | IntSyn.Decl (g'_, IntSyn.BDec (Some name', _)) ->
-          name = name' || cdfd g'_
-      | IntSyn.Decl (g'_, IntSyn.NDec (Some name')) -> name = name' || cdfd g'_
-      | IntSyn.Decl (g'_, _) -> cdfd g'_
+      | IntSyn.Decl (g', IntSyn.Dec (Some name', _)) ->
+          name = name' || cdfd g'
+      | IntSyn.Decl (g', IntSyn.BDec (Some name', _)) ->
+          name = name' || cdfd g'
+      | IntSyn.Decl (g', IntSyn.NDec (Some name')) -> name = name' || cdfd g'
+      | IntSyn.Decl (g', _) -> cdfd g'
     in
-    cdfd g_
+    cdfd g
 
   (* tryNextName (G, base) = baseN
        where N is the next suffix such that baseN is unused in
        G, as a variable, or as a constant.
     *)
-  let rec tryNextName (g_, base) =
+  let rec tryNextName (g, base) =
     let name = base ^ Int.toString (nextIndex base) in
-    begin if varDefined name || conDefined name || ctxDefined (g_, name) then
-      tryNextName (g_, base)
+    begin if varDefined name || conDefined name || ctxDefined (g, name) then
+      tryNextName (g, base)
     else name
     end
 
-  let rec findNameLocal (g_, base, i) =
+  let rec findNameLocal (g, base, i) =
     let name = base ^ Int.toString i in
-    begin if varDefined name || conDefined name || ctxDefined (g_, name) then
-      findNameLocal (g_, base, i + 1)
+    begin if varDefined name || conDefined name || ctxDefined (g, name) then
+      findNameLocal (g, base, i + 1)
     else name
     end
 
-  let findName = function
-    | g_, base, Local -> findNameLocal (g_, base, 0)
-    | g_, base, Global -> tryNextName (g_, base)
+  let findName (g, base, a) = match a with
+    | Local -> findNameLocal (g, base, 0)
+    | Global -> tryNextName (g, base)
 
   let takeNonDigits = Substring.takel (fun x -> not (Char.isDigit x))
 
@@ -991,20 +983,16 @@ module MakeNames
        where name is the next unused name appropriate for X,
        based on the name preference declaration for A if X:A
     *)
-  let newEVarName = function
-    | g_, (IntSyn.EVar (r, _, v_, cnstr_) as x_) ->
-        let name = tryNextName (g_, namePrefOf (Exist, v_)) in
-        begin
-          evarInsert (x_, name);
-          name
-        end
+  let newEVarName (g, a) = match a with
+    | (IntSyn.EVar (r, _, v, cnstr) as x) ->
+        let name = tryNextName (g, namePrefOf (Exist, v)) in
+        evarInsert (x, name);
+        name
         (* use name preferences below *)
-    | g_, (IntSyn.AVar r as x_) ->
-        let name = tryNextName (g_, namePrefOf' (Exist, None)) in
-        begin
-          evarInsert (x_, name);
-          name
-        end
+    | (IntSyn.AVar r as x) ->
+        let name = tryNextName (g, namePrefOf' (Exist, None)) in
+        evarInsert (x, name);
+        name
   (* use name preferences below *)
 
   (* evarName (G, X) = name
@@ -1012,14 +1000,12 @@ module MakeNames
        If no name has been assigned yet, assign a new one.
        Effect: if a name is assigned, update varTable
     *)
-  let evarName (g_, x_) =
-    begin match evarLookup x_ with
+  let evarName g x =
+    begin match evarLookup x with
     | None ->
-        let name = newEVarName (g_, x_) in
-        begin
-          varInsert (name, Evar x_);
-          name
-        end
+        let name = newEVarName (g, x) in
+        varInsert (name, Evar x);
+        name
     | Some name -> name
     end
 
@@ -1030,8 +1016,8 @@ module MakeNames
        If no name has been assigned, the context might be built the wrong
        way---check decName below instread of IntSyn.Dec
     *)
-  let bvarName (g_, k) =
-    begin match IntSyn.ctxLookup (g_, k) with
+  let bvarName g k =
+    begin match IntSyn.ctxLookup g k with
     | IntSyn.Dec (Some name, _) -> name
     | IntSyn.ADec (Some name, _) -> name
     | IntSyn.NDec (Some name) -> name
@@ -1049,49 +1035,49 @@ module MakeNames
     *)
   let decName' arg__1 arg__2 =
     begin match (arg__1, arg__2) with
-    | role, (g_, IntSyn.Dec (None, v_)) ->
-        let name = findName (g_, namePrefOf (role, v_), extent role) in
-        IntSyn.Dec (Some name, v_)
-    | role, (g_, (IntSyn.Dec (Some name, v_) as d_)) ->
-        begin if varDefined name || conDefined name || ctxDefined (g_, name)
-        then IntSyn.Dec (Some (tryNextName (g_, baseOf name)), v_)
-        else d_
+    | role, (g, IntSyn.Dec (None, v)) ->
+        let name = findName (g, namePrefOf (role, v), extent role) in
+        IntSyn.Dec (Some name, v)
+    | role, (g, (IntSyn.Dec (Some name, v) as d)) ->
+        begin if varDefined name || conDefined name || ctxDefined (g, name)
+        then IntSyn.Dec (Some (tryNextName (g, baseOf name)), v)
+        else d
         end
-    | role, (g_, (IntSyn.BDec (None, ((cid, t) as b)) as d_)) ->
+    | role, (g, (IntSyn.BDec (None, ((cid, t) as b)) as d)) ->
         let name =
-          findName (g_, "#" ^ IntSyn.conDecName (IntSyn.sgnLookup cid), Local)
+          findName (g, "#" ^ IntSyn.conDecName (IntSyn.sgnLookup cid), Local)
         in
         IntSyn.BDec (Some name, b)
-    | role, (g_, (IntSyn.BDec (Some name, ((cid, t) as b)) as d_)) ->
-        begin if varDefined name || conDefined name || ctxDefined (g_, name)
-        then IntSyn.BDec (Some (tryNextName (g_, baseOf name)), b)
-        else d_
+    | role, (g, (IntSyn.BDec (Some name, ((cid, t) as b)) as d)) ->
+        begin if varDefined name || conDefined name || ctxDefined (g, name)
+        then IntSyn.BDec (Some (tryNextName (g, baseOf name)), b)
+        else d
         end
-    | role, (g_, IntSyn.ADec (None, d)) ->
-        let name = findName (g_, namePrefOf' (role, None), extent role) in
+    | role, (g, IntSyn.ADec (None, d)) ->
+        let name = findName (g, namePrefOf' (role, None), extent role) in
         IntSyn.ADec (Some name, d)
-    | role, (g_, (IntSyn.ADec (Some name, d) as d_)) ->
-        begin if varDefined name || conDefined name || ctxDefined (g_, name)
-        then IntSyn.ADec (Some (tryNextName (g_, baseOf name)), d)
+    | role, (g, (IntSyn.ADec (Some name, d) as d_)) ->
+        begin if varDefined name || conDefined name || ctxDefined (g, name)
+        then IntSyn.ADec (Some (tryNextName (g, baseOf name)), d)
         else d_
         end
-    | role, (g_, (IntSyn.NDec None as d_)) ->
-        let name = findName (g_, "@x", Local) in
+    | role, (g, (IntSyn.NDec None as d)) ->
+        let name = findName (g, "@x", Local) in
         ignore (print name);
         IntSyn.NDec (Some name)
-    | role, (g_, (IntSyn.NDec (Some name) as d_)) ->
-        begin if varDefined name || conDefined name || ctxDefined (g_, name)
-        then IntSyn.NDec (Some (tryNextName (g_, baseOf name)))
-        else d_
+    | role, (g, (IntSyn.NDec (Some name) as d)) ->
+        begin if varDefined name || conDefined name || ctxDefined (g, name)
+        then IntSyn.NDec (Some (tryNextName (g, baseOf name)))
+        else d
         end
     end
   (*      IntSyn.ADec(SOME(name), d) *)
   (* use #l as base name preference for label l *)
 
-  let decName = decName' Exist
-  let decEName = decName' Exist
-  let decUName = decName' (Univ Global)
-  let decLUName = decName' (Univ Local)
+  let decName g d = decName' Exist (g, d)
+  let decEName g d = decName' Exist (g, d)
+  let decUName g d = decName' (Univ Global) (g, d)
+  let decLUName g d = decName' (Univ Local) (g, d)
 
   (* ctxName G = G'
 
@@ -1101,32 +1087,32 @@ module MakeNames
     *)
   let rec ctxName = function
     | IntSyn.Null -> IntSyn.Null
-    | IntSyn.Decl (g_, d_) ->
-        let g'_ = ctxName g_ in
-        IntSyn.Decl (g'_, decName (g'_, d_))
+    | IntSyn.Decl (g, d) ->
+        let g' = ctxName g in
+        IntSyn.Decl (g', decName g' d)
 
   (* ctxLUName G = G'
        like ctxName, but names assigned are local universal Names.
     *)
   let rec ctxLUName = function
     | IntSyn.Null -> IntSyn.Null
-    | IntSyn.Decl (g_, d_) ->
-        let g'_ = ctxLUName g_ in
-        IntSyn.Decl (g'_, decLUName (g'_, d_))
+    | IntSyn.Decl (g, d) ->
+        let g' = ctxLUName g in
+        IntSyn.Decl (g', decLUName g' d)
 
   (* pisEName' (G, i, V) = V'
        Assigns names to dependent Pi prefix of V with i implicit abstractions
        Used for implicit EVar in constant declarations after abstraction.
     *)
-  let rec pisEName' = function
-    | g_, i, IntSyn.Pi ((d_, IntSyn.Maybe), v_) when i > 0 ->
-        let d'_ = decEName (g_, d_) in
+  let rec pisEName' (g, i, a) = match a with
+    | IntSyn.Pi ((d, IntSyn.Maybe), v) when i > 0 ->
+        let d' = decEName g d in
         IntSyn.Pi
-          ((d'_, IntSyn.Maybe), pisEName' (IntSyn.Decl (g_, d'_), i - 1, v_))
-    | g_, _, v_ -> v_
+          ((d', IntSyn.Maybe), pisEName' (IntSyn.Decl (g, d'), i - 1, v))
+    | v -> v
 
   (* | pisEName' (G, i, V) = V *)
-  let pisEName (i, v_) = pisEName' (IntSyn.Null, i, v_)
+  let pisEName (i, v) = pisEName' (IntSyn.Null, i, v)
 
   (* defEName' (G, i, (U,V)) = (U',V')
        Invariant: G |- U : V  and G |- U' : V' since U == U' and V == V'.
@@ -1134,26 +1120,26 @@ module MakeNames
        with i implicit abstractions
        Used for implicit EVar in constant definitions after abstraction.
     *)
-  let rec defEName' = function
-    | g_, 0, uv -> uv
-    | g_, i, (IntSyn.Lam (d_, u_), IntSyn.Pi ((_, p_ (* = D *)), v_)) ->
-        let d'_ = decEName (g_, d_) in
-        let u'_, v'_ = defEName' (IntSyn.Decl (g_, d'_), i - 1, (u_, v_)) in
-        (IntSyn.Lam (d'_, u'_), IntSyn.Pi ((d'_, p_), v'_))
+  let rec defEName' (g, i, uv) = match i, uv with
+    | 0, uv -> uv
+    | i, (IntSyn.Lam (d, u), IntSyn.Pi ((_, p (* = D *)), v)) ->
+        let d' = decEName g d in
+        let u', v' = defEName' (IntSyn.Decl (g, d'), i - 1, (u, v)) in
+        (IntSyn.Lam (d', u'), IntSyn.Pi ((d', p), v'))
   (* i > 0 *)
 
   (* | defEName' (G, i, (U, V)) = (U, V) *)
   let defEName (imp, uv) = defEName' (IntSyn.Null, imp, uv)
 
   let nameConDec' = function
-    | IntSyn.ConDec (name, parent, imp, status, v_, l_) ->
-        IntSyn.ConDec (name, parent, imp, status, pisEName (imp, v_), l_)
-    | IntSyn.ConDef (name, parent, imp, u_, v_, l_, anc) ->
-        let u'_, v'_ = defEName (imp, (u_, v_)) in
-        IntSyn.ConDef (name, parent, imp, u'_, v'_, l_, anc)
-    | IntSyn.AbbrevDef (name, parent, imp, u_, v_, l_) ->
-        let u'_, v'_ = defEName (imp, (u_, v_)) in
-        IntSyn.AbbrevDef (name, parent, imp, u'_, v'_, l_)
+    | IntSyn.ConDec (name, parent, imp, status, v, l) ->
+        IntSyn.ConDec (name, parent, imp, status, pisEName (imp, v), l)
+    | IntSyn.ConDef (name, parent, imp, u, v, l, anc) ->
+        let u', v' = defEName (imp, (u, v)) in
+        IntSyn.ConDef (name, parent, imp, u', v', l, anc)
+    | IntSyn.AbbrevDef (name, parent, imp, u, v, l) ->
+        let u', v' = defEName (imp, (u, v)) in
+        IntSyn.AbbrevDef (name, parent, imp, u', v', l)
     | skodec -> skodec
 
   (* fix ??? *)
@@ -1171,6 +1157,14 @@ module MakeNames
   let evarCnstr = evarCnstr
 end
 
+module Wrap (M : NAMES.FIXITY) : NAMES.WRAP = struct 
+  module Fixity = M
+  module type S = NAMES with module Fixity = M
+  type t = (module S)
+
+  let wrap (m : (module S)) : t = m
+  let unwrap (t : t) : (module S) = t
+end  
 (* local varTable ... *)
 (* functor Names *)
 

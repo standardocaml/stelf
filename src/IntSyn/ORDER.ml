@@ -1,3 +1,4 @@
+
 (* # 1 "src/lambda/Order.sig.ml" *)
 open! Basis
 (** Termination and reduction order declarations for LF constants. *)
@@ -47,11 +48,11 @@ module type ORDER = sig
   val resetROrder : unit -> unit
   (** Compatibility alias for {!reset_r_order}. *)
 
-  val install : IntSyn.cid * tDec -> unit
+  val install : IntSyn.cid -> tDec -> unit
   val uninstall : IntSyn.cid -> bool
-  val install_r_order : IntSyn.cid * rDec -> unit
+  val install_r_order : IntSyn.cid -> rDec -> unit
 
-  val installROrder : IntSyn.cid * rDec -> unit
+  val installROrder : IntSyn.cid -> rDec -> unit
   (** Compatibility alias for {!install_r_order}. *)
 
   val uninstall_r_order : IntSyn.cid -> bool

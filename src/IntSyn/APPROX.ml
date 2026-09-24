@@ -1,3 +1,4 @@
+
 (* # 1 "src/lambda/Approx.sig.ml" *)
 open! Basis
 open Intsyn_
@@ -32,17 +33,17 @@ module type APPROX = sig
   val whnf : exp -> exp
   val uniToApx : IntSyn.uni -> uni
   val classToApx : IntSyn.exp -> exp * uni
-  val exactToApx : IntSyn.exp * IntSyn.exp -> exp * exp * uni
+  val exactToApx : IntSyn.exp -> IntSyn.exp -> exp * exp * uni
 
   exception Ambiguous
 
   val apxToUni : uni -> IntSyn.uni
-  val apxToClass : IntSyn.dctx * exp * uni * bool -> IntSyn.exp
-  val apxToExact : IntSyn.dctx * exp * IntSyn.eclo * bool -> IntSyn.exp
+  val apxToClass : IntSyn.dctx -> exp -> uni -> bool -> IntSyn.exp
+  val apxToExact : IntSyn.dctx -> exp -> IntSyn.eclo -> bool -> IntSyn.exp
 
   exception Unify of string
 
-  val matchUni : uni * uni -> unit
+  val matchUni : uni -> uni -> unit
   val match_ : exp * exp -> unit
   val makeGroundUni : uni -> bool
 end

@@ -1,5 +1,6 @@
+open! Paths.Paths_
+
 (* # 1 "src/frontend/ParseQuery.sig.ml" *)
-open! Basis
 open! Parsing
 
 (* Parsing Queries *)
@@ -8,7 +9,6 @@ include PARSEQUERY
 (* signature PARSE_QUERY *)
 
 (* # 1 "src/frontend/ParseQuery.fun.ml" *)
-open! Parsing
 open! Basis
 
 (* Parsing Queries *)
@@ -29,12 +29,12 @@ end) : PARSE_QUERY with module ExtQuery = ParseQuery__0.ExtQuery' = struct
     module LS = Parsing.Stream
     module P = Paths
 
-    let returnQuery (optName, (tm, f)) = (ExtQuery.query (optName, tm), f)
+    let returnQuery (optName, (tm, f)) = (ExtQuery.query optName tm, f)
 
-    let parseQuery1 = function
-      | name, f, LS.Cons ((L.Colon, r), s') ->
+    let parseQuery1 (name, f, a) = match a with
+      | LS.Cons ((L.Colon, r), s') ->
           returnQuery (Some name, ParseTerm.parseTerm' (LS.expose s'))
-      | name, f, _ -> returnQuery (None, ParseTerm.parseTerm' f)
+      | _ -> returnQuery (None, ParseTerm.parseTerm' f)
 
     let parseQuery' = function
       | LS.Cons ((L.Id (L.Upper, name), r), s') as f ->
@@ -45,53 +45,53 @@ end) : PARSE_QUERY with module ExtQuery = ParseQuery__0.ExtQuery' = struct
 
     let parseDefine4 (optName, optT, s) =
       let tm', f' = ParseTerm.parseTerm' (LS.expose s) in
-      (ExtQuery.define (optName, tm', optT), f')
+      (ExtQuery.define optName tm' optT, f')
 
-    let parseDefine3 = function
-      | optName, (tm, LS.Cons ((L.Equal, r), s')) ->
+    let parseDefine3 (optName, a) = match a with
+      | (tm, LS.Cons ((L.Equal, r), s')) ->
           parseDefine4 (optName, Some tm, s')
-      | _, (tm, LS.Cons ((t, r), _)) ->
-          Parsing.error (r, "Expected `=', found " ^ L.toString t)
+      | (tm, LS.Cons ((t, r), _)) ->
+          Parsing.error r ("Expected `=', found " ^ L.toString t)
 
-    let parseDefine2 = function
-      | optName, LS.Cons ((L.Colon, r), s') ->
+    let parseDefine2 (optName, a) = match a with
+      | LS.Cons ((L.Colon, r), s') ->
           parseDefine3 (optName, ParseTerm.parseTerm' (LS.expose s'))
-      | optName, LS.Cons ((L.Equal, r), s') -> parseDefine4 (optName, None, s')
-      | _, LS.Cons ((t, r), _) ->
-          Parsing.error (r, "Expected `:' or `=', found " ^ L.toString t)
+      | LS.Cons ((L.Equal, r), s') -> parseDefine4 (optName, None, s')
+      | LS.Cons ((t, r), _) ->
+          Parsing.error r ("Expected `:' or `=', found " ^ L.toString t)
 
     let parseDefine1 = function
       | LS.Cons ((L.Id (idCase, name), r), s') ->
           parseDefine2 (Some name, LS.expose s')
       | LS.Cons ((L.Underscore, r), s') -> parseDefine2 (None, LS.expose s')
       | LS.Cons ((t, r), _) ->
-          Parsing.error (r, "Expected identifier or `_', found " ^ L.toString t)
+          Parsing.error r ("Expected identifier or `_', found " ^ L.toString t)
 
-    let parseSolve3 = function
-      | defns, nameOpt, LS.Cons ((L.Colon, r), s'), r0 ->
+    let parseSolve3 (defns, nameOpt, a, r0) = match a with
+      | LS.Cons ((L.Colon, r), s') ->
           let tm, (LS.Cons ((_, r), _) as f') =
             ParseTerm.parseTerm' (LS.expose s')
           in
-          ((List.rev defns, ExtQuery.solve (nameOpt, tm, P.join (r0, r))), f')
-      | _, _, LS.Cons ((t, r), s'), r0 ->
-          Parsing.error (r, "Expected `:', found " ^ L.toString t)
+          ((List.rev defns, ExtQuery.solve nameOpt tm (P.join r0 r)), f')
+      | LS.Cons ((t, r), s') ->
+          Parsing.error r ("Expected `:', found " ^ L.toString t)
 
-    let rec parseSolve2 = function
-      | defns, LS.Cons ((L.Underscore, r), s'), r0 ->
+    let rec parseSolve2 (defns, a, r0) = match a with
+      | LS.Cons ((L.Underscore, r), s') ->
           parseSolve3 (defns, None, LS.expose s', r0)
-      | defns, LS.Cons ((L.Id (_, name), r), s'), r0 ->
+      | LS.Cons ((L.Id (_, name), r), s') ->
           parseSolve3 (defns, Some name, LS.expose s', r0)
-      | _, LS.Cons ((t, r), s'), r0 ->
-          Parsing.error (r, "Expected identifier or `_', found " ^ L.toString t)
+      | LS.Cons ((t, r), s') ->
+          Parsing.error r ("Expected identifier or `_', found " ^ L.toString t)
 
-    and parseSolve1 = function
-      | defns, LS.Cons ((L.Solve, r0), s') ->
+    and parseSolve1 (defns, a) = match a with
+      | LS.Cons ((L.Solve, r0), s') ->
           parseSolve2 (defns, LS.expose s', r0)
-      | defns, LS.Cons ((L.Define, r0), s') ->
+      | LS.Cons ((L.Define, r0), s') ->
           let defn, f' = parseDefine1 (LS.expose s') in
           parseSolve1 (defn :: defns, f')
-      | defns, LS.Cons ((t, r), s) ->
-          Parsing.error (r, "Expected %define or %solve, found " ^ L.toString t)
+      | LS.Cons ((t, r), s) ->
+          Parsing.error r ("Expected %define or %solve, found " ^ L.toString t)
 
     and parseSolve' f = parseSolve1 ([], f)
   end

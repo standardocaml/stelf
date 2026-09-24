@@ -1,3 +1,4 @@
+
 (* # 1 "src/m2/Strategy.sig.ml" *)
 open! Basis
 open Metasyn

@@ -1,3 +1,5 @@
+open! Domains
+open! Intsyn.Lambda_
 include module type of CSEQINTEGERS
 
 module CsEqIntegers (CSEqIntegers__0 : sig

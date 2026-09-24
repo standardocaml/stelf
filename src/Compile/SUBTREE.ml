@@ -1,3 +1,6 @@
+open! Table
+open! Intsyn.Lambda_
+
 (* # 1 "src/compile/Subtree.sig.ml" *)
 open! Basis
 
@@ -49,9 +52,9 @@ module type SUBTREE = sig
   val sProgInstall : IntSyn.cid * CompSyn.compHead * CompSyn.conjunction -> unit
 
   val matchSig :
-    IntSyn.cid
-    * IntSyn.dec IntSyn.ctx
-    * IntSyn.eclo
-    * ((CompSyn.conjunction * IntSyn.sub) * IntSyn.cid -> unit) ->
+    IntSyn.cid ->
+    IntSyn.dec IntSyn.ctx ->
+    IntSyn.eclo ->
+    ((CompSyn.conjunction * IntSyn.sub) * IntSyn.cid -> unit) ->
     unit
 end

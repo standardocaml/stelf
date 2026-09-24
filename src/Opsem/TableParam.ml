@@ -1,5 +1,10 @@
+open! Global.Global_
+open! Table
+open! Intsyn.Lambda_
+open! Compile
+open! CompSyn
+
 (* # 1 "src/opsem/TableParam.sig.ml" *)
-open! Basis
 open RedBlackSet
 
 (* Global Table parameters *)
@@ -54,21 +59,21 @@ module MakeTableParam (Global : GLOBAL) : TABLEPARAM = struct
   let resetGlobalTable () = globalTable := []
   let emptyAnsw () = ref { solutions = []; lookup = 0 }
 
-  let addSolution (s_, answRef) =
+  let addSolution g s s_ answRef =
     let { solutions = sList; lookup = k } = !answRef in
-    answRef := { solutions = s_ :: sList; lookup = k }
+    answRef := { solutions = ((g, s), s_) :: sList; lookup = k }
 
-  let updateAnswLookup (k', answRef) =
+  let updateAnswLookup k' answRef =
     let { solutions = sList; lookup = k } = !answRef in
     answRef := { solutions = sList; lookup = k' }
 
-  let solutions ({ contents = { solutions = s_; lookup = i } } as answ) = s_
-  let lookup ({ contents = { solutions = s_; lookup = i } } as answ) = i
+  let solutions ({ contents = { solutions = s; lookup = i } } as answ) = s
+  let lookup ({ contents = { solutions = s; lookup = i } } as answ) = i
 
   let noAnswers answ =
     begin match List.take (solutions answ, lookup answ) with
     | [] -> true
-    | l_ -> false
+    | l -> false
     end
   (*solutions(answ) *)
 
@@ -110,7 +115,6 @@ end
 (* structure TableParam *)
 
 (* # 1 "src/opsem/TableParam.sml.ml" *)
-open! Basis
 module TableParam = MakeTableParam (Global)
 (*! structure IntSyn' = IntSyn !*)
 (*! structure CompSyn' = CompSyn !*)

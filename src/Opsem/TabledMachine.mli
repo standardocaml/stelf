@@ -1,3 +1,10 @@
+open! Table
+open! Intsyn.Lambda_
+open! Print.Print_
+open! Index.Index_
+open! Compile
+open! Assign
+open! Tabling
 include module type of TABLEDMACHINE
 
 module Tabled (Tabled__0 : sig

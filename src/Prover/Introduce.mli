@@ -1,3 +1,4 @@
+open! Tomega_lib
 include module type of INTRODUCE
 
 module Introduce (Introduce__0 : sig

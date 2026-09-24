@@ -1,3 +1,6 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
 include module type of CSMANAGER
 include CS_MANAGER
 

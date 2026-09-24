@@ -1,3 +1,8 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Thm
 include module type of RECONTHM
 
 module ReconThm (ReconThm__0 : sig

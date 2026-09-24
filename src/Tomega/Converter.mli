@@ -1,3 +1,10 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Worldcheck
+open! Names.Names_
+open! Print.Print_
+open! Typecheck
+open! Modes
 include module type of CONVERTER
 
 module MakeConverter

@@ -1,3 +1,5 @@
+open! Timing
+
 (* # 1 "src/meta/Strategy.sig.ml" *)
 open! Basis
 open Funsyn

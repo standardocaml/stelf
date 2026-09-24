@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/prover/Search.sig.ml" *)
 open! Basis
 
@@ -12,6 +14,6 @@ module type SEARCH = sig
   exception Error of string
 
   val searchEx :
-    int * IntSyn.exp list * (int -> unit) ->
+    int -> IntSyn.exp list -> (int -> unit) ->
     unit (*      * (StateSyn.FunSyn.IntSyn.Exp * StateSyn.FunSyn.IntSyn.Sub) *)
 end

@@ -1,5 +1,5 @@
+
 (* # 1 "src/frontend/ParseThm.sig.ml" *)
-open! Basis
 open! Parsing
 
 (* Parsing Theorems *)

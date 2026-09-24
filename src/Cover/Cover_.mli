@@ -1,3 +1,12 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Modes
+open! Index.Index_
+open! Worldcheck
+open! Typecheck.Typecheck_
+open! Timing
 include module type of COVER
 
 module MakeCover

@@ -1,5 +1,9 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Print.Print_
+open! Typecheck.Typecheck_
+
 (* # 1 "src/meta/Inference.sig.ml" *)
-open! Basis
 open MtpGlobal
 open Funtypecheck
 open Uniquesearch
@@ -13,7 +17,6 @@ include INFERENCE
 (* signature Inference *)
 
 (* # 1 "src/meta/Inference.fun.ml" *)
-open! Global
 open! Basis
 
 (* Inference:  Version 1.3*)
@@ -65,92 +68,80 @@ end) : INFERENCE.INFERENCE = struct
 
     exception Success
 
-    let rec createEVars = function
-      | g_, (I.Pi ((I.Dec (_, v_), meta_), v'_), s) ->
-          let x_ = I.newEVar (g_, I.EClo (v_, s)) in
-          let x'_ = Whnf.lowerEVar x_ in
-          let xs_, fVs' = createEVars (g_, (v'_, I.Dot (I.Exp x_, s))) in
-          (x'_ :: xs_, fVs')
-      | g_, ((_, s) as fVs) -> ([], fVs)
+    let rec createEVars (g, a) = match a with
+      | (I.Pi ((I.Dec (_, v), meta), v'), s) ->
+          let x = I.newEVar g (I.EClo (v, s)) in
+          let x' = Whnf.lowerEVar x in
+          let xs, fVs' = createEVars (g, (v', I.Dot (I.Exp x, s))) in
+          (x' :: xs, fVs')
+      | ((_, s) as fVs) -> ([], fVs)
 
-    let forward = function
-      | g_, b_, (I.Pi ((_, meta_), _) as v_) -> (
-          let _ =
-            begin if !Global.doubleCheck then
-              TypeCheck.typeCheck (g_, (v_, I.Uni I.Type))
+    let forward (g, b, a) = match a with
+      | (I.Pi ((_, meta), _) as v) -> (
+          ignore begin if !Global.doubleCheck then
+              TypeCheck.typeCheck g (v, I.Uni I.Type)
             else ()
-            end
-          in
-          let xs_, (v'_, s') = createEVars (g_, (v_, I.id)) in
+            end;
+          let xs, (v', s') = createEVars (g, (v, I.id)) in
           try
             begin match
               UniqueSearch.searchEx
-                ( 2,
-                  xs_,
-                  function
-                  | [] -> [ Whnf.normalize (v'_, s') ]
-                  | _ -> raise (UniqueSearch.Error "Too many solutions") )
+                2 xs (function
+                  | [] -> [ Whnf.normalize (v', s') ]
+                  | _ -> raise (UniqueSearch.Error "Too many solutions"))
             with
             | vf'' :: [] -> Some vf''
             | [] -> None
             end
           with UniqueSearch.Error _ -> None)
-      | g_, b_, v_ -> None
+      | v -> None
 
-    let rec expand' = function
-      | (g0_, b0), (I.Null, I.Null), n ->
-          ((I.Null, I.Null), function (g'_, b'_), w' -> ((g'_, b'_), w'))
-      | ( (g0_, b0),
-          (I.Decl (g_, (I.Dec (_, v_) as d_)), I.Decl (b_, (S.Lemma rl_ as t_))),
-          n ) ->
-          let (g0'_, b0'), sc' = expand' ((g0_, b0), (g_, b_), n + 1) in
+    let rec expand' (gb0, a, n) = match gb0, a with
+      | (g0, b0), (I.Null, I.Null) ->
+          ((I.Null, I.Null), function (g', b'), w' -> ((g', b'), w'))
+      | (g0, b0), (I.Decl (g, (I.Dec (_, v) as d)), I.Decl (b, (S.Lemma rl as t))) ->
+          let (g0', b0'), sc' = expand' ((g0, b0), (g, b), n + 1) in
           let s = I.Shift (n + 1) in
-          let vs_ = Whnf.normalize (v_, s) in
-          begin match forward (g0_, b0, vs_) with
-          | None -> ((I.Decl (g0'_, d_), I.Decl (b0', t_)), sc')
-          | Some v'_ ->
-              ( (I.Decl (g0'_, d_), I.Decl (b0', S.Lemma S.RLdone)),
+          let vs = Whnf.normalize (v, s) in
+          begin match forward (g0, b0, vs) with
+          | None -> ((I.Decl (g0', d), I.Decl (b0', t)), sc')
+          | Some v' ->
+              ( (I.Decl (g0', d), I.Decl (b0', S.Lemma S.RLdone)),
                 function
-                | (g'_, b'_), w' ->
-                    let v'' = Whnf.normalize (v'_, w') in
+                | (g', b'), w' ->
+                    let v'' = Whnf.normalize (v', w') in
                     sc'
-                      ( ( I.Decl (g'_, I.Dec (None, v'')),
-                          I.Decl (b'_, S.Lemma (S.Splits !MTPGlobal.maxSplit))
+                      ( ( I.Decl (g', I.Dec (None, v'')),
+                          I.Decl (b', S.Lemma (S.Splits !MTPGlobal.maxSplit))
                         ),
-                        I.comp (w', I.shift) ) )
+                        I.comp w' I.shift ) )
           end
-      | gb0, (I.Decl (g_, d_), I.Decl (b_, t_)), n ->
-          let (g0'_, b0'), sc' = expand' (gb0, (g_, b_), n + 1) in
-          ((I.Decl (g0'_, d_), I.Decl (b0', t_)), sc')
+      | gb0, (I.Decl (g, d), I.Decl (b, t)) ->
+          let (g0', b0'), sc' = expand' (gb0, (g, b), n + 1) in
+          ((I.Decl (g0', d), I.Decl (b0', t)), sc')
 
-    let expand (S.State (n, (g_, b_), (ih_, oh), d, o_, h_, f_) as s_) =
-      let _ =
-        begin if !Global.doubleCheck then TypeCheck.typeCheckCtx g_ else ()
-        end
-      in
-      let (gnew, bnew), sc = expand' ((g_, b_), (g_, b_), 0) in
-      let _ =
-        begin if !Global.doubleCheck then TypeCheck.typeCheckCtx gnew else ()
-        end
-      in
-      let (g'_, b'_), w' = sc ((gnew, bnew), I.id) in
-      ignore (TypeCheck.typeCheckCtx g'_);
-      let s'_ =
+    let expand (S.State (n, (g, b), (ih, oh), d, o, h, f) as s) =
+      ignore begin if !Global.doubleCheck then TypeCheck.typeCheckCtx g else ()
+        end;
+      let (gnew, bnew), sc = expand' ((g, b), (g, b), 0) in
+      ignore begin if !Global.doubleCheck then TypeCheck.typeCheckCtx gnew else ()
+        end;
+      let (g', b'), w' = sc ((gnew, bnew), I.id) in
+      ignore (TypeCheck.typeCheckCtx g');
+      let s' =
         S.State
           ( n,
-            (g'_, b'_),
-            (ih_, oh),
+            (g', b'),
+            (ih, oh),
             d,
-            S.orderSub (o_, w'),
-            map (function i, f'_ -> (i, F.forSub (f'_, w'))) h_,
-            F.forSub (f_, w') )
+            S.orderSub o w',
+            map (function i, f' -> (i, F.forSub f' w')) h,
+            F.forSub f w' )
       in
-      let _ =
-        begin if !Global.doubleCheck then FunTypeCheck.isState (Obj.magic s'_)
+      ignore begin if !Global.doubleCheck then FunTypeCheck.isState (Obj.magic s')
         else ()
-        end
-      in
-      function () -> s'_
+        end;
+      function () -> s'
 
     let apply f = f ()
     let menu _ = "Inference"

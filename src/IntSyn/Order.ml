@@ -1,5 +1,6 @@
+open! Table.Table_
+
 (* # 1 "src/lambda/Order.sig.ml" *)
-open! Basis
 (** Termination and reduction order declarations for LF constants. *)
 
 open Intsyn_
@@ -66,7 +67,7 @@ end) : ORDER = struct
   let redOrderTable : rDec Table.table = Table.new_ 0
   let reset () = Table.clear orderTable
   let reset_r_order () = Table.clear redOrderTable
-  let install (cid, o_) = Table.insert orderTable (cid, o_)
+  let install cid o = Table.insert orderTable (cid, o)
 
   let uninstall cid =
     begin match Table.lookup orderTable cid with
@@ -77,7 +78,7 @@ end) : ORDER = struct
       end
     end
 
-  let install_r_order (cid, p_) = Table.insert redOrderTable (cid, p_)
+  let install_r_order cid p = Table.insert redOrderTable (cid, p)
 
   let uninstall_r_order cid =
     begin match Table.lookup redOrderTable cid with
@@ -98,7 +99,7 @@ end) : ORDER = struct
           (Error
              ("No termination order assigned for "
              ^ I.conDecName (I.sgnLookup a)))
-    | Some (TDec (s_, _)) -> s_
+    | Some (TDec (s, _)) -> s
     end
 
   let sel_lookup_r_order a =
@@ -108,7 +109,7 @@ end) : ORDER = struct
           (Error
              (("No reduction order assigned for " ^ I.conDecName (I.sgnLookup a))
              ^ "."))
-    | Some (RDec (p_, _)) -> p_
+    | Some (RDec (p, _)) -> p
     end
 
   let mutLookupROrder a =
@@ -117,27 +118,27 @@ end) : ORDER = struct
         raise
           (Error
              (("No order assigned for " ^ I.conDecName (I.sgnLookup a)) ^ "."))
-    | Some (RDec (_, m_)) -> m_
+    | Some (RDec (_, m)) -> m
     end
 
   let mut_lookup a =
     begin match lookup a with
     | None ->
         raise (Error ("No order assigned for " ^ I.conDecName (I.sgnLookup a)))
-    | Some (TDec (_, m_)) -> m_
+    | Some (TDec (_, m)) -> m
     end
 
   let mutual a =
-    let rec mutual' = function
-      | Empty, a's -> a's
-      | Le (a, m_), a's -> mutual' (m_, a :: a's)
-      | Lt (a, m_), a's -> mutual' (m_, a :: a's)
+    let rec mutual' (b, a's) = match b with
+      | Empty -> a's
+      | Le (a, m) -> mutual' (m, a :: a's)
+      | Lt (a, m) -> mutual' (m, a :: a's)
     in
     mutual' (mut_lookup a, [])
 
-  let rec closure = function
-    | [], a2s -> a2s
-    | a :: a1s, a2s ->
+  let rec closure (b, a2s) = match b with
+    | [] -> a2s
+    | a :: a1s ->
         begin if List.exists (function a' -> a = a') a2s then closure (a1s, a2s)
         else closure (mutual a @ a1s, a :: a2s)
         end
@@ -184,7 +185,7 @@ open Table.TableInstances
 module Key' = struct
   type key' = int
 
-  let compare ((a, b) : key' * key') : Basis.order =
+  let compare (a : key') (b : key') : Basis.order =
     if a < b then Less else if a > b then Greater else Equal
 end
 

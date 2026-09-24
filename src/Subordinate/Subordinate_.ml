@@ -1,5 +1,10 @@
+open! Global.Global_
+open! Table
+open! Table.Table_
+open! Intsyn.Lambda_
+open! Names.Names_
+
 (* # 1 "src/subordinate/Subordinate_.sig.ml" *)
-open! Basis
 
 (* Subordination *)
 (* Author: Carsten Schuermann *)
@@ -58,27 +63,25 @@ module MakeSubordinate
 
     let appReachable f b =
       let rec rch (b, visited) =
-        begin if IntSet.member (b, visited) then visited
+        begin if IntSet.member b visited then visited
         else begin
           ignore (f b);
-          IntSet.foldl rch (IntSet.insert (b, visited)) (adjNodes b)
+          IntSet.foldl rch (IntSet.insert b visited) (adjNodes b)
         end
         end
       in
-      begin
-        ignore (rch (b, IntSet.empty));
-        ()
-      end
+      ignore (rch (b, IntSet.empty));
+      ()
 
     exception Reachable
 
     let reach (b, a, visited) =
       let rec rch (b, visited) =
-        begin if IntSet.member (b, visited) then visited
+        begin if IntSet.member b visited then visited
         else
           let adj = adjNodes b in
-          begin if IntSet.member (a, adj) then raise Reachable
-          else IntSet.foldl rch (IntSet.insert (b, visited)) adj
+          begin if IntSet.member a adj then raise Reachable
+          else IntSet.foldl rch (IntSet.insert b visited) adj
           end
         end
       in
@@ -91,7 +94,7 @@ module MakeSubordinate
         memoCounter := !memoCounter + 1;
         begin
           memoInsert ((b, a), (true, !memoCounter));
-          updateFam (b, IntSet.insert (a, adjNodes b))
+          updateFam (b, IntSet.insert a (adjNodes b))
         end
       end
 
@@ -139,28 +142,26 @@ module MakeSubordinate
 
     let freezeList : IntSet.intset ref = ref IntSet.empty
 
-    let freeze l_ =
+    let freeze l =
       ignore (freezeList := IntSet.empty);
-      let l'_ = map expandFamilyAbbrevs l_ in
-      let _ =
-        List.app
+      let l' = map expandFamilyAbbrevs l in
+      ignore (List.app
           (function
             | a ->
                 appReachable
                   (function
                     | b -> begin
                         fSet (b, true);
-                        freezeList := IntSet.insert (b, !freezeList)
+                        freezeList := IntSet.insert b (!freezeList)
                       end)
                   a)
-          l'_
-      in
+          l');
       let cids = IntSet.foldl (fun (x, acc) -> x :: acc) [] !freezeList in
       cids
 
-    let frozen l_ =
-      let l'_ = map expandFamilyAbbrevs l_ in
-      List.exists (function a -> fGet a) l'_
+    let frozen l =
+      let l' = map expandFamilyAbbrevs l in
+      List.exists (function a -> fGet a) l'
 
     let computeBelow (a, b) =
       try
@@ -177,7 +178,7 @@ module MakeSubordinate
           true
         end
 
-    let below (a, b) =
+    let below a b =
       begin match memoLookup (b, a) with
       | None -> computeBelow (a, b)
       | Some (true, c) -> true
@@ -186,11 +187,11 @@ module MakeSubordinate
           end
       end
 
-    let belowEq (a, b) = a = b || below (a, b)
-    let equiv (a, b) = belowEq (a, b) && belowEq (b, a)
+    let belowEq a b = a = b || below a b
+    let equiv a b = belowEq a b && belowEq b a
 
-    let addSubord (a, b) =
-      begin if below (a, b) then ()
+    let addSubord a b =
+      begin if below a b then ()
       else
         begin if fGet b then
           raise
@@ -206,7 +207,7 @@ module MakeSubordinate
 
     let addIfBelowEq a's = function
       | b ->
-          begin if List.exists (function a -> belowEq (a, b)) a's then
+          begin if List.exists (function a -> belowEq a b) a's then
             aboveList := b :: !aboveList
           else ()
           end
@@ -226,13 +227,13 @@ module MakeSubordinate
 
     let insertNewDef (b, a) =
       begin match Table.lookup defGraph a with
-      | None -> Table.insert defGraph (a, IntSet.insert (b, IntSet.empty))
-      | Some bs -> Table.insert defGraph (a, IntSet.insert (b, bs))
+      | None -> Table.insert defGraph (a, IntSet.insert b IntSet.empty)
+      | Some bs -> Table.insert defGraph (a, IntSet.insert b bs)
       end
 
     let installConDec = function
-      | b, I.ConDef (_, _, _, a_, k_, I.Kind, _) ->
-          insertNewDef (b, I.targetFam a_)
+      | b, I.ConDef (_, _, _, a, k, I.Kind, _) ->
+          insertNewDef (b, I.targetFam a)
       | _ -> ()
 
     let installDef c = installConDec (c, I.sgnLookup c)
@@ -275,37 +276,37 @@ module MakeSubordinate
         end
       end
 
-    and installTypeN' = function
-      | I.Pi (((I.Dec (_, v1_) as d_), _), v2_), a -> begin
-          addSubord (I.targetFam v1_, a);
+    and installTypeN' (b, a) = match b with
+      | I.Pi (((I.Dec (_, v1) as d), _), v2) -> begin
+          addSubord (I.targetFam v1) a;
           begin
-            installTypeN v1_;
-            installTypeN' (v2_, a)
+            installTypeN v1;
+            installTypeN' (v2, a)
           end
         end
-      | (I.Root (I.Def _, _) as v_), a ->
-          let v'_ = Whnf.normalize (Whnf.expandDef (v_, I.id)) in
-          installTypeN' (v'_, a)
-      | I.Root _, _ -> ()
+      | (I.Root (I.Def _, _) as v) ->
+          let v' = Whnf.normalize (Whnf.expandDef (v, I.id)) in
+          installTypeN' (v', a)
+      | I.Root _ -> ()
 
-    and installTypeN v_ = installTypeN' (v_, I.targetFam v_)
+    and installTypeN v = installTypeN' (v, I.targetFam v)
 
-    let rec installKindN = function
-      | I.Uni l_, a -> ()
-      | I.Pi ((I.Dec (_, v1_), p_), v2_), a -> begin
-          addSubord (I.targetFam v1_, a);
+    let rec installKindN (b, a) = match b with
+      | I.Uni l -> ()
+      | I.Pi ((I.Dec (_, v1), p), v2) -> begin
+          addSubord (I.targetFam v1) a;
           begin
-            installTypeN v1_;
-            installKindN (v2_, a)
+            installTypeN v1;
+            installKindN (v2, a)
           end
         end
 
     let install c =
-      let v_ = I.constType c in
-      begin match I.targetFamOpt v_ with
+      let v = I.constType c in
+      begin match I.targetFamOpt v with
       | None -> begin
           insertNewFam c;
-          installKindN (v_, c)
+          installKindN (v, c)
         end
       | Some a -> begin
           begin match IntSyn.sgnLookup c with
@@ -313,28 +314,26 @@ module MakeSubordinate
           | IntSyn.SkoDec _ -> checkFreeze (c, a)
           | _ -> ()
           end;
-          installTypeN' (v_, a)
+          installTypeN' (v, a)
         end
       end
 
-    let installDec (I.Dec (_, v_)) = installTypeN v_
+    let installDec (I.Dec (_, v)) = installTypeN v
 
     let rec installSome = function
       | I.Null -> ()
-      | I.Decl (g_, d_) -> begin
-          installSome g_;
-          installDec d_
+      | I.Decl (g, d) -> begin
+          installSome g;
+          installDec d
         end
 
     let installBlock b =
-      let (I.BlockDec (_, _, g_, ds_)) = I.sgnLookup b in
-      begin
-        installSome g_;
-        List.app (function d_ -> installDec d_) ds_
-      end
+      let (I.BlockDec (_, _, g, ds)) = I.sgnLookup b in
+      installSome g;
+      List.app (function d -> installDec d) ds
 
     let checkBelow (a, b) =
-      begin if not (below (a, b)) then
+      begin if not (below a b) then
         raise
           (Error
              ((("Subordination violation: "
@@ -344,23 +343,23 @@ module MakeSubordinate
       else ()
       end
 
-    let rec respectsTypeN' = function
-      | I.Pi (((I.Dec (_, v1_) as d_), _), v2_), a -> begin
-          checkBelow (I.targetFam v1_, a);
+    let rec respectsTypeN' (b, a) = match b with
+      | I.Pi (((I.Dec (_, v1) as d), _), v2) -> begin
+          checkBelow (I.targetFam v1, a);
           begin
-            respectsTypeN v1_;
-            respectsTypeN' (v2_, a)
+            respectsTypeN v1;
+            respectsTypeN' (v2, a)
           end
         end
-      | (I.Root (I.Def _, _) as v_), a ->
-          let v'_ = Whnf.normalize (Whnf.expandDef (v_, I.id)) in
-          respectsTypeN' (v'_, a)
-      | I.Root _, _ -> ()
+      | (I.Root (I.Def _, _) as v) ->
+          let v' = Whnf.normalize (Whnf.expandDef (v, I.id)) in
+          respectsTypeN' (v', a)
+      | I.Root _ -> ()
 
-    and respectsTypeN v_ = respectsTypeN' (v_, I.targetFam v_)
+    and respectsTypeN v = respectsTypeN' (v, I.targetFam v)
 
-    let respects (g_, (v_, s)) = respectsTypeN (Whnf.normalize (v_, s))
-    let respectsN (g_, v_) = respectsTypeN v_
+    let respects g (v, s) = respectsTypeN (Whnf.normalize (v, s))
+    let respectsN g v = respectsTypeN v
 
     let famsToString (bs, msg) =
       IntSet.foldl
@@ -377,12 +376,12 @@ module MakeSubordinate
 
     let show () = Table.app showFam soGraph
 
-    let rec weaken = function
+    let rec weaken a1 b1 = match a1, b1 with
       | I.Null, a -> I.id
-      | I.Decl (g'_, (I.Dec (name, v_) as d_)), a ->
-          let w' = weaken (g'_, a) in
-          begin if belowEq (I.targetFam v_, a) then I.dot1 w'
-          else I.comp (w', I.shift)
+      | I.Decl (g', (I.Dec (name, v) as d)), a ->
+          let w' = weaken g' a in
+          begin if belowEq (I.targetFam v) a then I.dot1 w'
+          else I.comp w' I.shift
           end
 
     open! struct
@@ -426,12 +425,12 @@ module MakeSubordinate
         end
 
     let analyze = function
-      | I.ConDec (_, _, _, _, _, l_) -> inc declared
-      | I.ConDef (_, _, _, _, _, l_, ancestors) -> begin
+      | I.ConDec (_, _, _, _, _, l) -> inc declared
+      | I.ConDef (_, _, _, _, _, l, ancestors) -> begin
           inc defined;
           analyzeAnc ancestors
         end
-      | I.AbbrevDef (_, _, _, _, _, l_) -> inc abbrev
+      | I.AbbrevDef (_, _, _, _, _, l) -> inc abbrev
       | _ -> inc other
 
     let showDef () =
@@ -441,18 +440,14 @@ module MakeSubordinate
       ignore (print (("Defined : " ^ Int.toString !defined) ^ "\n"));
       ignore (print (("Abbrevs : " ^ Int.toString !abbrev) ^ "\n"));
       ignore (print (("Other   : " ^ Int.toString !other) ^ "\n"));
-      let _ =
-        print (("Max definition height: " ^ Int.toString !maxHeight) ^ "\n")
-      in
-      let _ =
-        ArraySlice.appi
+      ignore (print (("Max definition height: " ^ Int.toString !maxHeight) ^ "\n"));
+      ignore (ArraySlice.appi
           (function
             | h, i ->
                 print
                   ((((" Height " ^ Int.toString h) ^ ": ") ^ Int.toString i)
                   ^ " definitions\n"))
-          (ArraySlice.slice (heightArray, 0, Some (!maxHeight + 1)))
-      in
+          (ArraySlice.slice (heightArray, 0, Some (!maxHeight + 1))));
       ()
   end
 
@@ -687,7 +682,7 @@ module MemoTable = HashTable.HashTable (struct
   type key' = int * int
 
   let hash (n, m) = (7 * n) + m
-  let eq (x__op, y__op) = x__op = y__op
+  let eq x__op y__op = x__op = y__op
 end)
 
 module Subordinate =

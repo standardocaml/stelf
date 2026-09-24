@@ -1,9 +1,9 @@
+
 (* # 1 "src/flit/FlitOldSmlnjPack.sig.ml" *)
 
 (* # 1 "src/flit/FlitOldSmlnjPack.fun.ml" *)
 
 (* # 1 "src/flit/FlitOldSmlnjPack.sml.ml" *)
-open! Basis
 (* Commented out: PACK_WORD not available
 open! Basis;;
 (* cope with nonstandard old smlnj name of PackWord32Little -jcreed 2006.9.15 *);;

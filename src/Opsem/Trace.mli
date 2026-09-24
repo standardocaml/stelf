@@ -1,3 +1,6 @@
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
 include module type of TRACE
 
 module Trace (Trace__0 : sig

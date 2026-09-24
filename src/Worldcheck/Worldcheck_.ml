@@ -1,3 +1,14 @@
+open! Global.Global_
+open! Timing
+open! Table
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Paths
+open! Print.Print_
+open! Index.Index_
+open! Subordinate
+open! Solvers.Solvers_
+
 (* # 1 "src/worldcheck/Worldcheck_.sig.ml" *)
 
 (* # 1 "src/worldcheck/Worldcheck_.fun.ml" *)
@@ -12,7 +23,7 @@ module MemoTable = HashTable.HashTable (struct
   type key' = int * int
 
   let hash (n, m) = (7 * n) + m
-  let eq (x__op, y__op) = x__op = y__op
+  let eq x__op y__op = x__op = y__op
 end)
 
 module WorldSyn = WorldSyn.WorldSyn (struct

@@ -1,5 +1,7 @@
+open! Stream.Stream_
+open! Paths.Paths_
+
 (* # 1 "src/frontend/Lexer.sig.ml" *)
-open! Basis
 
 include LEXER
 (** Lexer implementation. Author: Frank Pfenning. *)
@@ -143,7 +145,7 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
   (* string constants *)
   exception Error of string
 
-  let error (r, msg) = raise (Error (P.wrap (r, msg)))
+  let error r msg = raise (Error (P.wrap r msg))
 
   (* isSym (c) = B iff c is a legal symbolic identifier constituent *)
   (* excludes quote character and digits, which are treated specially *)
@@ -167,13 +169,13 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
   (* stringToToken (idCase, string, region) = (token, region)
      converts special identifiers into tokens, returns ID token otherwise
   *)
-  let stringToToken = function
-    | Lower, "<-", r -> (Backarrow, r)
-    | Lower, "->", r -> (Arrow, r)
-    | Upper, "_", r -> (Underscore, r)
-    | Lower, "=", r -> (Equal, r)
-    | Lower, "type", r -> (Type, r)
-    | idCase, s, r -> (Id (idCase, s), r)
+  let stringToToken (idCase, s, r) = match idCase, s with
+    | Lower, "<-" -> (Backarrow, r)
+    | Lower, "->" -> (Arrow, r)
+    | Upper, "_" -> (Underscore, r)
+    | Lower, "=" -> (Equal, r)
+    | Lower, "type" -> (Type, r)
+    | idCase, s -> (Id (idCase, s), r)
 
   (* lex (inputFun) = (token, region) stream
 
@@ -225,25 +227,25 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
     let qidToToken (P.Reg (i, j)) =
       (Id (Lower, string (i, j + 1)), P.Reg (i, j + 1))
     in
-    let rec lexInitial = function
-      | '\n', i -> lexInitial (char i, i + 1)
-      | '\r', i -> lexInitial (char i, i + 1)
-      | '\t', i -> lexInitial (char i, i + 1)
-      | ' ', i -> lexInitial (char i, i + 1)
-      | ':', i -> (Colon, P.Reg (i - 1, i))
-      | '.', i -> (Dot, P.Reg (i - 1, i))
-      | '(', i -> (Lparen, P.Reg (i - 1, i))
-      | ')', i -> (Rparen, P.Reg (i - 1, i))
-      | '[', i -> (Lbracket, P.Reg (i - 1, i))
-      | ']', i -> (Rbracket, P.Reg (i - 1, i))
-      | '{', i -> (Lbrace, P.Reg (i - 1, i))
-      | '}', i -> (Rbrace, P.Reg (i - 1, i))
-      | '%', i -> lexPercent (char i, i + 1)
-      | '_', i -> lexID (Upper, P.Reg (i - 1, i))
-      | '\'', i -> lexID (Lower, P.Reg (i - 1, i))
-      | '\004', i -> (Eof, P.Reg (i - 1, i - 1))
-      | '"', i -> lexString (P.Reg (i - 1, i))
-      | c, i ->
+    let rec lexInitial (c, i) = match c with
+      | '\n' -> lexInitial (char i, i + 1)
+      | '\r' -> lexInitial (char i, i + 1)
+      | '\t' -> lexInitial (char i, i + 1)
+      | ' ' -> lexInitial (char i, i + 1)
+      | ':' -> (Colon, P.Reg (i - 1, i))
+      | '.' -> (Dot, P.Reg (i - 1, i))
+      | '(' -> (Lparen, P.Reg (i - 1, i))
+      | ')' -> (Rparen, P.Reg (i - 1, i))
+      | '[' -> (Lbracket, P.Reg (i - 1, i))
+      | ']' -> (Rbracket, P.Reg (i - 1, i))
+      | '{' -> (Lbrace, P.Reg (i - 1, i))
+      | '}' -> (Rbrace, P.Reg (i - 1, i))
+      | '%' -> lexPercent (char i, i + 1)
+      | '_' -> lexID (Upper, P.Reg (i - 1, i))
+      | '\'' -> lexID (Lower, P.Reg (i - 1, i))
+      | '\004' -> (Eof, P.Reg (i - 1, i - 1))
+      | '"' -> lexString (P.Reg (i - 1, i))
+      | c ->
           begin if Char.isSpace c then lexInitial (char i, i + 1)
           else
             begin if Char.isUpper c then lexID (Upper, P.Reg (i - 1, i))
@@ -257,8 +259,7 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
                     begin if isUTF8 c then lexID (Lower, P.Reg (i - 1, i))
                     else
                       error
-                        ( P.Reg (i - 1, i),
-                          "Illegal character " ^ Char.toString c )
+                        (P.Reg (i - 1, i)) ("Illegal character " ^ Char.toString c)
                     end
                   end
                 end
@@ -275,7 +276,7 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
       lexID' j
     and lexQUID (P.Reg (i, j)) =
       begin if Char.isSpace (char j) then
-        error (P.Reg (i, j + 1), "Whitespace in quoted identifier")
+        error (P.Reg (i, j + 1)) ("Whitespace in quoted identifier")
       else
         begin if isQuote (char j) then qidToToken (P.Reg (i, j))
         else lexQUID (P.Reg (i, j + 1))
@@ -283,64 +284,62 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
       end
     (* recover by adding implicit quote? *)
     (* qidToToken (i, j) *)
-    and lexPercent = function
-      | '.', i -> (Eof, P.Reg (i - 2, i))
-      | '{', i -> lexPercentBrace (char i, i + 1)
-      | '%', i -> lexComment ('%', i)
-      | c, i ->
+    and lexPercent (c, i) = match c with
+      | '.' -> (Eof, P.Reg (i - 2, i))
+      | '{' -> lexPercentBrace (char i, i + 1)
+      | '%' -> lexComment ('%', i)
+      | c ->
           begin if isIdChar c then
             lexPragmaKey (lexID (Quoted, P.Reg (i - 1, i)))
           else
             begin if Char.isSpace c then lexComment (c, i)
             else
               error
-                ( P.Reg (i - 1, i),
-                  "Comment character `%' not followed by white space" )
+                (P.Reg (i - 1, i)) ("Comment character `%' not followed by white space")
             end
           end
-    and lexPragmaKey = function
-      | Id (_, "infix"), r -> (Infix, r)
-      | Id (_, "prefix"), r -> (Prefix, r)
-      | Id (_, "postfix"), r -> (Postfix, r)
-      | Id (_, "mode"), r -> (Mode, r)
-      | Id (_, "unique"), r -> (Unique, r)
-      | Id (_, "terminates"), r -> (Terminates, r)
-      | Id (_, "block"), r -> (Block, r)
-      | Id (_, "worlds"), r -> (Worlds, r)
-      | Id (_, "covers"), r -> (Covers, r)
-      | Id (_, "total"), r -> (Total, r)
-      | Id (_, "reduces"), r -> (Reduces, r)
-      | Id (_, "tabled"), r -> (Tabled, r)
-      | Id (_, "keepTable"), r -> (Keeptable, r)
-      | Id (_, "theorem"), r -> (Theorem, r)
-      | Id (_, "prove"), r -> (Prove, r)
-      | Id (_, "establish"), r -> (Establish, r)
-      | Id (_, "assert"), r -> (Assert, r)
-      | Id (_, "abbrev"), r -> (Abbrev, r)
-      | Id (_, "name"), r -> (Name, r)
-      | Id (_, "define"), r -> (Define, r)
-      | Id (_, "solve"), r -> (Solve, r)
-      | Id (_, "query"), r -> (Query, r)
-      | Id (_, "fquery"), r -> (Fquery, r)
-      | Id (_, "compile"), r -> (Compile, r)
-      | Id (_, "querytabled"), r -> (Querytabled, r)
-      | Id (_, "trustme"), r -> (Trustme, r)
-      | Id (_, "subord"), r -> (Subord, r)
-      | Id (_, "freeze"), r -> (Freeze, r)
-      | Id (_, "thaw"), r -> (Thaw, r)
-      | Id (_, "deterministic"), r -> (Deterministic, r)
-      | Id (_, "clause"), r -> (Clause, r)
-      | Id (_, "sig"), r -> (Sig, r)
-      | Id (_, "struct"), r -> (Struct, r)
-      | Id (_, "where"), r -> (Where, r)
-      | Id (_, "include"), r -> (Include, r)
-      | Id (_, "open"), r -> (Open, r)
-      | Id (_, "use"), r -> (Use, r)
-      | Id (_, s), r ->
+    and lexPragmaKey (a, r) = match a with
+      | Id (_, "infix") -> (Infix, r)
+      | Id (_, "prefix") -> (Prefix, r)
+      | Id (_, "postfix") -> (Postfix, r)
+      | Id (_, "mode") -> (Mode, r)
+      | Id (_, "unique") -> (Unique, r)
+      | Id (_, "terminates") -> (Terminates, r)
+      | Id (_, "block") -> (Block, r)
+      | Id (_, "worlds") -> (Worlds, r)
+      | Id (_, "covers") -> (Covers, r)
+      | Id (_, "total") -> (Total, r)
+      | Id (_, "reduces") -> (Reduces, r)
+      | Id (_, "tabled") -> (Tabled, r)
+      | Id (_, "keepTable") -> (Keeptable, r)
+      | Id (_, "theorem") -> (Theorem, r)
+      | Id (_, "prove") -> (Prove, r)
+      | Id (_, "establish") -> (Establish, r)
+      | Id (_, "assert") -> (Assert, r)
+      | Id (_, "abbrev") -> (Abbrev, r)
+      | Id (_, "name") -> (Name, r)
+      | Id (_, "define") -> (Define, r)
+      | Id (_, "solve") -> (Solve, r)
+      | Id (_, "query") -> (Query, r)
+      | Id (_, "fquery") -> (Fquery, r)
+      | Id (_, "compile") -> (Compile, r)
+      | Id (_, "querytabled") -> (Querytabled, r)
+      | Id (_, "trustme") -> (Trustme, r)
+      | Id (_, "subord") -> (Subord, r)
+      | Id (_, "freeze") -> (Freeze, r)
+      | Id (_, "thaw") -> (Thaw, r)
+      | Id (_, "deterministic") -> (Deterministic, r)
+      | Id (_, "clause") -> (Clause, r)
+      | Id (_, "sig") -> (Sig, r)
+      | Id (_, "struct") -> (Struct, r)
+      | Id (_, "where") -> (Where, r)
+      | Id (_, "include") -> (Include, r)
+      | Id (_, "open") -> (Open, r)
+      | Id (_, "use") -> (Use, r)
+      | Id (_, s) ->
           error
-            ( r,
-              ("Unknown keyword %" ^ s)
-              ^ " (single line comment starts with `%<whitespace>' or `%%')" )
+            r (("Unknown keyword %" ^ s)
+              ^ " (single line comment starts with `%<whitespace>' or `%%')")
     (* -fp 08/09/02 *)
     (* -rv 11/27/01 *)
     (* -gaw 07/11/08 *)
@@ -352,46 +351,45 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
     (* -fp 3/18/01 *)
     (* -cs 6/3/01 *)
     (* -fp 8/17/03 *)
-    and lexComment = function
-      | '\n', i -> lexInitial (char i, i + 1)
-      | '%', i -> lexCommentPercent (char i, i + 1)
-      | '\004', i ->
+    and lexComment (c, i) = match c with
+      | '\n' -> lexInitial (char i, i + 1)
+      | '%' -> lexCommentPercent (char i, i + 1)
+      | '\004' ->
           error
-            (P.Reg (i - 1, i - 1), "Unclosed single-line comment at end of file")
-      | c, i -> lexComment (char i, i + 1)
+            (P.Reg (i - 1, i - 1)) ("Unclosed single-line comment at end of file")
+      | c -> lexComment (char i, i + 1)
     (* recover: (EOF, (i-1,i-1)) *)
-    and lexCommentPercent = function
-      | '.', i -> (Eof, P.Reg (i - 2, i))
-      | c, i -> lexComment (c, i)
+    and lexCommentPercent (c, i) = match c with
+      | '.' -> (Eof, P.Reg (i - 2, i))
+      | c -> lexComment (c, i)
     and lexPercentBrace (c, i) = lexDComment (c, 1, i)
-    and lexDComment = function
-      | '}', l, i -> lexDCommentRBrace (char i, l, i + 1)
-      | '%', l, i -> lexDCommentPercent (char i, l, i + 1)
-      | '\004', l, i ->
+    and lexDComment (c, l, i) = match c with
+      | '}' -> lexDCommentRBrace (char i, l, i + 1)
+      | '%' -> lexDCommentPercent (char i, l, i + 1)
+      | '\004' ->
           error
-            (P.Reg (i - 1, i - 1), "Unclosed delimited comment at end of file")
-      | c, l, i -> lexDComment (char i, l, i + 1)
+            (P.Reg (i - 1, i - 1)) ("Unclosed delimited comment at end of file")
+      | c -> lexDComment (char i, l, i + 1)
     (* recover: (EOF, (i-1,i-1)) *)
     (* pass comment beginning for error message? *)
-    and lexDCommentPercent = function
-      | '{', l, i -> lexDComment (char i, l + 1, i + 1)
-      | '.', l, i ->
+    and lexDCommentPercent (c, l, i) = match c with
+      | '{' -> lexDComment (char i, l + 1, i + 1)
+      | '.' ->
           error
-            ( P.Reg (i - 2, i),
-              "Unclosed delimited comment at end of file token `%.'" )
-      | c, l, i -> lexDComment (c, l, i)
+            (P.Reg (i - 2, i)) ("Unclosed delimited comment at end of file token `%.'")
+      | c -> lexDComment (c, l, i)
     (* recover: (EOF, (i-2,i)) *)
-    and lexDCommentRBrace = function
-      | '%', 1, i -> lexInitial (char i, i + 1)
-      | '%', l, i -> lexDComment (char i, l - 1, i + 1)
-      | c, l, i -> lexDComment (c, l, i)
+    and lexDCommentRBrace (c, l, i) = match c, l with
+      | '%', 1 -> lexInitial (char i, i + 1)
+      | '%', l -> lexDComment (char i, l - 1, i + 1)
+      | c, l -> lexDComment (c, l, i)
     and lexString (P.Reg (i, j)) =
       begin match char j with
       | '"' -> (String (string (i, j + 1)), P.Reg (i, j + 1))
       | '\n' ->
-          error (P.Reg (i - 1, i - 1), "Unclosed string constant at end of line")
+          error (P.Reg (i - 1, i - 1)) ("Unclosed string constant at end of line")
       | '\004' ->
-          error (P.Reg (i - 1, i - 1), "Unclosed string constant at end of file")
+          error (P.Reg (i - 1, i - 1)) ("Unclosed string constant at end of file")
       | _ -> lexString (P.Reg (i, j + 1))
       end
       (* recover: (EOL, (i-1,i-1)) *)
@@ -469,7 +467,7 @@ module MakeLexer (Stream : STREAM) : LEXER = struct
 
   (** [lexTerminal (prompt0, prompt1)] lexes from standard input using the given
       prompts. *)
-  let lexTerminal (prompt0, prompt1) =
+  let lexTerminal prompt0 prompt1 =
     lex (function
       | 0 -> begin
           print prompt0;

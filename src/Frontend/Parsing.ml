@@ -1,5 +1,7 @@
+open! Stream.Stream_
+open! Paths.Paths_
+
 (* # 1 "src/frontend/Parsing.sig.ml" *)
-open! Basis
 
 (* General basis for parsing modules *)
 (* Author: Frank Pfenning *)
@@ -25,15 +27,15 @@ module MakeParsing (Stream : STREAM) (Lexer : Lexer.LEXER) : PARSING = struct
 
   type 'a recparser = 'a recParseResult parser
 
-  let rec recwith (recparser, func) f =
+  let rec recwith recparser func f =
     begin match recparser f with
     | Done x, f' -> (Done (func x), f')
-    | Continuation k, f' -> (Continuation (recwith (k, func)), f')
+    | Continuation k, f' -> (Continuation (recwith k func), f')
     end
 
   exception Error of string
 
-  let error (r, msg) = raise (Error (Paths.wrap (r, msg)))
+  let error r msg = raise (Error (Paths.wrap r msg))
 end
 
 (*! structure Lexer' : LEXER !*)

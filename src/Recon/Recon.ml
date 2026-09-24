@@ -1,3 +1,8 @@
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Table
+open! Msg.Msg_
+open! Print.Print_
 open ReconConDec
 open ReconMode
 open ReconModule

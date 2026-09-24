@@ -1,9 +1,17 @@
+open! Global.Global_
+open! Trail.Trail_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Index.Index_
+open! Paths
+open! Paths.Paths_
+
 (* # 1 "src/terminate/Terminate_.sig.ml" *)
 
 (* # 1 "src/terminate/Terminate_.fun.ml" *)
 
 (* # 1 "src/terminate/Terminate_.sml.ml" *)
-open! Basis
 open Checking
 open Reduces
 

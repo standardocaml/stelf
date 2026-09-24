@@ -1,7 +1,8 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/solvers/CsEqStrings.sig.ml" *)
 
 (* # 1 "src/solvers/CsEqStrings.fun.ml" *)
-open! Basis
 
 module CsEqStrings (CSEqStrings__0 : sig
   (* String Equation Solver *)

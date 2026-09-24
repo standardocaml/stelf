@@ -1,9 +1,10 @@
+open! Names.Names_
+
 (* # 1 "src/frontend/Frontend_.sig.ml" *)
 
 (* # 1 "src/frontend/Frontend_.fun.ml" *)
 
 (* # 1 "src/frontend/Frontend_.sml.ml" *)
-open! Basis
 
 (* Front End Interface *)
 (* Author: Frank Pfenning *)

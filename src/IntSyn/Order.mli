@@ -1,3 +1,5 @@
+open! Basis
+open! Table.Table_
 include module type of ORDER
 
 module MakeOrder (Order__0 : sig

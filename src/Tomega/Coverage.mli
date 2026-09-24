@@ -1,3 +1,4 @@
+open! Cover.Cover_
 include module type of COVERAGE
 
 module MakeTomegaCoverage

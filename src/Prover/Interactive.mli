@@ -1,3 +1,9 @@
+open! Global.Global_
+open! Names.Names_
+open! Table
+open! Trail.Trail_
+open! Worldcheck
+open! Formatter.Formatter_
 include module type of INTERACTIVE
 
 module Interactive (Interactive__0 : sig

@@ -1,5 +1,5 @@
+
 (* # 1 "src/paths/Paths_.sig.ml" *)
-open! Basis
 
 (* Paths, Occurrences, and Error Locations *)
 
@@ -57,7 +57,7 @@ module MakePaths () : PATHS = struct
   (* join (r1, r2) = r
      where r is the  smallest region containing both r1 and r2
   *)
-  let join (Reg (i1, j1), Reg (i2, j2)) =
+  let join (Reg (i1, j1)) (Reg (i2, j2)) =
     Reg (Int.min (i1, i2), Int.max (j1, j2))
 
   (* The right endpoint of the interval counts IN RANGE *)
@@ -71,7 +71,7 @@ module MakePaths () : PATHS = struct
     (lineColToString (posToLineCol i) ^ "-") ^ lineColToString (posToLineCol j)
 
   (* wrap (r, msg) = msg' which contains region *)
-  let wrap (r, msg) = (toString r ^ " Error: \n") ^ msg
+  let wrap r msg = (toString r ^ " Error: \n") ^ msg
 
   (* wrapLoc ((loc, r), msg) = msg' which contains region and filename
      This should be used for locations retrieved from origins, where
@@ -87,7 +87,7 @@ module MakePaths () : PATHS = struct
      like wrapLoc, but converts character positions to line.col format based
      on linesInfo, if possible
   *)
-  let wrapLoc' = function
+  let wrapLoc' a1 b1 c1 = match a1, b1, c1 with
     | Loc (filename, Reg (i, j)), Some linesInfo, msg ->
         let lcfrom = posToLineCol' (linesInfo, i) in
         let lcto = posToLineCol' (linesInfo, j) in
@@ -95,7 +95,7 @@ module MakePaths () : PATHS = struct
         ((((filename ^ ":") ^ regString) ^ " ") ^ "Error: \n") ^ msg
     | loc, None, msg -> wrapLoc0 (loc, msg)
 
-  let wrapLoc (loc, msg) = wrapLoc' (loc, Some (getLinesInfo ()), msg)
+  let wrapLoc loc msg = wrapLoc' loc (Some (getLinesInfo ())) msg
 
   (* Paths, occurrences and occurrence trees only work well for normal forms *)
   (* In the general case, regions only approximate true source location *)
@@ -135,12 +135,12 @@ module MakePaths () : PATHS = struct
   (* u;s *)
   (* nil *)
   (* occToPath (occ, p) = p'(p) and occ corresponds to p' *)
-  let rec occToPath = function
-    | Top_, path -> path
-    | Label_ occ, path -> occToPath (occ, Label path)
-    | Body_ occ, path -> occToPath (occ, Body path)
-    | Head_ occ, path -> occToPath (occ, Head)
-    | Arg_ (n, occ), path -> occToPath (occ, Arg (n, path))
+  let rec occToPath (a, path) = match a with
+    | Top_ -> path
+    | Label_ occ -> occToPath (occ, Label path)
+    | Body_ occ -> occToPath (occ, Body path)
+    | Head_ occ -> occToPath (occ, Head)
+    | Arg_ (n, occ) -> occToPath (occ, Arg (n, path))
   (* path = Here by invariant *)
 
   type occConDec = Dec_ of int * occExp | Def_ of int * occExp * occExp option
@@ -186,9 +186,9 @@ module MakePaths () : PATHS = struct
             end
           end
     (* check? mark? *)
-    and toPathSpine = function
-      | Nils, n -> None
-      | App_ (u, s), n ->
+    and toPathSpine (a, n) = match a with
+      | Nils -> None
+      | App_ (u, s) ->
           begin if inside u then Some (n, toPath u) else toPathSpine (s, n + 1)
           end
     in
@@ -205,9 +205,9 @@ module MakePaths () : PATHS = struct
     | Root_ (r, _, _, _, _) -> r
 
   (* toRegionSpine (s, r) = r', the join of all regions in s and r *)
-  let rec toRegionSpine = function
+  let rec toRegionSpine a1 b1 = match a1, b1 with
     | Nils, r -> r
-    | App_ (u, s), r -> join (toRegion u, toRegionSpine (s, r))
+    | App_ (u, s), r -> join (toRegion u) (toRegionSpine s r)
 
   (* order? *)
   (* pathToRegion (u, p) = r,
@@ -230,9 +230,9 @@ module MakePaths () : PATHS = struct
         end
     | Leaf_ r, _ -> r
 
-  and pathToRegionSpine = function
-    | App_ (u, s), 1, path -> pathToRegion (u, path)
-    | App_ (u, s), n, path -> pathToRegionSpine (s, n - 1, path)
+  and pathToRegionSpine (a, n, path) = match a, n with
+    | App_ (u, s), 1 -> pathToRegion (u, path)
+    | App_ (u, s), n -> pathToRegionSpine (s, n - 1, path)
 
   (* possible if leaf was _ (underscore) *)
   (* other combinations should be impossible *)
@@ -288,14 +288,14 @@ module MakePaths () : PATHS = struct
   let label occ = Label_ occ
   let body occ = Body_ occ
   let head occ = Head_ occ
-  let arg (n, occ) = Arg_ (n, occ)
+  let arg n occ = Arg_ (n, occ)
   let leaf r = Leaf_ r
-  let bind (r, v, u) = Bind_ (r, v, u)
-  let root (r, h, i, a, s) = Root_ (r, h, i, a, s)
-  let app (u, s) = App_ (u, s)
+  let bind r v u = Bind_ (r, v, u)
+  let root r h i a s = Root_ (r, h, i, a, s)
+  let app u s = App_ (u, s)
   let nils = Nils
   let dec (n, v) = Dec_ (n, v)
-  let def (n, u, v) = Def_ (n, u, v)
+  let def n u v = Def_ (n, u, v)
 end
 
 (* functor Paths *)
@@ -303,7 +303,6 @@ module Paths = MakePaths (struct end)
 include Paths
 
 (* # 1 "src/paths/Paths_.sml.ml" *)
-open! Basis
 (* Now in Paths.fun *)
 (*
 structure Paths = Paths ();

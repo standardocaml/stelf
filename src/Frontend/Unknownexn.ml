@@ -1,5 +1,5 @@
+
 (* # 1 "src/frontend/Unknownexn.sig.ml" *)
-open! Basis
 include UNKNOWNEXN
 
 (* # 1 "src/frontend/Unknownexn.fun.ml" *)

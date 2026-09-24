@@ -1,3 +1,12 @@
+open! Global.Global_
+open! Table.Table_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Paths
+open! Print.Print_
+open! Index.Index_
+open! Subordinate
+open! Solvers.Solvers_
 include module type of WORLDIFY
 
 module Worldify (Worldify__0 : sig

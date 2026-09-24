@@ -1,3 +1,11 @@
+open! Timing
+open! Global.Global_
+open! Names.Names_
+open! Print.Print_
+open! Compile
+open! Compile.Compile_
+open! Opsem
+open! Msg.Msg_
 include module type of SOLVE
 
 module Solve (Solve__0 : sig

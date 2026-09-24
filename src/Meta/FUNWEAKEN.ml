@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/meta/Funweaken.sig.ml" *)
 open! Basis
 open Funsyn
@@ -7,8 +9,8 @@ open Funsyn
 
 module type FUNWEAKEN = sig
   (*! structure FunSyn : FUNSYN !*)
-  val strengthenPsi : FunSyn.lfctx * IntSyn.sub -> FunSyn.lfctx * IntSyn.sub
+  val strengthenPsi : FunSyn.lfctx -> IntSyn.sub -> FunSyn.lfctx * IntSyn.sub
 
   val strengthenPsi' :
-    FunSyn.lFDec list * IntSyn.sub -> FunSyn.lFDec list * IntSyn.sub
+    FunSyn.lFDec list -> IntSyn.sub -> FunSyn.lFDec list * IntSyn.sub
 end

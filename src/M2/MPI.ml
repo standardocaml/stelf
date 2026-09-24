@@ -1,3 +1,4 @@
+
 (* # 1 "src/m2/Mpi.sig.ml" *)
 open! Basis
 open Metasyn
@@ -10,7 +11,7 @@ module type MPI = sig
 
   exception Error of string
 
-  val init : int * string list -> unit
+  val init : int -> string list -> unit
   val select : int -> unit
   val print : unit -> unit
   val next : unit -> unit

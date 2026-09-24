@@ -1,5 +1,9 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Timing
+
 (* # 1 "src/m2/Prover.sig.ml" *)
-open! Basis
 
 (* Meta Prover *)
 (* Author: Carsten Schuermann *)
@@ -7,12 +11,6 @@ include PROVER
 (* signature PROVER *)
 
 (* # 1 "src/m2/Prover.fun.ml" *)
-open! Strategy
-open! Filling
-open! Splitting
-open! Recursion
-open! Qed
-open! Init
 open! Basis
 open Metasyn
 open MetaGlobal
@@ -62,29 +60,29 @@ end) : PROVER = struct
         solvedStates := []
       end
 
-    let rec contains = function
-      | [], _ -> true
-      | x :: l_, l'_ ->
-          List.exists (function x' -> x = x') l'_ && contains (l_, l'_)
+    let rec contains (a, l') = match a with
+      | [] -> true
+      | x :: l ->
+          List.exists (function x' -> x = x') l' && contains (l, l')
 
-    let equiv (l1_, l2_) = contains (l1_, l2_) && contains (l2_, l1_)
+    let equiv l1 l2 = contains (l1, l2) && contains (l2, l1)
 
-    let insertState s_ =
-      begin if Qed.subgoal s_ then solvedStates := s_ :: !solvedStates
-      else openStates := s_ :: !openStates
+    let insertState s =
+      begin if Qed.subgoal s then solvedStates := s :: !solvedStates
+      else openStates := s :: !openStates
       end
 
     let rec cLToString = function
       | [] -> ""
       | c :: [] -> I.conDecName (I.sgnLookup c)
-      | c :: l_ -> (I.conDecName (I.sgnLookup c) ^ ", ") ^ cLToString l_
+      | c :: l -> (I.conDecName (I.sgnLookup c) ^ ", ") ^ cLToString l
 
-    let init (k, (c :: _ as cL)) =
+    let init k (c :: _ as cL) =
       ignore (MetaGlobal.maxFill := k);
       ignore (reset ());
       let cL' = try Order.closure c with Order.Error _ -> cL in
-      begin if equiv (cL, cL') then
-        List.app (function s_ -> insertState s_) (Init.init cL)
+      begin if equiv cL cL' then
+        List.app (function s -> insertState s) (Init.init cL)
       else
         raise
           (Error
@@ -111,65 +109,61 @@ end) : PROVER = struct
       else ()
       end
 
-    let makeConDec (M.State (name, M.Prefix (g_, m_, b_), v_)) =
-      let rec makeConDec' = function
-        | I.Null, v_, k -> I.ConDec (name, None, k, I.Normal, v_, I.Type)
-        | I.Decl (g_, d_), v_, k ->
-            makeConDec' (g_, I.Pi ((d_, I.Maybe), v_), k + 1)
+    let makeConDec (M.State (name, M.Prefix (g, m, b), v)) =
+      let rec makeConDec' (a, v, k) = match a with
+        | I.Null -> I.ConDec (name, None, k, I.Normal, v, I.Type)
+        | I.Decl (g, d) ->
+            makeConDec' (g, I.Pi ((d, I.Maybe), v), k + 1)
       in
-      makeConDec' (g_, v_, 0)
+      makeConDec' (g, v, 0)
 
     let rec makeSignature = function
       | [] -> M.SgnEmpty
-      | s_ :: sl_ -> M.ConDec (makeConDec s_, makeSignature sl_)
+      | s :: sl -> M.ConDec (makeConDec s, makeSignature sl)
 
     let install installConDec =
       let rec install' = function
         | M.SgnEmpty -> ()
-        | M.ConDec (e, s_) -> begin
+        | M.ConDec (e, s) -> begin
             ignore (installConDec e);
-            install' s_
+            install' s
           end
       in
-      let is_ =
+      let is =
         begin if List.length !openStates > 0 then
           raise (Error "Theorem not proven")
         else makeSignature !solvedStates
         end
       in
-      begin
-        install' is_;
-        begin if !Global.chatter > 2 then begin
-          print "% ------------------\n";
-          begin
-            print (MetaPrint.sgnToString is_);
-            print "% ------------------\n"
-          end
+      install' is;
+      begin if !Global.chatter > 2 then begin
+        print "% ------------------\n";
+        begin
+          print (MetaPrint.sgnToString is);
+          print "% ------------------\n"
         end
-        else ()
-        end
+      end
+      else ()
       end
 
     let printState () =
       let rec print' = function
         | [] -> ()
-        | s_ :: l_ -> begin
-            print (MetaPrint.stateToString s_);
-            print' l_
+        | s :: l -> begin
+            print (MetaPrint.stateToString s);
+            print' l
           end
       in
+      print "Open problems:\n";
       begin
-        print "Open problems:\n";
+        print "==============\n\n";
         begin
-          print "==============\n\n";
+          print' !openStates;
           begin
-            print' !openStates;
+            print "Solved problems:\n";
             begin
-              print "Solved problems:\n";
-              begin
-                print "================\n\n";
-                print' !solvedStates
-              end
+              print "================\n\n";
+              print' !solvedStates
             end
           end
         end

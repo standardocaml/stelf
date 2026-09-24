@@ -1,3 +1,9 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Modes
+open! Print.Print_
+open! Typecheck.Typecheck_
 include module type of METAABSTRACT
 
 module MetaAbstract (MetaAbstract__0 : sig

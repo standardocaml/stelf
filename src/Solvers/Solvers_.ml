@@ -1,3 +1,8 @@
+open! Trail.Trail_
+open! Domains.Domains_
+open! Intsyn.Lambda_
+open! Table
+
 (* # 1 "src/solvers/Solvers_.sig.ml" *)
 
 (* # 1 "src/solvers/Solvers_.fun.ml" *)

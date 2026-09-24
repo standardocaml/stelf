@@ -1,5 +1,7 @@
+open! Table.Table_
+open! Intsyn.Lambda_
+
 (* # 1 "src/modes/Modetable.sig.ml" *)
-open! Basis
 open Modesyn
 
 (* Mode Table *)
@@ -42,7 +44,7 @@ module MakeModeTable (Table : TABLE with type key = int) : MODETABLE = struct
       | None -> []
       end
 
-    let installMode (a, mS) = Table.insert modeSignature (a, [ mS ])
+    let installMode a mS = Table.insert modeSignature (a, [ mS ])
 
     let uninstallMode a =
       begin match modeLookup a with
@@ -53,7 +55,7 @@ module MakeModeTable (Table : TABLE with type key = int) : MODETABLE = struct
         end
       end
 
-    let installMmode (a, mS) =
+    let installMmode a mS =
       let mSs = mmodeLookup a in
       Table.insert modeSignature (a, mS :: mSs)
   end

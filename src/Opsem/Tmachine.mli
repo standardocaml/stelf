@@ -1,10 +1,14 @@
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Index.Index_
+open! Compile
+open! Assign
+
 (* # 1 "src/opsem/Tmachine.sig.ml" *)
 
 (* # 1 "src/opsem/Tmachine.fun.ml" *)
-open! Index
 open! Trace
 open! Absmachine
-open! Basis
 
 (* Abstract Machine for Tracing *)
 (* Author: Frank Pfenning *)

@@ -1,7 +1,11 @@
+open! Trail.Trail_
+open! Domains
+open! Intsyn.Lambda_
+open! Table
+
 (* # 1 "src/solvers/CsIneqField.sig.ml" *)
 
 (* # 1 "src/solvers/CsIneqField.fun.ml" *)
-open! Basis
 
 module CsIneqField (CSIneqField__0 : sig
   (* Solver for a linearly ordered field, based on the simplex method *)

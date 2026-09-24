@@ -1,3 +1,5 @@
+open! Domains
+open! Intsyn.Lambda_
 include module type of CSEQFIELD
 
 module CsEqField (CSEqField__0 : sig

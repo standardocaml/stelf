@@ -1,3 +1,13 @@
+open! Basis
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Paths
+open! Table.Table_
+open! Modes
+open! Terminate
+open! Index.Index_
+open! Timing
 include module type of TOTAL
 
 module Total (Total__0 : sig

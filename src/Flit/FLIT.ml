@@ -1,3 +1,4 @@
+
 (* # 1 "src/flit/Flit_.sig.ml" *)
 open! Basis
 
@@ -12,11 +13,11 @@ module type FLIT = sig
   val initForText : unit -> unit
   (** initForText () *)
 
-  val dump : string * string -> int
-  (** dump (symbol, dag_file) *)
+  val dump : string -> string -> int
+  (** dump symbol dag_file *)
 
-  val dumpText : string * string -> unit
-  (** dumpText (outputSemant, outputChecker) *)
+  val dumpText : string -> string -> unit
+  (** dumpText outputSemant outputChecker *)
 
   val setFlag : unit -> unit
   (** setFlag () *)
@@ -27,6 +28,6 @@ module type FLIT = sig
   val dumpFlagged : string -> unit
   (** dumpFlagged (dag_file) *)
 
-  val dumpSymTable : string * string * string -> unit
-  (** dumpSynTable (start_sym, end_sym, sym_table_file) *)
+  val dumpSymTable : string -> string -> string -> unit
+  (** dumpSynTable start_sym end_sym sym_table_file *)
 end

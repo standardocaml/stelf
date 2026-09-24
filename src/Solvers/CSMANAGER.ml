@@ -1,3 +1,7 @@
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Modes.Modes_
+
 (* # 1 "src/solvers/CsManager.sig.ml" *)
 open! Basis
 

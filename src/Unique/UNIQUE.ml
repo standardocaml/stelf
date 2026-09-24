@@ -1,3 +1,6 @@
+open! Intsyn.Lambda_
+open! Modes
+
 (* # 1 "src/unique/Unique_.sig.ml" *)
 open! Basis
 
@@ -8,5 +11,5 @@ open! Basis
 module type UNIQUE = sig
   exception Error of string
 
-  val checkUnique : IntSyn.cid * Modesyn.ModeSyn.modeSpine -> unit
+  val checkUnique : IntSyn.cid -> Modesyn.ModeSyn.modeSpine -> unit
 end

@@ -1,5 +1,8 @@
+open! Intsyn
+open! Intsyn.Lambda_
+open! Cover.Cover_
+
 (* # 1 "src/tomega/Coverage.sig.ml" *)
-open! Basis
 module Tomega = Lambda_.Tomega
 
 (* Unification on Formulas *)
@@ -47,17 +50,17 @@ module MakeTomegaCoverage
 
     let chatter chlev f = Display.chatter_s chlev ("[coverage] " ^ f ())
 
-    let rec purifyFor = function
-      | (T.Unit, t), (psi, T.True), s -> (t, psi, s)
-      | (T.PairExp (u_, p_), t), (psi, T.Ex ((d_, _), f_)), s ->
+    let rec purifyFor (a, b, s) = match a, b with
+      | (T.Unit, t), (psi, T.True) -> (t, psi, s)
+      | (T.PairExp (u, p), t), (psi, T.Ex ((d, _), f)) ->
           purifyFor
-            ( (p_, T.Dot (T.Exp u_, t)),
-              (I.Decl (psi, T.UDec d_), f_),
-              T.comp (s, T.shift) )
+            ( (p, T.Dot (T.Exp u, t)),
+              (I.Decl (psi, T.UDec d), f),
+              T.comp s T.shift )
 
     let rec purifyCtx = function
       | (T.Shift k as t), psi -> (t, psi, T.id)
-      | T.Dot (T.Prg p_, t), I.Decl (psi, T.PDec (_, T.All _, _, _)) ->
+      | T.Dot (T.Prg p, t), I.Decl (psi, T.PDec (_, T.All _, _, _)) ->
           let t', psi', s' = purifyCtx (t, psi) in
           (t', psi', T.Dot (T.Undef, s'))
       | T.Dot (T.Prg (T.Var _), t), I.Decl (psi, T.PDec (_, _, _, _)) ->
@@ -70,70 +73,68 @@ module MakeTomegaCoverage
         ->
           let t', psi', s' = purifyCtx (t, psi) in
           (t', psi', T.Dot (T.Undef, s'))
-      | T.Dot (T.Prg p_, t), I.Decl (psi, T.PDec (_, f_, _, _)) ->
+      | T.Dot (T.Prg p, t), I.Decl (psi, T.PDec (_, f, _, _)) ->
           let t', psi', s' = purifyCtx (t, psi) in
           let t'', psi'', s'' =
-            purifyFor ((p_, t'), (psi', T.forSub (f_, s')), s')
+            purifyFor ((p, t'), (psi', T.forSub f s'), s')
           in
           (t'', psi'', T.Dot (T.Undef, s''))
-      | T.Dot (f_, t), I.Decl (psi, T.UDec d_) ->
+      | T.Dot (f, t), I.Decl (psi, T.UDec d) ->
           let t', psi', s' = purifyCtx (t, psi) in
-          ( T.Dot (f_, t'),
-            I.Decl (psi', T.UDec (I.decSub (d_, T.coerceSub s'))),
+          ( T.Dot (f, t'),
+            I.Decl (psi', T.UDec (I.decSub d (T.coerceSub s'))),
             T.dot1 s' )
 
     let purify (psi0, t, psi) =
       let t', psi', s' = purifyCtx (t, psi) in
-      ignore (TomegaTypeCheck.checkSub (psi0, t', psi'));
+      ignore (TomegaTypeCheck.checkSub psi0 t' psi');
       (psi0, t', psi')
 
-    let rec coverageCheckPrg = function
-      | w_, psi, T.Lam (d_, p_) -> coverageCheckPrg (w_, I.Decl (psi, d_), p_)
-      | w_, psi, T.New p_ -> coverageCheckPrg (w_, psi, p_)
-      | w_, psi, T.PairExp (u_, p_) -> coverageCheckPrg (w_, psi, p_)
-      | w_, psi, T.PairBlock (b_, p_) -> coverageCheckPrg (w_, psi, p_)
-      | w_, psi, T.PairPrg (p1_, p2_) -> begin
-          coverageCheckPrg (w_, psi, p1_);
-          coverageCheckPrg (w_, psi, p2_)
+    let rec coverageCheckPrg a b c = match a, b, c with
+      | w, psi, T.Lam (d, p) -> coverageCheckPrg w (I.Decl (psi, d)) p
+      | w, psi, T.New p -> coverageCheckPrg w psi p
+      | w, psi, T.PairExp (u, p) -> coverageCheckPrg w psi p
+      | w, psi, T.PairBlock (b, p) -> coverageCheckPrg w psi p
+      | w, psi, T.PairPrg (p1, p2) -> begin
+          coverageCheckPrg w psi p1;
+          coverageCheckPrg w psi p2
         end
-      | w_, psi, Unit -> ()
-      | w_, psi, T.Var _ -> ()
-      | w_, psi, T.Const _ -> ()
-      | w_, psi, T.Rec (d_, p_) -> coverageCheckPrg (w_, I.Decl (psi, d_), p_)
-      | w_, psi, T.Case (T.Cases omega_) ->
-          coverageCheckCases (w_, psi, omega_, [])
-      | w_, psi, (T.Let (d_, p1_, p2_) as p_) -> begin
-          coverageCheckPrg (w_, psi, p1_);
-          coverageCheckPrg (w_, I.Decl (psi, d_), p2_)
+      | w, psi, Unit -> ()
+      | w, psi, T.Var _ -> ()
+      | w, psi, T.Const _ -> ()
+      | w, psi, T.Rec (d, p) -> coverageCheckPrg w (I.Decl (psi, d)) p
+      | w, psi, T.Case (T.Cases omega) ->
+          coverageCheckCases (w, psi, omega, [])
+      | w, psi, (T.Let (d, p1, p2) as p) -> begin
+          coverageCheckPrg w psi p1;
+          coverageCheckPrg w (I.Decl (psi, d)) p2
         end
-      | w_, psi, T.Redex (p_, s_) -> coverageCheckSpine (w_, psi, s_)
+      | w, psi, T.Redex (p, s) -> coverageCheckSpine (w, psi, s)
 
-    and coverageCheckSpine = function
-      | w_, psi, T.Nil -> ()
-      | w_, psi, T.AppExp (u_, s_) -> coverageCheckSpine (w_, psi, s_)
-      | w_, psi, T.AppBlock (b_, s_) -> coverageCheckSpine (w_, psi, s_)
-      | w_, psi, T.AppPrg (p_, s_) -> begin
-          coverageCheckPrg (w_, psi, p_);
-          coverageCheckSpine (w_, psi, s_)
+    and coverageCheckSpine (w, psi, a) = match a with
+      | T.Nil -> ()
+      | T.AppExp (u, s) -> coverageCheckSpine (w, psi, s)
+      | T.AppBlock (b, s) -> coverageCheckSpine (w, psi, s)
+      | T.AppPrg (p, s) -> begin
+          coverageCheckPrg w psi p;
+          coverageCheckSpine (w, psi, s)
         end
 
-    and coverageCheckCases = function
-      | w_, psi, [], [] -> ()
-      | w_, psi, [], cs_ ->
-          let _ =
-            chatter 5 (function () ->
-                Int.toString (List.length cs_) ^ " cases to be checked\n")
-          in
-          let ((_, _, psi') :: _ as cs'_) = map purify cs_ in
-          let cs''_ =
+    and coverageCheckCases (w, psi, a, cs) = match a, cs with
+      | [], [] -> ()
+      | [], cs ->
+          ignore (chatter 5 (function () ->
+                Int.toString (List.length cs) ^ " cases to be checked\n"));
+          let ((_, _, psi') :: _ as cs') = map purify cs in
+          let cs'' =
             map
               (function psi0, t, _ -> (T.coerceCtx psi0, T.coerceSub t))
-              cs'_
+              cs'
           in
-          Cover.coverageCheckCases (w_, cs''_, T.coerceCtx psi')
-      | w_, psi, (psi', t, p_) :: omega_, cs_ -> begin
-          coverageCheckPrg (w_, psi', p_);
-          coverageCheckCases (w_, psi, omega_, (psi', t, psi) :: cs_)
+          Cover.coverageCheckCases w cs'' (T.coerceCtx psi')
+      | (psi', t, p) :: omega, cs -> begin
+          coverageCheckPrg w psi' p;
+          coverageCheckCases (w, psi, omega, (psi', t, psi) :: cs)
         end
   end
 

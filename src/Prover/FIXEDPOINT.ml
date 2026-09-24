@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/prover/Fixedpoint.sig.ml" *)
 open! Basis
 
@@ -13,7 +15,7 @@ module type FIXEDPOINT = sig
 
   type operator
 
-  val expand : State.focus * Tomega.tC -> operator
+  val expand : State.focus -> Tomega.tC -> operator
   val apply : operator -> unit
   val menu : operator -> string
 end

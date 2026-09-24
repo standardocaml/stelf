@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/modes/Modetable.sig.ml" *)
 open! Basis
 open Modesyn
@@ -11,12 +13,12 @@ module type MODETABLE = sig
   val reset : unit -> unit
 
   (* single mode installation and lookup *)
-  val installMode : IntSyn.cid * ModeSyn.modeSpine -> unit
+  val installMode : IntSyn.cid -> ModeSyn.modeSpine -> unit
   val modeLookup : IntSyn.cid -> ModeSyn.modeSpine option
   val uninstallMode : IntSyn.cid -> bool
 
   (* true: was declared, false: not *)
   (* multiple mode installation and lookup *)
-  val installMmode : IntSyn.cid * ModeSyn.modeSpine -> unit
+  val installMmode : IntSyn.cid -> ModeSyn.modeSpine -> unit
   val mmodeLookup : IntSyn.cid -> ModeSyn.modeSpine list
 end

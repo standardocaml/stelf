@@ -1,3 +1,5 @@
+open! Names.Names_
+open! Timing
 include module type of PROVER
 
 module Prover (Prover__0 : sig

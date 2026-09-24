@@ -1,7 +1,11 @@
+open! Trail.Trail_
+open! Domains
+open! Intsyn.Lambda_
+open! Table
+
 (* # 1 "src/solvers/CsIneqIntegers.sig.ml" *)
 
 (* # 1 "src/solvers/CsIneqIntegers.fun.ml" *)
-open! Basis
 
 module CsIneqIntegers (CSIneqIntegers__0 : sig
   (* Solver for linear inequations, based on branch & bound *)

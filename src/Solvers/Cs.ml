@@ -1,5 +1,5 @@
+
 (* # 1 "src/solvers/Cs.sig.ml" *)
-open! Basis
 
 (* Constraint Solver *)
 include CS

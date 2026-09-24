@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/compress/Rep.sig.ml" *)
 
 (* # 1 "src/compress/Rep.fun.ml" *)

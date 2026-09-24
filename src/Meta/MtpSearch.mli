@@ -1,3 +1,10 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Index.Index_
+open! Compile
+open! Compile.Compile_
 include module type of MTPSEARCH
 
 module MTPSearch (MTPSearch__0 : sig

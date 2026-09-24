@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/m2/MetaPrint.sig.ml" *)
 open! Basis
 open Metasyn

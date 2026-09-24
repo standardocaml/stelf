@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+open! Print.Print_
 include module type of ABSTRACTTABLED
 
 module AbstractTabled (AbstractTabled__0 : sig

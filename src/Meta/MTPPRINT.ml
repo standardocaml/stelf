@@ -1,3 +1,5 @@
+open! Formatter.Formatter_
+
 (* # 1 "src/meta/Print.sig.ml" *)
 open! Basis
 open Funsyn

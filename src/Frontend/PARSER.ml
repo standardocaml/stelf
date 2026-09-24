@@ -1,3 +1,7 @@
+open! Stream.Stream_
+open! Names.Names_
+open! Paths.Paths_
+
 (* # 1 "src/frontend/Parser.sig.ml" *)
 open! Basis
 
@@ -68,5 +72,5 @@ module type PARSER = sig
   val parseStream :
     TextIO.instream -> (fileParseResult * Paths.region) Stream.stream
 
-  val parseTerminalQ : string * string -> ExtQuery.query Stream.stream
+  val parseTerminalQ : string -> string -> ExtQuery.query Stream.stream
 end

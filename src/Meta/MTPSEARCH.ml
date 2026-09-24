@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/meta/Search.sig.ml" *)
 open! Basis
 open Funsyn
@@ -13,6 +15,6 @@ module type MTPSEARCH = sig
   exception Error of string
 
   val searchEx :
-    int * IntSyn.exp list * (int -> unit) ->
+    int -> IntSyn.exp list -> (int -> unit) ->
     unit (*      * (IntSyn.Exp * IntSyn.Sub) *)
 end

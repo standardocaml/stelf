@@ -1,3 +1,8 @@
+open! Global.Global_
+open! Table.Table_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Modules
 include module type of RECONMODULE
 
 module ReconModule (ReconModule__0 : sig

@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/worldcheck/Worldify.sig.ml" *)
 open! Basis
 
@@ -10,5 +12,5 @@ module type WORLDIFY = sig
   exception Error of string
 
   val worldify : IntSyn.cid -> IntSyn.conDec list
-  val worldifyGoal : IntSyn.dec IntSyn.ctx * IntSyn.exp -> IntSyn.exp
+  val worldifyGoal : IntSyn.dec IntSyn.ctx -> IntSyn.exp -> IntSyn.exp
 end

@@ -1,3 +1,13 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Subordinate
+open! Modes
+open! Typecheck.Typecheck_
+open! Index.Index_
+open! Worldcheck
+open! Timing
 include module type of UNIQUE
 
 module MakeUnique

@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/compile/Cprint.sig.ml" *)
 open! Basis
 

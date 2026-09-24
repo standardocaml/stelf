@@ -1,3 +1,10 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Formatter.Formatter_
+open! Print.Print_
+open! Subordinate
+open! Typecheck.Typecheck_
 include module type of MTPRECURSION
 
 module MTPRecursion (MTPRecursion__0 : sig

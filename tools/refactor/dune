@@ -1,0 +1,8 @@
+; Refactoring tool: mechanical source-to-source passes over the port.
+; Depends on nothing in src/, so the compiler-libs vs. project module-name
+; collisions noted in CLAUDE.md (Lambda / Lexer / Parser) do not arise here.
+
+(executable
+ (name refactor)
+ (modules Core Pass_beginend Pass_curry Pass_defun Pass_rename Pass_letunit Pass_selftest Refactor)
+ (libraries compiler-libs.common))

@@ -1,3 +1,7 @@
+open! Timing
+open! Global.Global_
+open! Names.Names_
+open! Print.Print_
 include module type of FQUERY
 
 module Fquery (Fquery__0 : sig

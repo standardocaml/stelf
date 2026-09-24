@@ -1,3 +1,7 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Modes
+open! Tabling
 include module type of THM
 
 module Make_Thm

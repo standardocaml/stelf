@@ -1,3 +1,31 @@
+open! Timing
+open! Global.Global_
+open! Tabling
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Paths
+open! Print
+open! Print.Print_
+open! Typecheck.Typecheck_
+open! Style
+open! Modes
+open! Terminate
+open! Index
+open! Thm
+open! M2
+open! Compile
+open! Opsem
+open! Subordinate
+open! Modules
+open! Solvers
+open! Solvers.Solvers_
+open! Worldcheck.Worldcheck_
+open! Unique
+open! Cover
+open! Tomega_lib
+open! Prover
+open! Msg
+
 module type STELF = TWELF.STELF
 
 module Stelf (Twelf__0 : sig

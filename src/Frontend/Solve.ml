@@ -1,5 +1,16 @@
+open! Timing
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Paths.Paths_
+open! Print.Print_
+open! Compile
+open! Compile.Compile_
+open! Opsem
+open! Solvers.Solvers_
+open! Msg.Msg_
+
 (* # 1 "src/frontend/Solve.sig.ml" *)
-open! Basis
 
 (* Solve and query declarations, interactive top level *)
 (* Author: Frank Pfenning *)
@@ -9,7 +20,6 @@ include SOLVE
 (* signature SOLVE *)
 
 (* # 1 "src/frontend/Solve.fun.ml" *)
-open! Parser
 open! Basis
 
 (* Front End Interface *)
@@ -105,8 +115,8 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
      formats instantiated EVars as a substitution.
      Abbreviate as empty string if chatter level is < 3.
   *)
-  let evarInstToString xs_ =
-    begin if !Global.chatter >= 3 then Print.evarInstToString xs_ else ""
+  let evarInstToString xs =
+    begin if !Global.chatter >= 3 then Print.evarInstToString xs else ""
     end
 
   (* expToString (G, U) = msg
@@ -114,7 +124,7 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
      Abbreviate as empty string if chatter level is < 3.
   *)
   let expToString gu =
-    begin if !Global.chatter >= 3 then Print.expToString gu else ""
+    begin if !Global.chatter >= 3 then (let g__, u__ = gu in Print.expToString g__ u__) else ""
     end
 
   (* exception AbortQuery
@@ -214,46 +224,40 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
      error messages and finally returning the status (either OK or
      ABORT).
   *)
-  let solve' (defines, solve_, Paths.Loc (fileName, r)) =
-    let a_, finish =
-      ReconQuery.solveToSolve (defines, solve_, Paths.Loc (fileName, r))
+  let solve' (defines, solve, Paths.Loc (fileName, r)) =
+    let a, finish =
+      ReconQuery.solveToSolve defines solve (Paths.Loc (fileName, r))
     in
     ignore (Display.chatter_s 3 "%solve ");
-    let _ =
-      Display.chatter_s 3
-        (("\n" ^ Timers.time Timers.printing expToString (IntSyn.Null, a_))
-        ^ ".\n")
-    in
+    ignore (Display.chatter_s 3
+        (("\n" ^ Timers.time Timers.printing expToString (IntSyn.Null, a))
+        ^ ".\n"));
     let g =
-      Timers.time Timers.compiling Compile.compileGoal (IntSyn.Null, a_)
+      Timers.time Timers.compiling (fun () -> Compile.compileGoal IntSyn.Null a) ()
     in
     let search () =
       AbsMachine.solve
-        ( (g, IntSyn.id),
-          CompSyn.DProg (IntSyn.Null, IntSyn.Null),
-          function m_ -> raise (Solution m_) )
+        g IntSyn.id (CompSyn.DProg (IntSyn.Null, IntSyn.Null)) (function m -> raise (Solution m))
     in
-    begin
-      CsManager.reset ();
+    CsManager.reset ();
+    try
+      begin
+        TimeLimit.timeLimit !Global.timeLimit
+          (Timers.time Timers.solving search)
+          ();
+        raise (AbortQuery "No solution to %solve found")
+      end
+      (* Call to solve raises Solution _ if there is a solution,
+        returns () if there is none.  It could also not terminate
+        *)
+    with Solution m -> (
       try
         begin
-          TimeLimit.timeLimit !Global.timeLimit
-            (Timers.time Timers.solving search)
-            ();
-          raise (AbortQuery "No solution to %solve found")
+          Display.chatter_s 3 " OK\n";
+          finish m
         end
-        (* Call to solve raises Solution _ if there is a solution,
-          returns () if there is none.  It could also not terminate
-          *)
-      with Solution m_ -> (
-        try
-          begin
-            Display.chatter_s 3 " OK\n";
-            finish m_
-          end
-        with TimeLimit.TimeOut ->
-          raise (AbortQuery "\n----------- TIME OUT ---------------\n"))
-    end
+      with TimeLimit.TimeOut ->
+        raise (AbortQuery "\n----------- TIME OUT ---------------\n"))
 
   (* self timing *)
   (* echo declaration, according to chatter level *)
@@ -264,55 +268,56 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
   -- this version can be used to produce oracles, however no user
   directive is added yet.
 *)
-  let solveSbt (defines, solve_, Paths.Loc (fileName, r)) =
-    let a_, finish =
-      ReconQuery.solveToSolve (defines, solve_, Paths.Loc (fileName, r))
+  let solveSbt (defines, solve, Paths.Loc (fileName, r)) =
+    let a, finish =
+      ReconQuery.solveToSolve defines solve (Paths.Loc (fileName, r))
     in
     ignore (Display.chatter_s 3 "%solve ");
-    let _ =
-      Display.chatter_s 3
-        (("\n" ^ Timers.time Timers.printing expToString (IntSyn.Null, a_))
-        ^ ".\n")
-    in
+    ignore (Display.chatter_s 3
+        (("\n" ^ Timers.time Timers.printing expToString (IntSyn.Null, a))
+        ^ ".\n"));
     let g =
-      Timers.time Timers.compiling Compile.compileGoal (IntSyn.Null, a_)
+      Timers.time Timers.compiling (fun () -> Compile.compileGoal IntSyn.Null a) ()
     in
-    begin
-      CsManager.reset ();
+    CsManager.reset ();
+    try
+      begin
+        TimeLimit.timeLimit !Global.timeLimit
+          (fun (a__, b__, c__, d__) ->
+            Timers.time Timers.solving
+              (fun () -> AbsMachineSbt.solve a__ b__ c__ d__) ())
+          ( g,
+            IntSyn.id,
+            CompSyn.DProg (IntSyn.Null, IntSyn.Null),
+            function skel -> raise (SolutionSkel skel) );
+        raise (AbortQuery "No solution to %solve found")
+      end
+      (* Call to solve raises Solution _ if there is a solution,
+        returns () if there is none.  It could also not terminate
+        *)
+    with SolutionSkel skel -> (
       try
         begin
-          TimeLimit.timeLimit !Global.timeLimit
-            (Timers.time Timers.solving AbsMachineSbt.solve)
-            ( (g, IntSyn.id),
-              CompSyn.DProg (IntSyn.Null, IntSyn.Null),
-              function skel -> raise (SolutionSkel skel) );
-          raise (AbortQuery "No solution to %solve found")
+          Display.chatter_s 2 " OK\n";
+          try
+            begin
+              Timers.time Timers.ptrecon
+                (fun () ->
+                  PtRecon.solve skel g IntSyn.id
+                    (CompSyn.DProg (IntSyn.Null, IntSyn.Null))
+                    (function skel, m -> raise (Solution m)))
+                ();
+              raise (AbortQuery "Proof reconstruction for %solve failed")
+            end
+          with Solution m -> finish m
         end
-        (* Call to solve raises Solution _ if there is a solution,
-          returns () if there is none.  It could also not terminate
-          *)
-      with SolutionSkel skel -> (
-        try
-          begin
-            Display.chatter_s 2 " OK\n";
-            try
-              begin
-                Timers.time Timers.ptrecon PtRecon.solve
-                  ( skel,
-                    (g, IntSyn.id),
-                    CompSyn.DProg (IntSyn.Null, IntSyn.Null),
-                    function skel, m_ -> raise (Solution m_) );
-                raise (AbortQuery "Proof reconstruction for %solve failed")
-              end
-            with Solution m_ -> finish m_
-          end
-        with TimeLimit.TimeOut ->
-          raise (AbortQuery "\n----------- TIME OUT ---------------\n"))
-    end
+      with TimeLimit.TimeOut ->
+        raise (AbortQuery "\n----------- TIME OUT ---------------\n"))
   (* self timing *)
   (* echo declaration, according to chatter level *)
 
-  let solve args =
+  let solve a__ b__ c__ =
+    let args = (a__, b__, c__) in
     begin match !Compile.optimize with
     | CompSyn.Indexing -> solveSbt args
     | CompSyn.LinearHeads -> solve' args
@@ -324,25 +329,21 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
 
   (* %query <expected> <try> A or %query <expected> <try> X : A *)
   let query' ((expected, try_, quy), Paths.Loc (fileName, r)) =
-    let a_, optName, xs_ =
-      ReconQuery.queryToQuery (quy, Paths.Loc (fileName, r))
+    let a, optName, xs =
+      ReconQuery.queryToQuery quy (Paths.Loc (fileName, r))
     in
-    let _ =
-      Display.chatter_s 3
+    ignore (Display.chatter_s 3
         (((("%query " ^ boundToString expected) ^ " ") ^ boundToString try_)
-        ^ "\n")
-    in
+        ^ "\n"));
     ignore (Display.chatter_s 4 " ");
-    let _ =
-      Display.chatter_s 3
-        (("\n" ^ Timers.time Timers.printing expToString (IntSyn.Null, a_))
-        ^ ".\n")
-    in
+    ignore (Display.chatter_s 3
+        (("\n" ^ Timers.time Timers.printing expToString (IntSyn.Null, a))
+        ^ ".\n"));
     let g =
-      Timers.time Timers.compiling Compile.compileGoal (IntSyn.Null, a_)
+      Timers.time Timers.compiling (fun () -> Compile.compileGoal IntSyn.Null a) ()
     in
     let solutions = ref 0 in
-    let scInit m_ =
+    let scInit m =
       begin
         solutions := !solutions + 1;
         begin
@@ -351,20 +352,20 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
               (("---------- Solution " ^ Int.toString !solutions)
               ^ " ----------\n");
             Display.chatter_s 3
-              (Timers.time Timers.printing evarInstToString xs_ ^ "\n")
+              (Timers.time Timers.printing evarInstToString xs ^ "\n")
           end;
           begin
             begin match optName with
             | None -> ()
             | Some name -> begin
                 Display.chatter_s 3
-                  (Timers.time Timers.printing evarInstToString [ (m_, name) ]
+                  (Timers.time Timers.printing evarInstToString [ (m, name) ]
                   ^ "\n")
               end
             end;
             begin
               begin match
-                Timers.time Timers.printing Print.evarCnstrsToStringOpt xs_
+                Timers.time Timers.printing Print.evarCnstrsToStringOpt xs
               with
               | None -> ()
               | Some str ->
@@ -380,34 +381,32 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
     in
     let search () =
       AbsMachine.solve
-        ((g, IntSyn.id), CompSyn.DProg (IntSyn.Null, IntSyn.Null), scInit)
+        g IntSyn.id (CompSyn.DProg (IntSyn.Null, IntSyn.Null)) scInit
     in
-    begin
-      begin if not (boundEq (try_, Some 0)) then begin
-        CsManager.reset ();
-        (try
-           try
-             TimeLimit.timeLimit !Global.timeLimit
-               (Timers.time Timers.solving search)
-               ()
-           with Done -> ()
-           (* printing is timed into solving! *)
-         with TimeLimit.TimeOut ->
-           raise (AbortQuery "\n----------- TIME OUT ---------------\n"));
-        CsManager.reset ();
-        checkSolutions (expected, try_, !solutions)
-      end
-      (* solve query if bound > 0 *)
-      (* in case Done was raised *)
-      (* check if number of solutions is correct *)
-        else begin
-        Display.chatter_s 3 "Skipping query (bound = 0)\n";
-        Display.chatter_s 4 "skipping"
-      end
-      end;
-      Display.chatter_s 3 "____________________________________________\n\n";
-      Display.chatter_s 4 " OK\n"
+    begin if not (boundEq (try_, Some 0)) then begin
+      CsManager.reset ();
+      (try
+         try
+           TimeLimit.timeLimit !Global.timeLimit
+             (Timers.time Timers.solving search)
+             ()
+         with Done -> ()
+         (* printing is timed into solving! *)
+       with TimeLimit.TimeOut ->
+         raise (AbortQuery "\n----------- TIME OUT ---------------\n"));
+      CsManager.reset ();
+      checkSolutions (expected, try_, !solutions)
     end
+    (* solve query if bound > 0 *)
+    (* in case Done was raised *)
+    (* check if number of solutions is correct *)
+      else begin
+      Display.chatter_s 3 "Skipping query (bound = 0)\n";
+      Display.chatter_s 4 "skipping"
+    end
+    end;
+    Display.chatter_s 3 "____________________________________________\n\n";
+    Display.chatter_s 4 " OK\n"
 
   (* optName = SOME(X) or NONE, Xs = free variables in query excluding X *)
   (* times itself *)
@@ -428,25 +427,21 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
 
   (* %query <expected> <try> A or %query <expected> <try> X : A *)
   let querySbt ((expected, try_, quy), Paths.Loc (fileName, r)) =
-    let a_, optName, xs_ =
-      ReconQuery.queryToQuery (quy, Paths.Loc (fileName, r))
+    let a, optName, xs =
+      ReconQuery.queryToQuery quy (Paths.Loc (fileName, r))
     in
-    let _ =
-      Display.chatter_s 3
+    ignore (Display.chatter_s 3
         (((("%query " ^ boundToString expected) ^ " ") ^ boundToString try_)
-        ^ "\n")
-    in
+        ^ "\n"));
     ignore (Display.chatter_s 4 " ");
-    let _ =
-      Display.chatter_s 3
-        (("\n" ^ Timers.time Timers.printing expToString (IntSyn.Null, a_))
-        ^ ".\n")
-    in
+    ignore (Display.chatter_s 3
+        (("\n" ^ Timers.time Timers.printing expToString (IntSyn.Null, a))
+        ^ ".\n"));
     let g =
-      Timers.time Timers.compiling Compile.compileGoal (IntSyn.Null, a_)
+      Timers.time Timers.compiling (fun () -> Compile.compileGoal IntSyn.Null a) ()
     in
     let solutions = ref 0 in
-    let scInit m_ =
+    let scInit m =
       begin
         solutions := !solutions + 1;
         begin
@@ -455,7 +450,7 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
               (("---------- Solution " ^ Int.toString !solutions)
               ^ " ----------\n");
             Display.chatter_s 3
-              (Timers.time Timers.printing evarInstToString xs_ ^ "\n")
+              (Timers.time Timers.printing evarInstToString xs ^ "\n")
           end;
           begin
             begin match optName with
@@ -464,26 +459,27 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
                 begin if !Global.chatter > 3 then begin
                   Display.debug (Display.string "\n pskeleton \n");
                   Display.debug
-                    (Display.string (CompSyn.pskeletonToString m_ ^ "\n"))
+                    (Display.string (CompSyn.pskeletonToString m ^ "\n"))
                 end
                 else ()
                 end;
-                Timers.time Timers.ptrecon PtRecon.solve
-                  ( m_,
-                    (g, IntSyn.id),
-                    CompSyn.DProg (IntSyn.Null, IntSyn.Null),
-                    function
-                    | pskel, m_ -> begin
-                        Display.chatter_s 3
-                          (Timers.time Timers.printing evarInstToString
-                             [ (m_, name) ]
-                          ^ "\n")
-                      end )
+                Timers.time Timers.ptrecon
+                  (fun () ->
+                    PtRecon.solve m g IntSyn.id
+                      (CompSyn.DProg (IntSyn.Null, IntSyn.Null))
+                      (function
+                      | pskel, m -> begin
+                          Display.chatter_s 3
+                            (Timers.time Timers.printing evarInstToString
+                               [ (m, name) ]
+                            ^ "\n")
+                        end))
+                  ()
               end
             end;
             begin
               begin match
-                Timers.time Timers.printing Print.evarCnstrsToStringOpt xs_
+                Timers.time Timers.printing Print.evarCnstrsToStringOpt xs
               with
               | None -> ()
               | Some str ->
@@ -499,34 +495,32 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
     in
     let search () =
       AbsMachineSbt.solve
-        ((g, IntSyn.id), CompSyn.DProg (IntSyn.Null, IntSyn.Null), scInit)
+        g IntSyn.id (CompSyn.DProg (IntSyn.Null, IntSyn.Null)) scInit
     in
-    begin
-      begin if not (boundEq (try_, Some 0)) then begin
-        CsManager.reset ();
-        (try
-           try
-             TimeLimit.timeLimit !Global.timeLimit
-               (Timers.time Timers.solving search)
-               ()
-           with Done -> ()
-         with TimeLimit.TimeOut ->
-           raise (AbortQuery "\n----------- TIME OUT ---------------\n"));
-        CsManager.reset ();
-        checkSolutions (expected, try_, !solutions)
-      end
-      (* solve query if bound > 0 *)
-      (* printing is timed into solving! *)
-      (* in case Done was raised *)
-      (* check if number of solutions is correct *)
-        else begin
-        Display.chatter_s 3 "Skipping query (bound = 0)\n";
-        Display.chatter_s 4 "skipping"
-      end
-      end;
-      Display.chatter_s 3 "____________________________________________\n\n";
-      Display.chatter_s 4 " OK\n"
+    begin if not (boundEq (try_, Some 0)) then begin
+      CsManager.reset ();
+      (try
+         try
+           TimeLimit.timeLimit !Global.timeLimit
+             (Timers.time Timers.solving search)
+             ()
+         with Done -> ()
+       with TimeLimit.TimeOut ->
+         raise (AbortQuery "\n----------- TIME OUT ---------------\n"));
+      CsManager.reset ();
+      checkSolutions (expected, try_, !solutions)
     end
+    (* solve query if bound > 0 *)
+    (* printing is timed into solving! *)
+    (* in case Done was raised *)
+    (* check if number of solutions is correct *)
+      else begin
+      Display.chatter_s 3 "Skipping query (bound = 0)\n";
+      Display.chatter_s 4 "skipping"
+    end
+    end;
+    Display.chatter_s 3 "____________________________________________\n\n";
+    Display.chatter_s 4 " OK\n"
 
   (* optName = SOME(X) or NONE, Xs = free variables in query excluding X *)
   (* times itself *)
@@ -547,7 +541,8 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
        *)
 
   (* %query <expected> <try> A or %query <expected> <try> X : A  *)
-  let query args =
+  let query a1 a2 a3 b__ =
+    let args = ((a1, a2, a3), b__) in
     begin match !Compile.optimize with
     | CompSyn.Indexing -> querySbt args
     | CompSyn.LinearHeads -> query' args
@@ -562,28 +557,24 @@ end) : SOLVE with module ExtQuery = Solve__0.ReconQuery = struct
 or  %querytabled <expected solutions> <max stages tried>  X : A
   note : %querytabled terminates if we have found the expected number of
   solutions or if we have reached the maximal number of stages *)
-  let querytabled ((numSol, try_, quy), Paths.Loc (fileName, r)) =
-    let _ =
-      Display.chatter_s 3
-        ((("%querytabled " ^ boundToString numSol) ^ " ") ^ boundToString try_)
-    in
-    let a_, optName, xs_ =
-      ReconQuery.queryToQuery (quy, Paths.Loc (fileName, r))
+  let querytabled numSol try_ quy (Paths.Loc (fileName, r)) =
+    ignore (Display.chatter_s 3
+        ((("%querytabled " ^ boundToString numSol) ^ " ") ^ boundToString try_));
+    let a, optName, xs =
+      ReconQuery.queryToQuery quy (Paths.Loc (fileName, r))
     in
     ignore (Display.chatter_s 4 " ");
-    let _ =
-      Display.chatter_s 3
-        (("\n" ^ Timers.time Timers.printing expToString (IntSyn.Null, a_))
-        ^ ".\n")
-    in
+    ignore (Display.chatter_s 3
+        (("\n" ^ Timers.time Timers.printing expToString (IntSyn.Null, a))
+        ^ ".\n"));
     let g =
-      Timers.time Timers.compiling Compile.compileGoal (IntSyn.Null, a_)
+      Timers.time Timers.compiling (fun () -> Compile.compileGoal IntSyn.Null a) ()
     in
     let solutions = ref 0 in
     let status = ref false in
     let solExists = ref false in
     let stages = ref 1 in
-    let scInit o_ =
+    let scInit o =
       begin
         solutions := !solutions + 1;
         begin
@@ -594,7 +585,7 @@ or  %querytabled <expected solutions> <max stages tried>  X : A
                 (("\n---------- Solutions " ^ Int.toString !solutions)
                 ^ " ----------\n");
               Display.chatter_s 3
-                (Timers.time Timers.printing evarInstToString xs_ ^ " \n");
+                (Timers.time Timers.printing evarInstToString xs ^ " \n");
               Display.chatter_s 1 "."
             end;
             begin
@@ -602,23 +593,24 @@ or  %querytabled <expected solutions> <max stages tried>  X : A
               | None -> ()
               | Some name -> begin
                   Display.debug
-                    (Display.string (CompSyn.pskeletonToString o_ ^ "\n"));
-                  Timers.time Timers.ptrecon PtRecon.solve
-                    ( o_,
-                      (g, IntSyn.id),
-                      CompSyn.DProg (IntSyn.Null, IntSyn.Null),
-                      function
-                      | o_, m_ -> begin
-                          Display.chatter_s 3
-                            (Timers.time Timers.printing evarInstToString
-                               [ (m_, name) ]
-                            ^ "\n")
-                        end )
+                    (Display.string (CompSyn.pskeletonToString o ^ "\n"));
+                  Timers.time Timers.ptrecon
+                    (fun () ->
+                      PtRecon.solve o g IntSyn.id
+                        (CompSyn.DProg (IntSyn.Null, IntSyn.Null))
+                        (function
+                        | o, m -> begin
+                            Display.chatter_s 3
+                              (Timers.time Timers.printing evarInstToString
+                                 [ (m, name) ]
+                              ^ "\n")
+                          end))
+                    ()
                 end
               end;
               begin
                 begin match
-                  Timers.time Timers.printing Print.evarCnstrsToStringOpt xs_
+                  Timers.time Timers.printing Print.evarCnstrsToStringOpt xs
                 with
                 | None -> ()
                 | Some str ->
@@ -698,7 +690,7 @@ or  %querytabled <expected solutions> <max stages tried>  X : A
     let tabledSearch () =
       begin
         Tabled.solve
-          ((g, IntSyn.id), CompSyn.DProg (IntSyn.Null, IntSyn.Null), scInit);
+          g IntSyn.id (CompSyn.DProg (IntSyn.Null, IntSyn.Null)) scInit;
         begin
           CsManager.reset ();
           begin
@@ -710,63 +702,61 @@ or  %querytabled <expected solutions> <max stages tried>  X : A
       (* in case Done was raised *)
       (* next stage until table doesn't change *)
     in
+    begin if not (boundEq (try_, Some 0)) then
+      try
+        begin
+          CsManager.reset ();
+          try
+            TimeLimit.timeLimit !Global.timeLimit
+              (Timers.time Timers.solving tabledSearch)
+              ()
+          with TimeLimit.TimeOut ->
+            begin
+              Display.debug
+                (Display.string "\n----------- TIME OUT ---------------\n");
+              raise Done
+            end
+        end
+        (* solve query if bound > 0 *)
+      with Done -> ()
+    else begin
+      Display.chatter_s 3 "Skipping query (bound = 0)\n";
+      Display.chatter_s 2 "skipping"
+    end
+    end;
     begin
-      begin if not (boundEq (try_, Some 0)) then
-        try
-          begin
-            CsManager.reset ();
-            try
-              TimeLimit.timeLimit !Global.timeLimit
-                (Timers.time Timers.solving tabledSearch)
-                ()
-            with TimeLimit.TimeOut ->
-              begin
-                Display.debug
-                  (Display.string "\n----------- TIME OUT ---------------\n");
-                raise Done
-              end
-          end
-          (* solve query if bound > 0 *)
-        with Done -> ()
-      else begin
-        Display.chatter_s 3 "Skipping query (bound = 0)\n";
-        Display.chatter_s 2 "skipping"
-      end
+      Display.chatter_s 3 "\n____________________________________________\n\n";
+      Display.chatter_s 3
+        ((((("number of stages: tried " ^ boundToString try_) ^ " \n")
+          ^ "terminated after ")
+         ^ Int.toString !stages)
+        ^ " stages \n \n");
+      begin if !solExists then ()
+      else Display.chatter_s 3 "\nNO solution exists to query \n\n"
       end;
-      begin
-        Display.chatter_s 3 "\n____________________________________________\n\n";
-        Display.chatter_s 3
-          ((((("number of stages: tried " ^ boundToString try_) ^ " \n")
-            ^ "terminated after ")
-           ^ Int.toString !stages)
-          ^ " stages \n \n");
-        begin if !solExists then ()
-        else Display.chatter_s 3 "\nNO solution exists to query \n\n"
-        end;
-        begin if !status then
-          Display.chatter_s 3 "Tabled evaluation COMPLETE \n \n"
-        else Display.chatter_s 3 "Tabled evaluation NOT COMPLETE \n \n"
-        end;
-        Display.chatter_s 3 "\n____________________________________________\n\n";
-        Display.chatter_s 3 "\n Table Indexing parameters: \n";
-        begin match !TableParam.strategy with
-        | variant_ -> Display.chatter_s 3 "\n Table Strategy := Variant \n"
-        | subsumption_ ->
-            Display.chatter_s 3 "\n Table Strategy := Subsumption \n"
-        end;
-        begin if !TableParam.strengthen then
-          Display.chatter_s 3 "\n Strengthening := true \n"
-        else Display.chatter_s 3 "\n Strengthening := false \n"
-        end;
-        Display.chatter_s 3
-          (("\nNumber of table indices : " ^ Int.toString (Tabled.tableSize ()))
-          ^ "\n");
-        Display.chatter_s 3
-          (("Number of suspended goals : " ^ Int.toString (Tabled.suspGoalNo ()))
-          ^ "\n");
-        Display.chatter_s 3 "\n____________________________________________\n\n";
-        Tabled.updateGlobalTable (g, !status)
-      end
+      begin if !status then
+        Display.chatter_s 3 "Tabled evaluation COMPLETE \n \n"
+      else Display.chatter_s 3 "Tabled evaluation NOT COMPLETE \n \n"
+      end;
+      Display.chatter_s 3 "\n____________________________________________\n\n";
+      Display.chatter_s 3 "\n Table Indexing parameters: \n";
+      begin match !TableParam.strategy with
+      | variant -> Display.chatter_s 3 "\n Table Strategy := Variant \n"
+      | subsumption ->
+          Display.chatter_s 3 "\n Table Strategy := Subsumption \n"
+      end;
+      begin if !TableParam.strengthen then
+        Display.chatter_s 3 "\n Strengthening := true \n"
+      else Display.chatter_s 3 "\n Strengthening := false \n"
+      end;
+      Display.chatter_s 3
+        (("\nNumber of table indices : " ^ Int.toString (Tabled.tableSize ()))
+        ^ "\n");
+      Display.chatter_s 3
+        (("Number of suspended goals : " ^ Int.toString (Tabled.suspGoalNo ()))
+        ^ "\n");
+      Display.chatter_s 3 "\n____________________________________________\n\n";
+      Tabled.updateGlobalTable g (!status)
     end
 
   (* optName = SOME(X) or NONE, Xs = free variables in query excluding X *)
@@ -792,36 +782,36 @@ or  %querytabled <expected solutions> <max stages tried>  X : A
     qLoops
       begin
         CsManager.reset ();
-        Parser.parseTerminalQ ("?- ", "   ")
+        Parser.parseTerminalQ ("?- ") ("   ")
       end
 
   and qLoops s = qLoops' (Timers.time Timers.parsing S.expose s)
 
   and qLoops' = function
-    | empty_ -> true
-    | S.Cons (query_, s') ->
-        let a_, optName, xs_ =
-          ReconQuery.queryToQuery (query_, Paths.Loc ("stdIn", Paths.Reg (0, 0)))
+    | empty -> true
+    | S.Cons (query, s') ->
+        let a, optName, xs =
+          ReconQuery.queryToQuery query (Paths.Loc ("stdIn", Paths.Reg (0, 0)))
         in
         let g =
-          Timers.time Timers.compiling Compile.compileGoal (IntSyn.Null, a_)
+          Timers.time Timers.compiling (fun () -> Compile.compileGoal IntSyn.Null a) ()
         in
-        let scInit m_ =
+        let scInit m =
           begin
             Display.chatter_s 1
-              (Timers.time Timers.printing evarInstToString xs_ ^ "\n");
+              (Timers.time Timers.printing evarInstToString xs ^ "\n");
             begin
               begin match optName with
               | None -> ()
               | Some name -> begin
                   Display.chatter_s 3
-                    (Timers.time Timers.printing evarInstToString [ (m_, name) ]
+                    (Timers.time Timers.printing evarInstToString [ (m, name) ]
                     ^ "\n")
                 end
               end;
               begin
                 begin match
-                  Timers.time Timers.printing Print.evarCnstrsToStringOpt xs_
+                  Timers.time Timers.printing Print.evarCnstrsToStringOpt xs
                 with
                 | None -> ()
                 | Some str ->
@@ -838,8 +828,11 @@ or  %querytabled <expected solutions> <max stages tried>  X : A
         ignore (Display.chatter_s 3 "Solving...\n");
         begin try
           begin
-            Timers.time Timers.solving AbsMachine.solve
-              ((g, IntSyn.id), CompSyn.DProg (IntSyn.Null, IntSyn.Null), scInit);
+            Timers.time Timers.solving
+              (fun () ->
+                AbsMachine.solve g IntSyn.id
+                  (CompSyn.DProg (IntSyn.Null, IntSyn.Null)) scInit)
+              ();
             Display.debug (Display.string "No more solutions\n");
             qLoop ()
           end
@@ -859,26 +852,26 @@ or  %querytabled <expected solutions> <max stages tried>  X : A
     qLoopsT
       begin
         CsManager.reset ();
-        Parser.parseTerminalQ ("?- ", "   ")
+        Parser.parseTerminalQ ("?- ") ("   ")
       end
 
   and qLoopsT s = qLoopsT' (Timers.time Timers.parsing S.expose s)
 
   and qLoopsT' = function
-    | empty_ -> true
-    | S.Cons (query_, s') ->
+    | empty -> true
+    | S.Cons (query, s') ->
         let solExists = ref false in
-        let a_, optName, xs_ =
-          ReconQuery.queryToQuery (query_, Paths.Loc ("stdIn", Paths.Reg (0, 0)))
+        let a, optName, xs =
+          ReconQuery.queryToQuery query (Paths.Loc ("stdIn", Paths.Reg (0, 0)))
         in
         let g =
-          Timers.time Timers.compiling Compile.compileGoal (IntSyn.Null, a_)
+          Timers.time Timers.compiling (fun () -> Compile.compileGoal IntSyn.Null a) ()
         in
         ignore (Tabled.reset ());
-        let scInit o_ =
+        let scInit o =
           begin
             Display.chatter_s 1
-              (Timers.time Timers.printing evarInstToString xs_ ^ "\n");
+              (Timers.time Timers.printing evarInstToString xs ^ "\n");
             begin
               begin match optName with
               | None -> ()
@@ -889,7 +882,7 @@ or  %querytabled <expected solutions> <max stages tried>  X : A
               end;
               begin
                 begin match
-                  Timers.time Timers.printing Print.evarCnstrsToStringOpt xs_
+                  Timers.time Timers.printing Print.evarCnstrsToStringOpt xs
                 with
                 | None -> ()
                 | Some str ->
@@ -917,8 +910,11 @@ or  %querytabled <expected solutions> <max stages tried>  X : A
         ignore (Display.chatter_s 3 "Solving...\n");
         begin try
           begin
-            Timers.time Timers.solving Tabled.solve
-              ((g, IntSyn.id), CompSyn.DProg (IntSyn.Null, IntSyn.Null), scInit);
+            Timers.time Timers.solving
+              (fun () ->
+                Tabled.solve g IntSyn.id
+                  (CompSyn.DProg (IntSyn.Null, IntSyn.Null)) scInit)
+              ();
             try loop ()
             with Completed ->
               begin if !solExists then

@@ -1,3 +1,6 @@
+open! Intsyn.Lambda_
+open! Modes
+
 (* # 1 "src/cover/Cover_.sig.ml" *)
 open! Basis
 
@@ -10,11 +13,11 @@ module type COVER = sig
 
   val checkNoDef : IntSyn.cid -> unit
 
-  val checkOut : IntSyn.dctx * IntSyn.eclo -> unit
+  val checkOut : IntSyn.dctx -> IntSyn.eclo -> unit
   (** raises Error(msg) *)
 
-  val checkCovers : IntSyn.cid * Modesyn.ModeSyn.modeSpine -> unit
+  val checkCovers : IntSyn.cid -> Modesyn.ModeSyn.modeSpine -> unit
 
   val coverageCheckCases :
-    Tomega.worlds * (IntSyn.dctx * IntSyn.sub) list * IntSyn.dctx -> unit
+    Tomega.worlds -> (IntSyn.dctx * IntSyn.sub) list -> IntSyn.dctx -> unit
 end

@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+open! Print.Print_
 include module type of ASSIGN
 
 module Assign (Assign__0 : sig

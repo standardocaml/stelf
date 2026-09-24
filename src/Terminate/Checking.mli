@@ -1,3 +1,10 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Formatter__Formatter_
+open! Index.Index_
+open! Paths
 include module type of CHECKING
 
 module Checking (Checking__0 : sig

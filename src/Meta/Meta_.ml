@@ -1,9 +1,23 @@
+open! Global.Global_
+open! Trail.Trail_
+open! Table
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Subordinate
+open! Modes.Modes_
+open! Typecheck.Typecheck_
+open! Index.Index_
+open! Compile.Compile_
+open! Heuristic.Heuristic_
+open! Timing
+open! M2
+
 (* # 1 "src/meta/Meta_.sig.ml" *)
 
 (* # 1 "src/meta/Meta_.fun.ml" *)
 
 (* # 1 "src/meta/Meta_.sml.ml" *)
-open! Basis
 open MtpGlobal
 open MetaGlobal
 open Statesyn

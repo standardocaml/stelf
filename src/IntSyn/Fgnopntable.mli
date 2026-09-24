@@ -1,7 +1,7 @@
+
 (* # 1 "src/lambda/Fgnopntable.sig.ml" *)
 
 (* # 1 "src/lambda/Fgnopntable.fun.ml" *)
-open! Basis
 open Fgnopn
 
 module FgnOpnTable (FgnOpnTable__0 : sig

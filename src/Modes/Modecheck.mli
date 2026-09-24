@@ -1,3 +1,6 @@
+open! Intsyn.Lambda_
+open! Paths
+open! Index.Index_
 include module type of MODECHECK
 
 module MakeModeCheck

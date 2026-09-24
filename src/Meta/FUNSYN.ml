@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/meta/Funsyn.sig.ml" *)
 open! Basis
 
@@ -95,14 +97,14 @@ module type FUNSYN = sig
   val lemmaLookup : lemma -> lemmaDec
   val lemmaAdd : lemmaDec -> lemma
   val lemmaSize : unit -> int
-  val mdecSub : mDec * IntSyn.sub -> mDec
+  val mdecSub : mDec -> IntSyn.sub -> mDec
   val makectx : lfctx -> IntSyn.dctx
   val lfctxLength : lfctx -> int
-  val lfctxLFDec : lfctx * int -> lFDec * IntSyn.sub
-  val dot1n : IntSyn.dctx * IntSyn.sub -> IntSyn.sub
-  val convFor : (for_ * IntSyn.sub) * (for_ * IntSyn.sub) -> bool
-  val forSub : for_ * IntSyn.sub -> for_
-  val normalizeFor : for_ * IntSyn.sub -> for_
+  val lfctxLFDec : lfctx -> int -> lFDec * IntSyn.sub
+  val dot1n : IntSyn.dctx -> IntSyn.sub -> IntSyn.sub
+  val convFor : for_ -> IntSyn.sub -> for_ * IntSyn.sub -> bool
+  val forSub : for_ -> IntSyn.sub -> for_
+  val normalizeFor : for_ -> IntSyn.sub -> for_
   val listToCtx : IntSyn.dec list -> IntSyn.dctx
   val ctxToList : IntSyn.dctx -> IntSyn.dec list
 end

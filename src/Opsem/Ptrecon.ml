@@ -1,5 +1,12 @@
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Index.Index_
+open! Compile
+open! CompSyn
+open! Assign
+
 (* # 1 "src/opsem/Ptrecon.sig.ml" *)
-open! Basis
 
 (* Abstract Machine guided by proof skeleton *)
 (* Author: Brigitte Pientks *)
@@ -10,7 +17,6 @@ include PTRECON
 (* signature PTRECON *)
 
 (* # 1 "src/opsem/Ptrecon.fun.ml" *)
-open! Index
 open! Basis
 open MemoTable
 
@@ -69,12 +75,12 @@ end) : PTRECON = struct
     | _ -> false
 
   let rec compose' = function
-    | I.Null, g_ -> g_
-    | IntSyn.Decl (g_, d_), g'_ -> IntSyn.Decl (compose' (g_, g'_), d_)
+    | I.Null, g -> g
+    | IntSyn.Decl (g, d), g' -> IntSyn.Decl (compose' (g, g'), d)
 
-  let rec shift = function
-    | I.Null, s -> s
-    | IntSyn.Decl (g_, d_), s -> I.dot1 (shift (g_, s))
+  let rec shift (a, s) = match a with
+    | I.Null -> s
+    | IntSyn.Decl (g, d) -> I.dot1 (shift (g, s))
 
   (* We write
        G |- M : g
@@ -104,165 +110,159 @@ end) : PTRECON = struct
      Effects: instantiation of EVars in g, s, and dp
               any effect  sc M  might have
   *)
-  let rec solve' = function
-    | o_, (C.Atom p, s), (C.DProg (g_, dPool) as dp), sc ->
-        matchAtom (o_, (p, s), dp, sc)
-    | o_, (C.Impl (r, a_, ha, g), s), C.DProg (g_, dPool), sc ->
-        let d'_ = I.Dec (None, I.EClo (a_, s)) in
+  let rec solve' (o, a, b, sc) = match a, b with
+    | (C.Atom p, s), (C.DProg (g, dPool) as dp) ->
+        matchAtom (o, (p, s), dp, sc)
+    | (C.Impl (r, a, ha, g), s), C.DProg (g_, dPool) ->
+        let d' = I.Dec (None, I.EClo (a, s)) in
         begin if !TableParam.strengthen then
-          begin match MT.memberCtx ((g_, I.EClo (a_, s)), g_) with
-          | Some d_ ->
-              let x_ = I.newEVar (g_, I.EClo (a_, s)) in
+          begin match MT.memberCtx g_ (I.EClo (a, s)) g_ with
+          | Some d ->
+              let x = I.newEVar g_ (I.EClo (a, s)) in
               solve'
-                ( o_,
-                  (g, I.Dot (I.Exp x_, s)),
+                ( o,
+                  (g, I.Dot (I.Exp x, s)),
                   C.DProg (g_, dPool),
-                  function o_, m_ -> sc (o_, I.Lam (d'_, m_)) )
+                  function o, m -> sc (o, I.Lam (d', m)) )
               (* need to reuse label for this assumption .... *)
           | None ->
               solve'
-                ( o_,
+                ( o,
                   (g, I.dot1 s),
-                  C.DProg (I.Decl (g_, d'_), I.Decl (dPool, C.Dec (r, s, ha))),
-                  function o_, m_ -> sc (o_, I.Lam (d'_, m_)) )
+                  C.DProg (I.Decl (g_, d'), I.Decl (dPool, C.Dec (r, s, ha))),
+                  function o, m -> sc (o, I.Lam (d', m)) )
           end
         else
           solve'
-            ( o_,
+            ( o,
               (g, I.dot1 s),
-              C.DProg (I.Decl (g_, d'_), I.Decl (dPool, C.Dec (r, s, ha))),
-              function o_, m_ -> sc (o_, I.Lam (d'_, m_)) )
+              C.DProg (I.Decl (g_, d'), I.Decl (dPool, C.Dec (r, s, ha))),
+              function o, m -> sc (o, I.Lam (d', m)) )
         end
         (*      solve' (O, (g, I.dot1 s), C.DProg (I.Decl(G, D'), I.Decl (dPool, C.Dec (r, s, Ha))),
                (fn (O,M) => sc (O, (I.Lam (D', M)))))*)
-    | o_, (C.All (d_, g), s), C.DProg (g_, dPool), sc ->
-        let d'_ = Names.decLUName (g_, I.decSub (d_, s)) in
+    | (C.All (d, g), s), C.DProg (g_, dPool) ->
+        let d' = Names.decLUName g_ (I.decSub d s) in
         solve'
-          ( o_,
+          ( o,
             (g, I.dot1 s),
-            C.DProg (I.Decl (g_, d'_), I.Decl (dPool, C.Parameter)),
-            function o_, m_ -> sc (o_, I.Lam (d'_, m_)) )
+            C.DProg (I.Decl (g_, d'), I.Decl (dPool, C.Parameter)),
+            function o, m -> sc (o, I.Lam (d', m)) )
   (* val D' = I.decSub (D, s) *)
 
-  and rSolve = function
-    | o_, ps', (C.Eq q_, s), C.DProg (g_, dPool), sc ->
-        begin if Unify.unifiable (g_, (q_, s), ps') then sc (o_, I.Nil)
+  and rSolve (o, ps', a, b, sc) = match a, b with
+    | (C.Eq q, s), C.DProg (g, dPool) ->
+        begin if Unify.unifiable g (q, s) ps' then sc (o, I.Nil)
         else
-          let _ =
-            begin
+          let () = ignore begin
               print "Unification Failed -- SHOULD NEVER HAPPEN!\n";
               begin
                 print
-                  (Print.expToString (g_, I.EClo (fst ps', snd ps')) ^ " unify ");
-                print (Print.expToString (g_, I.EClo (q_, s)) ^ "\n")
+                  (Print.expToString g (I.EClo (fst ps', snd ps')) ^ " unify ");
+                print (Print.expToString g (I.EClo (q, s)) ^ "\n")
               end
-            end
-          in
+            end in
           ()
         end
-    | o_, ps', (C.Assign (q_, eqns), s), (C.DProg (g_, dPool) as dp), sc ->
-        begin match Assign.assignable (g_, ps', (q_, s)) with
+    | (C.Assign (q, eqns), s), (C.DProg (g, dPool) as dp) ->
+        begin match Assign.assignable g ps' (q, s) with
         | Some cnstr ->
-            begin if aSolve ((eqns, s), dp, cnstr) then sc (o_, I.Nil)
+            begin if aSolve ((eqns, s), dp, cnstr) then sc (o, I.Nil)
             else print "aSolve cnstr not solvable -- SHOULD NEVER HAPPEN\n"
             end
         | None -> print "Clause Head not assignable -- SHOULD NEVER HAPPEN\n"
         end
-    | o_, ps', (C.And (r, a_, g), s), (C.DProg (g_, dPool) as dp), sc ->
-        let x_ = I.newEVar (g_, I.EClo (a_, s)) in
+    | (C.And (r, a, g), s), (C.DProg (g_, dPool) as dp) ->
+        let x = I.newEVar g_ (I.EClo (a, s)) in
         rSolve
-          ( o_,
+          ( o,
             ps',
-            (r, I.Dot (I.Exp x_, s)),
+            (r, I.Dot (I.Exp x, s)),
             dp,
             function
-            | o_, s_ ->
+            | o, s_ ->
                 solve'
-                  (o_, (g, s), dp, function o_, m_ -> sc (o_, I.App (m_, s_)))
+                  (o, (g, s), dp, function o, m -> sc (o, I.App (m, s_)))
           )
         (* is this EVar redundant? -fp *)
-    | o_, ps', (C.Exists (I.Dec (_, a_), r), s), (C.DProg (g_, dPool) as dp), sc
+    | (C.Exists (I.Dec (_, a), r), s), (C.DProg (g, dPool) as dp)
       ->
-        let x_ = I.newEVar (g_, I.EClo (a_, s)) in
+        let x = I.newEVar g (I.EClo (a, s)) in
         rSolve
-          ( o_,
+          ( o,
             ps',
-            (r, I.Dot (I.Exp x_, s)),
+            (r, I.Dot (I.Exp x, s)),
             dp,
-            function o_, s_ -> sc (o_, I.App (x_, s_)) )
-    | ( o_,
-        ps',
-        (C.Axists (I.ADec (Some x_, d), r), s),
-        (C.DProg (g_, dPool) as dp),
-        sc ) ->
-        let x'_ = I.newAVar () in
+            function o, s -> sc (o, I.App (x, s)) )
+    | (C.Axists (I.ADec (Some x, d), r), s), (C.DProg (g, dPool) as dp) ->
+        let x' = I.newAVar () in
         rSolve
-          (o_, ps', (r, I.Dot (I.Exp (I.EClo (x'_, I.Shift (-d))), s)), dp, sc)
+          (o, ps', (r, I.Dot (I.Exp (I.EClo (x', I.Shift (-d))), s)), dp, sc)
   (* we don't increase the proof term here! *)
   (* fail *)
 
-  and aSolve = function
-    | (trivial_, s), dp, cnstr -> Assign.solveCnstr cnstr
-    | (C.UnifyEq (g'_, e1, n_, eqns), s), (C.DProg (g_, dPool) as dp), cnstr ->
-        let g''_ = compose' (g'_, g_) in
-        let s' = shift (g'_, s) in
-        Assign.unifiable (g''_, (n_, s'), (e1, s'))
+  and aSolve (a, b, cnstr) = match a, b with
+    | (trivial, s), dp -> Assign.solveCnstr cnstr
+    | (C.UnifyEq (g', e1, n, eqns), s), (C.DProg (g, dPool) as dp) ->
+        let g'' = compose' (g', g) in
+        let s' = shift (g', s) in
+        Assign.unifiable g'' (n, s') (e1, s')
         && aSolve ((eqns, s), dp, cnstr)
 
   and matchAtom
-      (ho :: o_, ((I.Root (ha, s_), s) as ps'), (C.DProg (g_, dPool) as dp), sc)
+      (ho :: o, ((I.Root (ha, s_), s) as ps'), (C.DProg (g, dPool) as dp), sc)
       =
-    let rec matchSig = function
-      | [], k -> raise (Error " \noracle #Pc does not exist \n")
-      | (I.Const c as hc) :: sgn', k ->
+    let rec matchSig (a, k) = match a with
+      | [] -> raise (Error " \noracle #Pc does not exist \n")
+      | (I.Const c as hc) :: sgn' ->
           begin if c = k then
             let (C.SClause r) = C.sProgLookup (cidFromHead hc) in
             rSolve
-              ( o_,
+              ( o,
                 ps',
                 (r, I.id),
                 dp,
-                function o_, s_ -> sc (o_, I.Root (hc, s_)) )
+                function o, s -> sc (o, I.Root (hc, s)) )
           else matchSig (sgn', k)
           end
-      | (I.Def d as hc) :: sgn', k ->
+      | (I.Def d as hc) :: sgn' ->
           begin if d = k then
             let (C.SClause r) = C.sProgLookup (cidFromHead hc) in
             rSolve
-              ( o_,
+              ( o,
                 ps',
                 (r, I.id),
                 dp,
-                function o_, s_ -> sc (o_, I.Root (hc, s_)) )
+                function o, s -> sc (o, I.Root (hc, s)) )
           else matchSig (sgn', k)
           end
       (* should not happen *)
     in
-    let rec matchDProg = function
-      | I.Null, i, k ->
+    let rec matchDProg (a, i, k) = match a, i with
+      | I.Null, i ->
           raise
             (Error
                "\n\
                \ selected dynamic clause number does not exist in current \
                 dynamic clause pool!\n")
-      | I.Decl (dPool', C.Dec (r, s, ha')), 1, k ->
+      | I.Decl (dPool', C.Dec (r, s, ha')), 1 ->
           begin if eqHead (ha, ha') then
             rSolve
-              ( o_,
+              ( o,
                 ps',
-                (r, I.comp (s, I.Shift k)),
+                (r, I.comp s (I.Shift k)),
                 dp,
-                function o_, s_ -> sc (o_, I.Root (I.BVar k, s_)) )
+                function o, s -> sc (o, I.Root (I.BVar k, s)) )
           else
             raise
               (Error "\n selected dynamic clause does not match current goal!\n")
           end
-      | I.Decl (dPool', dc), i, k -> matchDProg (dPool', i - 1, k)
+      | I.Decl (dPool', dc), i -> matchDProg (dPool', i - 1, k)
     in
     begin match ho with
     | C.Pc i -> matchSig (Index.lookup (cidFromHead ha), i)
     | C.Dc i -> matchDProg (dPool, i, i)
-    | C.Csolver u_ -> sc (o_, u_)
+    | C.Csolver u -> sc (o, u)
     end
 
   (* matchSig [c1,...,cn] = ()
@@ -309,8 +309,8 @@ end) : PTRECON = struct
      This first tries the local assumptions in dp then
      the static signature.
   *)
-  let solve (o_, (g, s), (C.DProg (g_, dPool) as dp), sc) =
-    try solve' (o_, (g, s), dp, sc) with Error msg -> print msg
+  let solve o g s (C.DProg (g_, dPool) as dp) sc =
+    try solve' (o, (g, s), dp, sc) with Error msg -> print msg
 end
 (*! sharing Names.IntSyn = IntSyn' !*)
 (*! structure CsManager : CS_MANAGER !*)

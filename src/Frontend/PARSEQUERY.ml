@@ -1,3 +1,4 @@
+
 (* # 1 "src/frontend/ParseQuery.sig.ml" *)
 open! Basis
 open! Parsing

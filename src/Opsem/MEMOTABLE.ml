@@ -1,3 +1,7 @@
+open! Intsyn.Lambda_
+open! Compile
+open! CompSyn
+
 (* # 1 "src/opsem/MemoTable.sig.ml" *)
 open! Basis
 open TableParam
@@ -17,12 +21,12 @@ module type MEMOTABLE = sig
    * SIDE EFFECT: D, G |- U added to table
    *)
   val callCheck :
-    IntSyn.dctx
-    * IntSyn.dctx
-    * IntSyn.dctx
-    * IntSyn.exp
-    * TableParam.resEqn
-    * TableParam.status ->
+    IntSyn.dctx ->
+    IntSyn.dctx ->
+    IntSyn.dctx ->
+    IntSyn.exp ->
+    TableParam.resEqn ->
+    TableParam.status ->
     TableParam.callCheckResult
 
   (* answer check/insert *)
@@ -38,7 +42,7 @@ module type MEMOTABLE = sig
    *  else new
    *)
   val answerCheck :
-    IntSyn.sub * TableParam.answer * CompSyn.pskeleton -> TableParam.answState
+    IntSyn.sub -> TableParam.answer -> CompSyn.pskeleton -> TableParam.answState
 
   (* reset table *)
   val reset : unit -> unit
@@ -55,15 +59,15 @@ module type MEMOTABLE = sig
    *)
   val updateTable : unit -> bool
   val tableSize : unit -> int
-  val memberCtx : (IntSyn.dctx * IntSyn.exp) * IntSyn.dctx -> IntSyn.dec option
+  val memberCtx : IntSyn.dctx -> IntSyn.exp -> IntSyn.dctx -> IntSyn.dec option
 
   val insertIntoTree :
-    IntSyn.dctx
-    * IntSyn.dctx
-    * IntSyn.dctx
-    * IntSyn.exp
-    * TableParam.resEqn
-    * TableParam.answer
-    * TableParam.status ->
+    IntSyn.dctx ->
+    IntSyn.dctx ->
+    IntSyn.dctx ->
+    IntSyn.exp ->
+    TableParam.resEqn ->
+    TableParam.answer ->
+    TableParam.status ->
     TableParam.callCheckResult
 end

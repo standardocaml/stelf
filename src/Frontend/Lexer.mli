@@ -1,3 +1,4 @@
+open! Stream.Stream_
 include module type of LEXER
 module MakeLexer (Stream : STREAM) : LEXER
 module Lexer : LEXER

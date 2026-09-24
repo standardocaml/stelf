@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/index/Index_.sig.ml" *)
 open! Basis
 

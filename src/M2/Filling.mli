@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+open! Print.Print_
 include module type of FILLING
 
 module Filling (Filling__0 : sig

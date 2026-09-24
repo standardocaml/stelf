@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+open! Names.Names_
 include module type of THMSYN
 
 module ThmSyn (ThmSyn__0 : sig

@@ -1,3 +1,8 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Modes
+open! Print.Print_
+open! Index.Index_
 include module type of SPLITTING
 
 module Splitting (Splitting__0 : sig

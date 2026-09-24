@@ -1,3 +1,7 @@
+open! Intsyn.Lambda_
+open! Compile
+open! CompSyn
+
 (* # 1 "src/opsem/TabledMachine.sig.ml" *)
 open! Basis
 
@@ -8,10 +12,10 @@ module type TABLED = sig
   (*! structure IntSyn : INTSYN !*)
   (*! structure CompSyn : COMPSYN !*)
   val solve :
-    (CompSyn.goal * IntSyn.sub) * CompSyn.dProg * (CompSyn.pskeleton -> unit) ->
+    CompSyn.goal -> IntSyn.sub -> CompSyn.dProg -> (CompSyn.pskeleton -> unit) ->
     unit
 
-  val updateGlobalTable : CompSyn.goal * bool -> unit
+  val updateGlobalTable : CompSyn.goal -> bool -> unit
   val keepTable : IntSyn.cid -> bool
   val fillTable : unit -> unit
   val nextStage : unit -> bool

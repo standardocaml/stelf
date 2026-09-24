@@ -1,3 +1,4 @@
+
 (* # 1 "src/frontend/ParseMode.sig.ml" *)
 open! Basis
 open! Parsing

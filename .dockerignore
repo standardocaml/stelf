@@ -1,0 +1,36 @@
+# Docker build context excludes, for tools/ci/*.Dockerfile.
+#
+# The context is the repository root, and those images build the project from
+# scratch the way README says a person would. Everything listed here is host
+# state that would make them test something else instead -- in most cases by
+# silently SKIPPING work rather than by failing, which is the dangerous kind.
+
+# Phase 4's sentinel (Makefile's DEPS_SENTINEL). Its mere presence, whatever the
+# contents, makes `make` skip the entire dependency install; the build then gets
+# all the way to `Library "basis" not found` before anyone notices.
+.deps-installed
+
+# The host's local opam switch: absolute host paths throughout, and it satisfies
+# the phase 1-2 sentinels with a switch the container cannot use.
+_opam/
+**/_opam/
+
+# Dune's cache, keyed to that same host switch.
+_build/
+**/_build/
+
+# The 24MB executable that `make build` is supposed to produce in there.
+/stelf
+
+# Absent from a clean checkout, but anyone who has run `make lock` has one, and
+# shipping it flips dune into package management mode -- a different dependency
+# resolution path than the one CI is meant to exercise.
+dune.lock/
+
+# Deliberately NOT excluded:
+#   .git/    Makefile phase 3 runs `git submodule update`, which needs a real
+#            repository; the submodules' .git files are relative gitlinks, so
+#            they survive the copy.
+#   basis/   a workspace member the build genuinely requires, and
+#   twelf/   excluding either only makes the container re-clone it over the
+#            network -- slower, and it makes the build need the network at all.

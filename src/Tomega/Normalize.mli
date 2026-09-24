@@ -1,3 +1,4 @@
+open! Intsyn.Lambda_
 include module type of NORMALIZE
 
 module Normalize (Normalize__0 : sig

@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+open! M2
 include module type of MTPPROVER
 
 module MTProver (MTProver__0 : sig

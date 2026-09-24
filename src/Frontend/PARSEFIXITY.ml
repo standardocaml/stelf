@@ -1,3 +1,6 @@
+open! Names.Names_
+open! Paths.Paths_
+
 (* # 1 "src/frontend/ParseFixity.sig.ml" *)
 open! Basis
 open! Parsing

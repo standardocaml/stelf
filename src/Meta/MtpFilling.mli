@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+open! Typecheck.Typecheck_
 include module type of MTPFILLING
 
 module MTPFilling (MTPFilling__0 : sig

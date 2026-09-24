@@ -1,5 +1,8 @@
+open! Global.Global_
+open! Table
+open! Table.Table_
+
 (* # 1 "src/paths/Origins.sig.ml" *)
-open! Basis
 open Paths_
 module Paths = Paths_.Paths
 
@@ -21,7 +24,7 @@ module MakeOrigins (Global : GLOBAL) (Table : TABLE with type key = string) :
     let linesInfoTable : Paths.linesInfo Table.table = Table.new_ 31
     let reset () = Table.clear linesInfoTable
 
-    let install (string, linesInfo) =
+    let install string linesInfo =
       Table.insert linesInfoTable (string, linesInfo)
 
     let lookup string = Table.lookup linesInfoTable string
@@ -37,7 +40,7 @@ module MakeOrigins (Global : GLOBAL) (Table : TABLE with type key = string) :
         : (string * Paths.occConDec option) Array.array)
   end
 
-  let installOrigin (cid, fileNameOpt) =
+  let installOrigin cid fileNameOpt =
     Array.update (originArray, cid, fileNameOpt)
 
   let originLookup cid = Array.sub (originArray, cid)
@@ -48,7 +51,6 @@ end
 (* functor Origins *)
 
 (* # 1 "src/paths/Origins.sml.ml" *)
-open! Basis
 open! TableInstances
 module Origins = MakeOrigins (Global) (StringHashTable)
 include Origins

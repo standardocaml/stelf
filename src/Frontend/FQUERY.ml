@@ -1,3 +1,5 @@
+open! Paths.Paths_
+
 (* # 1 "src/frontend/Fquery.sig.ml" *)
 open! Basis
 
@@ -9,5 +11,5 @@ module type FQUERY = sig
 
   exception AbortQuery of string
 
-  val run : ExtQuery.query * Paths.location -> unit
+  val run : ExtQuery.query -> Paths.location -> unit
 end

@@ -1,5 +1,6 @@
+open! Trail.Trail_
+
 (* # 1 "src/lambda/Unify.sig.ml" *)
-open! Basis
 open Intsyn_
 
 (* Unification *)
@@ -66,31 +67,31 @@ module MakeUnify (Whnf : WHNF) (Trail : TRAIL) : UNIFY = struct
 
     let rec resetCnstr = function
       | [] -> []
-      | BindCnstr (refC, cnstr_) :: l_ -> begin
-          refC := cnstr_;
-          refC :: resetCnstr l_
+      | BindCnstr (refC, cnstr) :: l -> begin
+          refC := cnstr;
+          refC :: resetCnstr l
         end
 
     let reset = function
-      | BindExp (refU, u_) -> begin
-          refU := u_;
+      | BindExp (refU, u) -> begin
+          refU := u;
           Instantiate refU
         end
-      | BindBlock (refB, b_) -> begin
-          refB := b_;
+      | BindBlock (refB, b) -> begin
+          refB := b;
           InstantiateBlock refB
         end
       | BindAdd (cnstrs, cActions) -> begin
           cnstrs := resetCnstr cActions;
           Add cnstrs
         end
-      | FSolve (refCnstr, cnstr_, cnstr'_) -> begin
-          refCnstr := cnstr'_;
-          Solve (refCnstr, cnstr_)
+      | FSolve (refCnstr, cnstr, cnstr') -> begin
+          refCnstr := cnstr';
+          Solve (refCnstr, cnstr)
         end
 
-    let suspend () = Trail.suspend (globalTrail, copy)
-    let resume trail = Trail.resume (trail, globalTrail, reset)
+    let suspend () = Trail.suspend globalTrail copy
+    let resume trail = Trail.resume trail globalTrail reset
 
     let undo = function
       | Instantiate refU -> refU := None
@@ -100,54 +101,54 @@ module MakeUnify (Whnf : WHNF) (Trail : TRAIL) : UNIFY = struct
 
     let reset () = Trail.reset globalTrail
     let mark () = Trail.mark globalTrail
-    let unwind () = Trail.unwind (globalTrail, undo)
+    let unwind () = Trail.unwind globalTrail undo
 
-    let addConstraint (cnstrs, cnstr) =
+    let addConstraint cnstrs cnstr =
       begin
         cnstrs := cnstr :: !cnstrs;
-        Trail.log (globalTrail, Add cnstrs)
+        Trail.log globalTrail (Add cnstrs)
       end
 
     let solveConstraint ({ contents = cnstr_ } as cnstr) =
       begin
         cnstr := Solved;
-        Trail.log (globalTrail, Solve (cnstr, cnstr_))
+        Trail.log globalTrail (Solve (cnstr, cnstr_))
       end
 
-    let rec delayExpW = function
-      | ((Uni l_ as u_), s1), _ -> ()
-      | (Pi ((d_, p_), u_), s), cnstr -> begin
-          delayDec ((d_, s), cnstr);
-          delayExp ((u_, dot1 s), cnstr)
+    let rec delayExpW (a, cnstr) = match a with
+      | ((Uni l as u), s1) -> ()
+      | (Pi ((d, p), u), s) -> begin
+          delayDec ((d, s), cnstr);
+          delayExp ((u, dot1 s), cnstr)
         end
-      | (Root (h_, s_), s), cnstr -> begin
-          delayHead (h_, cnstr);
+      | (Root (h, s_), s) -> begin
+          delayHead (h, cnstr);
           delaySpine ((s_, s), cnstr)
         end
-      | (Lam (d_, u_), s), cnstr -> begin
-          delayDec ((d_, s), cnstr);
-          delayExp ((u_, dot1 s), cnstr)
+      | (Lam (d, u), s) -> begin
+          delayDec ((d, s), cnstr);
+          delayExp ((u, dot1 s), cnstr)
         end
-      | (EVar (g_, r, v_, cnstrs), s), cnstr -> addConstraint (cnstrs, cnstr)
-      | (FgnExp (csfe_csid, csfe_ops), s), cnstr ->
-          FgnExpStd.App.apply (csfe_csid, csfe_ops) (function u_ ->
-              delayExp ((u_, s), cnstr))
+      | (EVar (g, r, v, cnstrs), s) -> addConstraint cnstrs cnstr
+      | (FgnExp (csfe_csid, csfe_ops), s) ->
+          FgnExpStd.App.apply csfe_csid csfe_ops (function u ->
+              delayExp ((u, s), cnstr))
 
-    and delayExp (us_, cnstr) = delayExpW (Whnf.whnf us_, cnstr)
+    and delayExp (us, cnstr) = delayExpW (Whnf.whnf us, cnstr)
 
-    and delayHead = function
-      | FVar (x, v_, s'), cnstr -> delayExp ((v_, id), cnstr)
-      | h_, _ -> ()
+    and delayHead (h, cnstr) = match h with
+      | FVar (x, v, s') -> delayExp ((v, id), cnstr)
+      | h -> ()
 
-    and delaySpine = function
-      | (Nil, s), cnstr -> ()
-      | (App (u_, s_), s), cnstr -> begin
-          delayExp ((u_, s), cnstr);
+    and delaySpine (a, cnstr) = match a with
+      | (Nil, s) -> ()
+      | (App (u, s_), s) -> begin
+          delayExp ((u, s), cnstr);
           delaySpine ((s_, s), cnstr)
         end
-      | (SClo (s_, s'), s), cnstr -> delaySpine ((s_, comp (s', s)), cnstr)
+      | (SClo (s_, s'), s) -> delaySpine ((s_, comp s' s), cnstr)
 
-    and delayDec ((Dec (name, v_), s), cnstr) = delayExp ((v_, s), cnstr)
+    and delayDec ((Dec (name, v), s), cnstr) = delayExp ((v, s), cnstr)
 
     open! struct
       let awakenCnstrs = (ref [] : cnstr list ref)
@@ -164,584 +165,571 @@ module MakeUnify (Whnf : WHNF) (Trail : TRAIL) : UNIFY = struct
         end
       end
 
-    let instantiateEVar (refU, v_, cnstrL) =
+    let instantiateEVar refU v cnstrL =
       begin
-        refU := Some v_;
+        refU := Some v;
         begin
-          Trail.log (globalTrail, Instantiate refU);
+          Trail.log globalTrail (Instantiate refU);
           awakenCnstrs := cnstrL @ !awakenCnstrs
         end
       end
 
-    let instantiateLVar (refB, b_) =
+    let instantiateLVar refB b =
       begin
-        refB := Some b_;
-        Trail.log (globalTrail, InstantiateBlock refB)
+        refB := Some b;
+        Trail.log globalTrail (InstantiateBlock refB)
       end
 
-    let rec intersection = function
+    let rec intersection a3 b3 = match a3, b3 with
       | Dot (Idx k1, s1), Dot (Idx k2, s2) ->
-          begin if k1 = k2 then dot1 (intersection (s1, s2))
-          else comp (intersection (s1, s2), shift)
+          begin if k1 = k2 then dot1 (intersection s1 s2)
+          else comp (intersection s1 s2) shift
           end
       | (Dot _ as s1), Shift n2 ->
-          intersection (s1, Dot (Idx (n2 + 1), Shift (n2 + 1)))
+          intersection s1 (Dot (Idx (n2 + 1), Shift (n2 + 1)))
       | Shift n1, (Dot _ as s2) ->
-          intersection (Dot (Idx (n1 + 1), Shift (n1 + 1)), s2)
+          intersection (Dot (Idx (n1 + 1), Shift (n1 + 1))) s2
       | Shift _, Shift _ -> id
 
-    let rec weakenSub = function
-      | g_, Shift n, ss ->
-          begin if n < ctxLength g_ then
-            weakenSub (g_, Dot (Idx (n + 1), Shift (n + 1)), ss)
+    let rec weakenSub (g, a, ss) = match a with
+      | Shift n ->
+          begin if n < ctxLength g then
+            weakenSub (g, Dot (Idx (n + 1), Shift (n + 1)), ss)
           else id
           end
-      | g_, Dot (Idx n, s'), ss ->
-          begin match bvarSub (n, ss) with
-          | Undef -> comp (weakenSub (g_, s', ss), shift)
-          | Idx _ -> dot1 (weakenSub (g_, s', ss))
+      | Dot (Idx n, s') ->
+          begin match bvarSub n ss with
+          | Undef -> comp (weakenSub (g, s', ss)) shift
+          | Idx _ -> dot1 (weakenSub (g, s', ss))
           end
-      | g_, Dot (Undef, s'), ss -> comp (weakenSub (g_, s', ss), shift)
+      | Dot (Undef, s') -> comp (weakenSub (g, s', ss)) shift
 
-    let rec invertExp (g_, us_, ss, rOccur) =
-      invertExpW (g_, Whnf.whnf us_, ss, rOccur)
+    let rec invertExp (g, us, ss, rOccur) =
+      invertExpW (g, Whnf.whnf us, ss, rOccur)
 
-    and invertExpW = function
-      | g_, ((Uni _ as u_), s), _, _ -> u_
-      | g_, (Pi ((d_, p_), v_), s), ss, rOccur ->
+    and invertExpW (g, a, ss, rOccur) = match a with
+      | ((Uni _ as u), s) -> u
+      | (Pi ((d, p), v), s) ->
           Pi
-            ( (invertDec (g_, (d_, s), ss, rOccur), p_),
+            ( (invertDec (g, (d, s), ss, rOccur), p),
               invertExp
-                (Decl (g_, decSub (d_, s)), (v_, dot1 s), dot1 ss, rOccur) )
-      | g_, (Lam (d_, v_), s), ss, rOccur ->
+                (Decl (g, decSub d s), (v, dot1 s), dot1 ss, rOccur) )
+      | (Lam (d, v), s) ->
           Lam
-            ( invertDec (g_, (d_, s), ss, rOccur),
+            ( invertDec (g, (d, s), ss, rOccur),
               invertExp
-                (Decl (g_, decSub (d_, s)), (v_, dot1 s), dot1 ss, rOccur) )
-      | g_, (Root (h_, s_), s), ss, rOccur ->
+                (Decl (g, decSub d s), (v, dot1 s), dot1 ss, rOccur) )
+      | (Root (h, s_), s) ->
           Root
-            ( invertHead (g_, h_, ss, rOccur),
-              invertSpine (g_, (s_, s), ss, rOccur) )
-      | g_, ((EVar (r, gx, v_, cnstrs) as x_), s), ss, rOccur ->
+            ( invertHead (g, h, ss, rOccur),
+              invertSpine (g, (s_, s), ss, rOccur) )
+      | ((EVar (r, gx, v, cnstrs) as x), s) ->
           begin if rOccur == r then raise NotInvertible
           else
             begin if Whnf.isPatSub s then
-              let w = weakenSub (g_, s, ss) in
-              begin if Whnf.isId w then EClo (x_, comp (s, ss))
+              let w = weakenSub (g, s, ss) in
+              begin if Whnf.isId w then EClo (x, comp s ss)
               else raise NotInvertible
               end
-            else EClo (x_, invertSub (g_, s, ss, rOccur))
+            else EClo (x, invertSub g s ss rOccur)
             end
           end
-      | g_, (FgnExp (csfe_csid, csfe_ops), s), ss, rOccur ->
-          FgnExpStd.Map.apply (csfe_csid, csfe_ops) (function u_ ->
-              invertExp (g_, (u_, s), ss, rOccur))
+      | (FgnExp (csfe_csid, csfe_ops), s) ->
+          FgnExpStd.Map.apply csfe_csid csfe_ops (function u ->
+              invertExp (g, (u, s), ss, rOccur))
 
-    and invertDec (g_, (Dec (name, v_), s), ss, rOccur) =
-      Dec (name, invertExp (g_, (v_, s), ss, rOccur))
+    and invertDec (g, (Dec (name, v), s), ss, rOccur) =
+      Dec (name, invertExp (g, (v, s), ss, rOccur))
 
-    and invertSpine = function
-      | g_, (Nil, s), ss, rOccur -> Nil
-      | g_, (App (u_, s_), s), ss, rOccur ->
+    and invertSpine (g, a, ss, rOccur) = match a with
+      | (Nil, s) -> Nil
+      | (App (u, s_), s) ->
           App
-            ( invertExp (g_, (u_, s), ss, rOccur),
-              invertSpine (g_, (s_, s), ss, rOccur) )
-      | g_, (SClo (s_, s'), s), ss, rOccur ->
-          invertSpine (g_, (s_, comp (s', s)), ss, rOccur)
+            ( invertExp (g, (u, s), ss, rOccur),
+              invertSpine (g, (s_, s), ss, rOccur) )
+      | (SClo (s_, s'), s) ->
+          invertSpine (g, (s_, comp s' s), ss, rOccur)
 
-    and invertHead = function
-      | g_, BVar k, ss, rOccur ->
-          begin match bvarSub (k, ss) with
+    and invertHead (g, a, ss, rOccur) = match a with
+      | BVar k ->
+          begin match bvarSub k ss with
           | Undef -> raise NotInvertible
           | Idx k' -> BVar k'
           end
-      | g_, (Const _ as h_), ss, rOccur -> h_
-      | g_, Proj ((Bidx k as b_), i), ss, rOccur ->
-          begin match blockSub (b_, ss) with Bidx k' -> Proj (Bidx k', i)
+      | (Const _ as h) -> h
+      | Proj ((Bidx k as b), i) ->
+          begin match blockSub b ss with Bidx k' -> Proj (Bidx k', i)
           end
-      | g_, (Proj (LVar (r, sk, (l, t)), i) as h_), ss, rOccur -> begin
-          ignore (invertSub (g_, t, id, rOccur));
-          h_
+      | (Proj (LVar (r, sk, (l, t)), i) as h) -> begin
+          ignore (invertSub g t id rOccur);
+          h
         end
-      | g_, (Skonst _ as h_), ss, rOccur -> h_
-      | g_, (Def _ as h_), ss, rOccur -> h_
-      | g_, FVar (x, v_, s'), ss, rOccur -> begin
-          ignore (invertExp (g_, (v_, id), id, rOccur));
-          FVar (x, v_, comp (s', ss))
+      | (Skonst _ as h) -> h
+      | (Def _ as h) -> h
+      | FVar (x, v, s') -> begin
+          ignore (invertExp (g, (v, id), id, rOccur));
+          FVar (x, v, comp s' ss)
         end
-      | g_, (FgnConst _ as h_), ss, rOccur -> h_
+      | (FgnConst _ as h) -> h
 
-    and invertSub = function
-      | g_, (Shift n as s), ss, rOccur ->
-          begin if n < ctxLength g_ then
-            invertSub (g_, Dot (Idx (n + 1), Shift (n + 1)), ss, rOccur)
-          else comp (s, ss)
+    and invertSub g a ss rOccur = match a with
+      | (Shift n as s) ->
+          begin if n < ctxLength g then
+            invertSub g (Dot (Idx (n + 1), Shift (n + 1))) ss rOccur
+          else comp s ss
           end
-      | g_, Dot (Idx n, s'), ss, rOccur ->
-          begin match bvarSub (n, ss) with
+      | Dot (Idx n, s') ->
+          begin match bvarSub n ss with
           | Undef -> raise NotInvertible
-          | ft_ -> Dot (ft_, invertSub (g_, s', ss, rOccur))
+          | ft -> Dot (ft, invertSub g s' ss rOccur)
           end
-      | g_, Dot (Exp u_, s'), ss, rOccur ->
+      | Dot (Exp u, s') ->
           Dot
-            ( Exp (invertExp (g_, (u_, id), ss, rOccur)),
-              invertSub (g_, s', ss, rOccur) )
+            ( Exp (invertExp (g, (u, id), ss, rOccur)),
+              invertSub g s' ss rOccur )
 
-    let rec pruneExp (g_, us_, ss, rOccur) =
-      pruneExpW (g_, Whnf.whnf us_, ss, rOccur)
+    let rec pruneExp (g, us, ss, rOccur) =
+      pruneExpW (g, Whnf.whnf us, ss, rOccur)
 
-    and pruneExpW = function
-      | g_, ((Uni _ as u_), s), _, _ -> u_
-      | g_, (Pi ((d_, p_), v_), s), ss, rOccur ->
+    and pruneExpW (g, a, ss, rOccur) = match a with
+      | ((Uni _ as u), s) -> u
+      | (Pi ((d, p), v), s) ->
           Pi
-            ( (pruneDec (g_, (d_, s), ss, rOccur), p_),
-              pruneExp (Decl (g_, decSub (d_, s)), (v_, dot1 s), dot1 ss, rOccur)
+            ( (pruneDec (g, (d, s), ss, rOccur), p),
+              pruneExp (Decl (g, decSub d s), (v, dot1 s), dot1 ss, rOccur)
             )
-      | g_, (Lam (d_, v_), s), ss, rOccur ->
+      | (Lam (d, v), s) ->
           Lam
-            ( pruneDec (g_, (d_, s), ss, rOccur),
-              pruneExp (Decl (g_, decSub (d_, s)), (v_, dot1 s), dot1 ss, rOccur)
+            ( pruneDec (g, (d, s), ss, rOccur),
+              pruneExp (Decl (g, decSub d s), (v, dot1 s), dot1 ss, rOccur)
             )
-      | g_, (Root (h_, s_), s), ss, rOccur ->
+      | (Root (h, s_), s) ->
           Root
-            ( pruneHead (g_, h_, ss, rOccur),
-              pruneSpine (g_, (s_, s), ss, rOccur) )
-      | g_, ((EVar (r, gx, v_, cnstrs) as x_), s), ss, rOccur ->
+            ( pruneHead (g, h, ss, rOccur),
+              pruneSpine (g, (s_, s), ss, rOccur) )
+      | ((EVar (r, gx, v, cnstrs) as x), s) ->
           begin if rOccur == r then raise (Unify "Variable occurrence")
           else
             begin if Whnf.isPatSub s then
-              let w = weakenSub (g_, s, ss) in
-              begin if Whnf.isId w then EClo (x_, comp (s, ss))
+              let w = weakenSub (g, s, ss) in
+              begin if Whnf.isId w then EClo (x, comp s ss)
               else
                 let wi = Whnf.invert w in
-                let v'_ = pruneExp (gx, (v_, id), wi, rOccur) in
+                let v' = pruneExp (gx, (v, id), wi, rOccur) in
                 let gy = pruneCtx (wi, gx, rOccur) in
-                let y_ = newEVar (gy, v'_) in
-                let yw = EClo (y_, w) in
-                ignore (instantiateEVar (r, yw, !cnstrs));
-                EClo (yw, comp (s, ss))
+                let y = newEVar gy v' in
+                let yw = EClo (y, w) in
+                ignore (instantiateEVar r yw (!cnstrs));
+                EClo (yw, comp s ss)
               end
             else
-              try EClo (x_, invertSub (g_, s, ss, rOccur))
+              try EClo (x, invertSub g s ss rOccur)
               with NotInvertible ->
-                let gy = pruneCtx (ss, g_, rOccur) in
-                let v'_ = pruneExp (g_, (v_, s), ss, rOccur) in
-                let y_ = newEVar (gy, v'_) in
-                let _ =
-                  addConstraint
-                    ( cnstrs,
-                      ref (Eqn (g_, EClo (x_, s), EClo (y_, Whnf.invert ss))) )
-                in
-                y_
+                let gy = pruneCtx (ss, g, rOccur) in
+                let v' = pruneExp (g, (v, s), ss, rOccur) in
+                let y = newEVar gy v' in
+                ignore (addConstraint
+                    cnstrs (ref (Eqn (g, EClo (x, s), EClo (y, Whnf.invert ss)))));
+                y
             end
           end
-      | g_, (FgnExp (csfe_csid, csfe_ops), s), ss, rOccur ->
-          FgnExpStd.Map.apply (csfe_csid, csfe_ops) (function u_ ->
-              pruneExp (g_, (u_, s), ss, rOccur))
-      | g_, ((AVar _ as x_), s), ss, rOccur -> raise (Unify "Left-over AVar")
+      | (FgnExp (csfe_csid, csfe_ops), s) ->
+          FgnExpStd.Map.apply csfe_csid csfe_ops (function u ->
+              pruneExp (g, (u, s), ss, rOccur))
+      | ((AVar _ as x), s) -> raise (Unify "Left-over AVar")
 
-    and pruneDec = function
-      | g_, (Dec (name, v_), s), ss, rOccur ->
-          Dec (name, pruneExp (g_, (v_, s), ss, rOccur))
-      | g_, (NDec x, _), _, _ -> NDec x
+    and pruneDec (g, a, ss, rOccur) = match a with
+      | (Dec (name, v), s) ->
+          Dec (name, pruneExp (g, (v, s), ss, rOccur))
+      | (NDec x, _) -> NDec x
 
-    and pruneSpine = function
-      | g_, (Nil, s), ss, rOccur -> Nil
-      | g_, (App (u_, s_), s), ss, rOccur ->
+    and pruneSpine (g, a, ss, rOccur) = match a with
+      | (Nil, s) -> Nil
+      | (App (u, s_), s) ->
           App
-            ( pruneExp (g_, (u_, s), ss, rOccur),
-              pruneSpine (g_, (s_, s), ss, rOccur) )
-      | g_, (SClo (s_, s'), s), ss, rOccur ->
-          pruneSpine (g_, (s_, comp (s', s)), ss, rOccur)
+            ( pruneExp (g, (u, s), ss, rOccur),
+              pruneSpine (g, (s_, s), ss, rOccur) )
+      | (SClo (s_, s'), s) ->
+          pruneSpine (g, (s_, comp s' s), ss, rOccur)
 
-    and pruneHead = function
-      | g_, BVar k, ss, rOccur ->
-          begin match bvarSub (k, ss) with
+    and pruneHead (g, a, ss, rOccur) = match a with
+      | BVar k ->
+          begin match bvarSub k ss with
           | Undef -> raise (Unify "Parameter dependency")
           | Idx k' -> BVar k'
           end
-      | g_, (Const _ as h_), ss, rOccur -> h_
-      | g_, Proj ((Bidx k as b_), i), ss, rOccur ->
-          begin match blockSub (b_, ss) with Bidx k' -> Proj (Bidx k', i)
+      | (Const _ as h) -> h
+      | Proj ((Bidx k as b), i) ->
+          begin match blockSub b ss with Bidx k' -> Proj (Bidx k', i)
           end
-      | g_, (Proj (LVar (r, sk, (l, t)), i) as h_), ss, rOccur -> begin
-          ignore (pruneSub (g_, t, id, rOccur));
-          h_
+      | (Proj (LVar (r, sk, (l, t)), i) as h) -> begin
+          ignore (pruneSub (g, t, id, rOccur));
+          h
         end
-      | g_, (Skonst _ as h_), ss, rOccur -> h_
-      | g_, (Def _ as h_), ss, rOccur -> h_
-      | g_, FVar (x, v_, s'), ss, rOccur -> begin
-          ignore (pruneExp (g_, (v_, id), id, rOccur));
-          FVar (x, v_, comp (s', ss))
+      | (Skonst _ as h) -> h
+      | (Def _ as h) -> h
+      | FVar (x, v, s') -> begin
+          ignore (pruneExp (g, (v, id), id, rOccur));
+          FVar (x, v, comp s' ss)
         end
-      | g_, (FgnConst _ as h_), ss, rOccur -> h_
+      | (FgnConst _ as h) -> h
 
-    and pruneSub = function
-      | g_, (Shift n as s), ss, rOccur ->
-          if n < ctxLength g_ then
-            pruneSub (g_, Dot (Idx (n + 1), Shift (n + 1)), ss, rOccur)
-          else comp (s, ss)
-      | g_, Dot (Idx n, s'), ss, rOccur ->
-          begin match bvarSub (n, ss) with
+    and pruneSub (g, a, ss, rOccur) = match a with
+      | (Shift n as s) ->
+          if n < ctxLength g then
+            pruneSub (g, Dot (Idx (n + 1), Shift (n + 1)), ss, rOccur)
+          else comp s ss
+      | Dot (Idx n, s') ->
+          begin match bvarSub n ss with
           | Undef -> raise (Unify "Not prunable")
-          | ft_ -> Dot (ft_, pruneSub (g_, s', ss, rOccur))
+          | ft -> Dot (ft, pruneSub (g, s', ss, rOccur))
           end
-      | g_, Dot (Exp u_, s'), ss, rOccur ->
+      | Dot (Exp u, s') ->
           Dot
-            ( Exp (pruneExp (g_, (u_, id), ss, rOccur)),
-              pruneSub (g_, s', ss, rOccur) )
+            ( Exp (pruneExp (g, (u, id), ss, rOccur)),
+              pruneSub (g, s', ss, rOccur) )
 
-    and pruneCtx = function
-      | Shift n, Null, rOccur -> Null
-      | Dot (Idx k, t), Decl (g_, d_), rOccur ->
-          let t' = comp (t, invShift) in
-          let d'_ = pruneDec (g_, (d_, id), t', rOccur) in
-          Decl (pruneCtx (t', g_, rOccur), d'_)
-      | Dot (Undef, t), Decl (g_, d), rOccur -> pruneCtx (t, g_, rOccur)
-      | Shift n, g_, rOccur ->
-          pruneCtx (Dot (Idx (n + 1), Shift (n + 1)), g_, rOccur)
+    and pruneCtx (a, b, rOccur) = match a, b with
+      | Shift n, Null -> Null
+      | Dot (Idx k, t), Decl (g, d) ->
+          let t' = comp t invShift in
+          let d' = pruneDec (g, (d, id), t', rOccur) in
+          Decl (pruneCtx (t', g, rOccur), d')
+      | Dot (Undef, t), Decl (g, d) -> pruneCtx (t, g, rOccur)
+      | Shift n, g ->
+          pruneCtx (Dot (Idx (n + 1), Shift (n + 1)), g, rOccur)
 
-    let rec unifyExpW = function
-      | g_, ((FgnExp (csfe1_csid, csfe1_ops), _) as us1), us2 ->
+    let rec unifyExpW (g, a, b) = match a, b with
+      | ((FgnExp (csfe1_csid, csfe1_ops), _) as us1), us2 ->
           begin match
-            FgnExpStd.UnifyWith.apply (csfe1_csid, csfe1_ops)
-              ( g_,
-                let us2_e_, us2_s_ = us2 in
-                EClo (us2_e_, us2_s_) )
+            FgnExpStd.UnifyWith.apply csfe1_csid csfe1_ops
+              ( g,
+                let us2_e, us2_s = us2 in
+                EClo (us2_e, us2_s) )
           with
           | Succeed residualL ->
               let execResidual = function
-                | Assign (g_, EVar (r, _, _, cnstrs), w_, ss) ->
-                    let w'_ = pruneExp (g_, (w_, id), ss, r) in
-                    instantiateEVar (r, w'_, !cnstrs)
-                | Delay (u_, cnstr) -> delayExp ((u_, id), cnstr)
+                | Assign (g, EVar (r, _, _, cnstrs), w, ss) ->
+                    let w' = pruneExp (g, (w, id), ss, r) in
+                    instantiateEVar r w' (!cnstrs)
+                | Delay (u, cnstr) -> delayExp ((u, id), cnstr)
               in
               List.app execResidual residualL
           | Fail -> raise (Unify "Foreign Expression Mismatch")
           end
-      | g_, us1, ((FgnExp (csfe2_csid, csfe2_ops), _) as us2) ->
+      | us1, ((FgnExp (csfe2_csid, csfe2_ops), _) as us2) ->
           begin match
-            FgnExpStd.UnifyWith.apply (csfe2_csid, csfe2_ops)
-              ( g_,
-                let us1_e_, us1_s_ = us1 in
-                EClo (us1_e_, us1_s_) )
+            FgnExpStd.UnifyWith.apply csfe2_csid csfe2_ops
+              ( g,
+                let us1_e, us1_s = us1 in
+                EClo (us1_e, us1_s) )
           with
           | Succeed opL ->
               let execOp = function
-                | Assign (g_, EVar (r, _, _, cnstrs), w_, ss) ->
-                    let w'_ = pruneExp (g_, (w_, id), ss, r) in
-                    instantiateEVar (r, w'_, !cnstrs)
-                | Delay (u_, cnstr) -> delayExp ((u_, id), cnstr)
+                | Assign (g, EVar (r, _, _, cnstrs), w, ss) ->
+                    let w' = pruneExp (g, (w, id), ss, r) in
+                    instantiateEVar r w' (!cnstrs)
+                | Delay (u, cnstr) -> delayExp ((u, id), cnstr)
               in
               List.app execOp opL
           | Fail -> raise (Unify "Foreign Expression Mismatch")
           end
-      | g_, (Uni l1_, _), (Uni l2_, _) -> ()
-      | g_, ((Root (h1_, s1_), s1) as us1), ((Root (h2_, s2_), s2) as us2) ->
-          begin match (h1_, h2_) with
+      | (Uni l1, _), (Uni l2, _) -> ()
+      | ((Root (h1, s1_), s1) as us1), ((Root (h2, s2_), s2) as us2) ->
+          begin match (h1, h2) with
           | BVar k1, BVar k2 ->
-              begin if k1 = k2 then unifySpine (g_, (s1_, s1), (s2_, s2))
+              begin if k1 = k2 then unifySpine (g, (s1_, s1), (s2_, s2))
               else raise (Unify "Bound variable clash")
               end
           | Const c1, Const c2 ->
-              begin if c1 = c2 then unifySpine (g_, (s1_, s1), (s2_, s2))
+              begin if c1 = c2 then unifySpine (g, (s1_, s1), (s2_, s2))
               else raise (Unify "Constant clash")
               end
           | Proj (b1, i1), Proj (b2, i2) ->
               begin if i1 = i2 then begin
-                unifyBlock (g_, b1, b2);
-                unifySpine (g_, (s1_, s1), (s2_, s2))
+                unifyBlock g b1 b2;
+                unifySpine (g, (s1_, s1), (s2_, s2))
               end
               else raise (Unify "Global parameter clash")
               end
           | Skonst c1, Skonst c2 ->
-              begin if c1 = c2 then unifySpine (g_, (s1_, s1), (s2_, s2))
+              begin if c1 = c2 then unifySpine (g, (s1_, s1), (s2_, s2))
               else raise (Unify "Skolem constant clash")
               end
           | FVar (n1, _, _), FVar (n2, _, _) ->
-              begin if n1 = n2 then unifySpine (g_, (s1_, s1), (s2_, s2))
+              begin if n1 = n2 then unifySpine (g, (s1_, s1), (s2_, s2))
               else raise (Unify "Free variable clash")
               end
           | Def d1, Def d2 ->
-              begin if d1 = d2 then unifySpine (g_, (s1_, s1), (s2_, s2))
-              else unifyDefDefW (g_, us1, us2)
+              begin if d1 = d2 then unifySpine (g, (s1_, s1), (s2_, s2))
+              else unifyDefDefW (g, us1, us2)
               end
           | Def d1, Const c2 ->
               begin match defAncestor d1 with
-              | Anc (_, _, None) -> unifyExpW (g_, Whnf.expandDef us1, us2)
+              | Anc (_, _, None) -> unifyExpW (g, Whnf.expandDef us1, us2)
               | Anc (_, _, Some c1) ->
-                  begin if c1 = c2 then unifyExpW (g_, Whnf.expandDef us1, us2)
+                  begin if c1 = c2 then unifyExpW (g, Whnf.expandDef us1, us2)
                   else raise (Unify "Constant clash")
                   end
               end
           | Const c1, Def d2 ->
               begin match defAncestor d2 with
-              | Anc (_, _, None) -> unifyExpW (g_, us1, Whnf.expandDef us2)
+              | Anc (_, _, None) -> unifyExpW (g, us1, Whnf.expandDef us2)
               | Anc (_, _, Some c2) ->
-                  begin if c1 = c2 then unifyExpW (g_, us1, Whnf.expandDef us2)
+                  begin if c1 = c2 then unifyExpW (g, us1, Whnf.expandDef us2)
                   else raise (Unify "Constant clash")
                   end
               end
           | Def d1, BVar k2 -> raise (Unify "Head mismatch")
           | BVar k1, Def d2 -> raise (Unify "Head mismatch")
-          | Def d1, _ -> unifyExpW (g_, Whnf.expandDef us1, us2)
-          | _, Def d2 -> unifyExpW (g_, us1, Whnf.expandDef us2)
+          | Def d1, _ -> unifyExpW (g, Whnf.expandDef us1, us2)
+          | _, Def d2 -> unifyExpW (g, us1, Whnf.expandDef us2)
           | ( FgnConst (cs1, ConDec (n1, _, _, _, _, _)),
               FgnConst (cs2, ConDec (n2, _, _, _, _, _)) ) ->
               begin if cs1 = cs2 && n1 = n2 then ()
               else raise (Unify "Foreign Constant clash")
               end
-          | ( FgnConst (cs1, ConDef (n1, _, _, w1_, _, _, _)),
-              FgnConst (cs2, ConDef (n2, _, _, v_, w2_, _, _)) ) ->
+          | ( FgnConst (cs1, ConDef (n1, _, _, w1, _, _, _)),
+              FgnConst (cs2, ConDef (n2, _, _, v, w2, _, _)) ) ->
               begin if cs1 = cs2 && n1 = n2 then ()
-              else unifyExp (g_, (w1_, s1), (w2_, s2))
+              else unifyExp (g, (w1, s1), (w2, s2))
               end
-          | FgnConst (_, ConDef (_, _, _, w1_, _, _, _)), _ ->
-              unifyExp (g_, (w1_, s1), us2)
-          | _, FgnConst (_, ConDef (_, _, _, w2_, _, _, _)) ->
-              unifyExp (g_, us1, (w2_, s2))
+          | FgnConst (_, ConDef (_, _, _, w1, _, _, _)), _ ->
+              unifyExp (g, (w1, s1), us2)
+          | _, FgnConst (_, ConDef (_, _, _, w2, _, _, _)) ->
+              unifyExp (g, us1, (w2, s2))
           | _ -> raise (Unify "Head mismatch")
           end
-      | g_, (Pi ((d1_, _), u1_), s1), (Pi ((d2_, _), u2_), s2) -> begin
-          unifyDec (g_, (d1_, s1), (d2_, s2));
-          unifyExp (Decl (g_, decSub (d1_, s1)), (u1_, dot1 s1), (u2_, dot1 s2))
+      | (Pi ((d1, _), u1), s1), (Pi ((d2, _), u2), s2) -> begin
+          unifyDec (g, (d1, s1), (d2, s2));
+          unifyExp (Decl (g, decSub d1 s1), (u1, dot1 s1), (u2, dot1 s2))
         end
-      | g_, ((Pi (_, _), _) as us1), ((Root (Def _, _), _) as us2) ->
-          unifyExpW (g_, us1, Whnf.expandDef us2)
-      | g_, ((Root (Def _, _), _) as us1), ((Pi (_, _), _) as us2) ->
-          unifyExpW (g_, Whnf.expandDef us1, us2)
-      | g_, (Lam (d1_, u1_), s1), (Lam (d2_, u2_), s2) ->
-          unifyExp (Decl (g_, decSub (d1_, s1)), (u1_, dot1 s1), (u2_, dot1 s2))
-      | g_, (Lam (d1_, u1_), s1), (u2_, s2) ->
+      | ((Pi (_, _), _) as us1), ((Root (Def _, _), _) as us2) ->
+          unifyExpW (g, us1, Whnf.expandDef us2)
+      | ((Root (Def _, _), _) as us1), ((Pi (_, _), _) as us2) ->
+          unifyExpW (g, Whnf.expandDef us1, us2)
+      | (Lam (d1, u1), s1), (Lam (d2, u2), s2) ->
+          unifyExp (Decl (g, decSub d1 s1), (u1, dot1 s1), (u2, dot1 s2))
+      | (Lam (d1, u1), s1), (u2, s2) ->
           unifyExp
-            ( Decl (g_, decSub (d1_, s1)),
-              (u1_, dot1 s1),
-              (Redex (EClo (u2_, shift), App (Root (BVar 1, Nil), Nil)), dot1 s2)
+            ( Decl (g, decSub d1 s1),
+              (u1, dot1 s1),
+              (Redex (EClo (u2, shift), App (Root (BVar 1, Nil), Nil)), dot1 s2)
             )
-      | g_, (u1_, s1), (Lam (d2_, u2_), s2) ->
+      | (u1, s1), (Lam (d2, u2), s2) ->
           unifyExp
-            ( Decl (g_, decSub (d2_, s2)),
-              (Redex (EClo (u1_, shift), App (Root (BVar 1, Nil), Nil)), dot1 s1),
-              (u2_, dot1 s2) )
-      | ( g_,
-          (((EVar (r1, g1_, v1_, cnstrs1) as u1_), s1) as us1),
-          (((EVar (r2, g2_, v2_, cnstrs2) as u2_), s2) as us2) ) ->
+            ( Decl (g, decSub d2 s2),
+              (Redex (EClo (u1, shift), App (Root (BVar 1, Nil), Nil)), dot1 s1),
+              (u2, dot1 s2) )
+      | (((EVar (r1, g1, v1, cnstrs1) as u1), s1) as us1), (((EVar (r2, g2, v2, cnstrs2) as u2), s2) as us2) ->
           begin if r1 == r2 then
             begin if Whnf.isPatSub s1 then
               begin if Whnf.isPatSub s2 then
-                let s' = intersection (s1, s2) in
+                let s' = intersection s1 s2 in
                 begin if Whnf.isId s' then ()
                 else
                   let ss' = Whnf.invert s' in
-                  let v1' = EClo (v1_, ss') in
-                  let g1'_ = Whnf.strengthen (ss', g1_) in
-                  instantiateEVar (r1, EClo (newEVar (g1'_, v1'), s'), !cnstrs1)
+                  let v1' = EClo (v1, ss') in
+                  let g1' = Whnf.strengthen ss' g1 in
+                  instantiateEVar r1 (EClo (newEVar g1' v1', s')) (!cnstrs1)
                 end
               else
                 addConstraint
-                  ( cnstrs2,
-                    ref
+                  cnstrs2 (ref
                       (Eqn
-                         ( g_,
-                           (let us2_e_, us2_s_ = us2 in
-                            EClo (us2_e_, us2_s_)),
-                           let us1_e_, us1_s_ = us1 in
-                           EClo (us1_e_, us1_s_) )) )
+                         ( g,
+                           (let us2_e, us2_s = us2 in
+                            EClo (us2_e, us2_s)),
+                           let us1_e, us1_s = us1 in
+                           EClo (us1_e, us1_s) )))
               end
             else
               addConstraint
-                ( cnstrs1,
-                  ref
+                cnstrs1 (ref
                     (Eqn
-                       ( g_,
-                         (let us1_e_, us1_s_ = us1 in
-                          EClo (us1_e_, us1_s_)),
-                         let us2_e_, us2_s_ = us2 in
-                         EClo (us2_e_, us2_s_) )) )
+                       ( g,
+                         (let us1_e, us1_s = us1 in
+                          EClo (us1_e, us1_s)),
+                         let us2_e, us2_s = us2 in
+                         EClo (us2_e, us2_s) )))
             end
           else
             begin if Whnf.isPatSub s1 then
               let ss1 = Whnf.invert s1 in
-              let u2' = pruneExp (g_, us2, ss1, r1) in
-              instantiateEVar (r1, u2', !cnstrs1)
+              let u2' = pruneExp (g, us2, ss1, r1) in
+              instantiateEVar r1 u2' (!cnstrs1)
             else
               begin if Whnf.isPatSub s2 then
                 let ss2 = Whnf.invert s2 in
-                let u1' = pruneExp (g_, us1, ss2, r2) in
-                instantiateEVar (r2, u1', !cnstrs2)
+                let u1' = pruneExp (g, us1, ss2, r2) in
+                instantiateEVar r2 u1' (!cnstrs2)
               else
                 let cnstr =
                   ref
                     (Eqn
-                       ( g_,
-                         (let us1_e_, us1_s_ = us1 in
-                          EClo (us1_e_, us1_s_)),
-                         let us2_e_, us2_s_ = us2 in
-                         EClo (us2_e_, us2_s_) ))
+                       ( g,
+                         (let us1_e, us1_s = us1 in
+                          EClo (us1_e, us1_s)),
+                         let us2_e, us2_s = us2 in
+                         EClo (us2_e, us2_s) ))
                 in
-                addConstraint (cnstrs1, cnstr)
+                addConstraint cnstrs1 cnstr
               end
             end
           end
-      | g_, ((EVar (r, gx, v_, cnstrs), s) as us1), ((u2_, s2) as us2) ->
+      | ((EVar (r, gx, v, cnstrs), s) as us1), ((u2, s2) as us2) ->
           begin if Whnf.isPatSub s then
             let ss = Whnf.invert s in
-            let u2' = pruneExp (g_, us2, ss, r) in
-            instantiateEVar (r, u2', !cnstrs)
+            let u2' = pruneExp (g, us2, ss, r) in
+            instantiateEVar r u2' (!cnstrs)
           else
             addConstraint
-              ( cnstrs,
-                ref
+              cnstrs (ref
                   (Eqn
-                     ( g_,
-                       (let us1_e_, us1_s_ = us1 in
-                        EClo (us1_e_, us1_s_)),
-                       let us2_e_, us2_s_ = us2 in
-                       EClo (us2_e_, us2_s_) )) )
+                     ( g,
+                       (let us1_e, us1_s = us1 in
+                        EClo (us1_e, us1_s)),
+                       let us2_e, us2_s = us2 in
+                       EClo (us2_e, us2_s) )))
           end
-      | g_, ((u1_, s1) as us1), ((EVar (r, gx, v_, cnstrs), s) as us2) ->
+      | ((u1, s1) as us1), ((EVar (r, gx, v, cnstrs), s) as us2) ->
           begin if Whnf.isPatSub s then
             let ss = Whnf.invert s in
-            let u1' = pruneExp (g_, us1, ss, r) in
-            instantiateEVar (r, u1', !cnstrs)
+            let u1' = pruneExp (g, us1, ss, r) in
+            instantiateEVar r u1' (!cnstrs)
           else
             addConstraint
-              ( cnstrs,
-                ref
+              cnstrs (ref
                   (Eqn
-                     ( g_,
-                       (let us1_e_, us1_s_ = us1 in
-                        EClo (us1_e_, us1_s_)),
-                       let us2_e_, us2_s_ = us2 in
-                       EClo (us2_e_, us2_s_) )) )
+                     ( g,
+                       (let us1_e, us1_s = us1 in
+                        EClo (us1_e, us1_s)),
+                       let us2_e, us2_s = us2 in
+                       EClo (us2_e, us2_s) )))
           end
-      | g_, us1, us2 -> raise (Unify "Expression clash")
+      | us1, us2 -> raise (Unify "Expression clash")
 
-    and unifyExp (g_, ((e1_, s1) as us1), ((e2_, s2) as us2)) =
-      unifyExpW (g_, Whnf.whnf us1, Whnf.whnf us2)
+    and unifyExp (g, ((e1, s1) as us1), ((e2, s2) as us2)) =
+      unifyExpW (g, Whnf.whnf us1, Whnf.whnf us2)
 
     and unifyDefDefW
-        ( g_,
+        ( g,
           ((Root (Def d1, s1_), s1) as us1),
           ((Root (Def d2, s2_), s2) as us2) ) =
       let (Anc (_, h1, c1Opt)) = defAncestor d1 in
       let (Anc (_, h2, c2Opt)) = defAncestor d2 in
-      let _ =
-        begin match (c1Opt, c2Opt) with
+      ignore begin match (c1Opt, c2Opt) with
         | Some c1, Some c2 ->
             begin if c1 <> c2 then
               raise (Unify "Irreconcilable defined constant clash")
             else ()
             end
         | _ -> ()
-        end
-      in
+        end;
       begin match Int.compare (h1, h2) with
-      | Equal -> unifyExpW (g_, Whnf.expandDef us1, Whnf.expandDef us2)
-      | Less -> unifyExpW (g_, us1, Whnf.expandDef us2)
-      | Greater -> unifyExpW (g_, Whnf.expandDef us1, us2)
+      | Equal -> unifyExpW (g, Whnf.expandDef us1, Whnf.expandDef us2)
+      | Less -> unifyExpW (g, us1, Whnf.expandDef us2)
+      | Greater -> unifyExpW (g, Whnf.expandDef us1, us2)
       end
 
-    and unifySpine = function
-      | g_, (Nil, _), (Nil, _) -> ()
-      | g_, (SClo (s1_, s1'), s1), ss_ ->
-          unifySpine (g_, (s1_, comp (s1', s1)), ss_)
-      | g_, ss_, (SClo (s2_, s2'), s2) ->
-          unifySpine (g_, ss_, (s2_, comp (s2', s2)))
-      | g_, (App (u1_, s1_), s1), (App (u2_, s2_), s2) -> begin
-          unifyExp (g_, (u1_, s1), (u2_, s2));
-          unifySpine (g_, (s1_, s1), (s2_, s2))
+    and unifySpine (g, a, b) = match a, b with
+      | (Nil, _), (Nil, _) -> ()
+      | (SClo (s1_, s1'), s1), ss ->
+          unifySpine (g, (s1_, comp s1' s1), ss)
+      | ss, (SClo (s2_, s2'), s2) ->
+          unifySpine (g, ss, (s2_, comp s2' s2))
+      | (App (u1, s1_), s1), (App (u2, s2_), s2) -> begin
+          unifyExp (g, (u1, s1), (u2, s2));
+          unifySpine (g, (s1_, s1), (s2_, s2))
         end
 
-    and unifyDec (g_, (Dec (_, v1_), s1), (Dec (_, v2_), s2)) =
-      unifyExp (g_, (v1_, s1), (v2_, s2))
+    and unifyDec (g, (Dec (_, v1), s1), (Dec (_, v2), s2)) =
+      unifyExp (g, (v1, s1), (v2, s2))
 
-    and unifySub = function
-      | g_, Shift n1, Shift n2 -> ()
-      | g_, Shift n, (Dot _ as s2) ->
-          unifySub (g_, Dot (Idx (n + 1), Shift (n + 1)), s2)
-      | g_, (Dot _ as s1), Shift m ->
-          unifySub (g_, s1, Dot (Idx (m + 1), Shift (m + 1)))
-      | g_, Dot (ft1, s1), Dot (ft2, s2) -> begin
+    and unifySub a3 b3 c3 = match a3, b3, c3 with
+      | g, Shift n1, Shift n2 -> ()
+      | g, Shift n, (Dot _ as s2) ->
+          unifySub g (Dot (Idx (n + 1), Shift (n + 1))) s2
+      | g, (Dot _ as s1), Shift m ->
+          unifySub g s1 (Dot (Idx (m + 1), Shift (m + 1)))
+      | g, Dot (ft1, s1), Dot (ft2, s2) -> begin
           begin match (ft1, ft2) with
           | Idx n1, Idx n2 ->
               begin if n1 <> n2 then raise (Error "SOME variables mismatch")
               else ()
               end
-          | Exp u1_, Exp u2_ -> unifyExp (g_, (u1_, id), (u2_, id))
-          | Exp u1_, Idx n2 ->
-              unifyExp (g_, (u1_, id), (Root (BVar n2, Nil), id))
-          | Idx n1, Exp u2_ ->
-              unifyExp (g_, (Root (BVar n1, Nil), id), (u2_, id))
+          | Exp u1, Exp u2 -> unifyExp (g, (u1, id), (u2, id))
+          | Exp u1, Idx n2 ->
+              unifyExp (g, (u1, id), (Root (BVar n2, Nil), id))
+          | Idx n1, Exp u2 ->
+              unifyExp (g, (Root (BVar n1, Nil), id), (u2, id))
           end;
-          unifySub (g_, s1, s2)
+          unifySub g s1 s2
         end
 
-    and unifyBlock = function
-      | g_, LVar ({ contents = Some b1_ }, s, _), b2_ ->
-          unifyBlock (g_, blockSub (b1_, s), b2_)
-      | g_, b1_, LVar ({ contents = Some b2_ }, s, _) ->
-          unifyBlock (g_, b1_, blockSub (b2_, s))
-      | g_, b1_, b2_ -> unifyBlockW (g_, b1_, b2_)
+    and unifyBlock a3 b3 c3 = match a3, b3, c3 with
+      | g, LVar ({ contents = Some b1 }, s, _), b2 ->
+          unifyBlock g (blockSub b1 s) b2
+      | g, b1, LVar ({ contents = Some b2 }, s, _) ->
+          unifyBlock g b1 (blockSub b2 s)
+      | g, b1, b2 -> unifyBlockW (g, b1, b2)
 
-    and unifyBlockW = function
-      | ( g_,
-          LVar (r1, (Shift k1 as s1), (l1, t1)),
-          LVar (r2, (Shift k2 as s2), (l2, t2)) ) ->
+    and unifyBlockW (g, b1, b2) = match b1, b2 with
+      | LVar (r1, (Shift k1 as s1), (l1, t1)), LVar (r2, (Shift k2 as s2), (l2, t2)) ->
           begin if l1 <> l2 then raise (Unify "Label clash")
           else
             begin if r1 == r2 then ()
             else begin
-              unifySub (g_, comp (t1, s1), comp (t2, s2));
+              unifySub g (comp t1 s1) (comp t2 s2);
               begin if k1 < k2 then
-                instantiateLVar (r1, LVar (r2, Shift (k2 - k1), (l2, t2)))
-              else instantiateLVar (r2, LVar (r1, Shift (k1 - k2), (l1, t1)))
+                instantiateLVar r1 (LVar (r2, Shift (k2 - k1), (l2, t2)))
+              else instantiateLVar r2 (LVar (r1, Shift (k1 - k2), (l1, t1)))
               end
             end
             end
           end
-      | g_, LVar (r1, s1, (l1, t1)), b2_ ->
-          instantiateLVar (r1, blockSub (b2_, Whnf.invert s1))
-      | g_, b1_, LVar (r2, s2, (l2, t2)) ->
-          instantiateLVar (r2, blockSub (b1_, Whnf.invert s2))
-      | g_, Bidx n1, Bidx n2 ->
+      | LVar (r1, s1, (l1, t1)), b2 ->
+          instantiateLVar r1 (blockSub b2 (Whnf.invert s1))
+      | b1, LVar (r2, s2, (l2, t2)) ->
+          instantiateLVar r2 (blockSub b1 (Whnf.invert s2))
+      | Bidx n1, Bidx n2 ->
           begin if n1 <> n2 then raise (Unify "Block index clash") else ()
           end
 
-    let rec unify1W (g_, us1, us2) =
+    let rec unify1W (g, us1, us2) =
       begin
-        unifyExpW (g_, us1, us2);
+        unifyExpW (g, us1, us2);
         awakeCnstr (nextCnstr ())
       end
 
-    and unify1 (g_, us1, us2) =
+    and unify1 (g, us1, us2) =
       begin
-        unifyExp (g_, us1, us2);
+        unifyExp (g, us1, us2);
         awakeCnstr (nextCnstr ())
       end
 
     and awakeCnstr = function
       | None -> ()
       | Some { contents = Solved } -> awakeCnstr (nextCnstr ())
-      | Some ({ contents = Eqn (g_, u1_, u2_) } as cnstr) -> begin
+      | Some ({ contents = Eqn (g, u1, u2) } as cnstr) -> begin
           solveConstraint cnstr;
-          unify1 (g_, (u1_, id), (u2_, id))
+          unify1 (g, (u1, id), (u2, id))
         end
       | Some { contents = FgnCnstr (csfc_csid, csfc_ops) } ->
-          begin if FgnCnstrStd.Awake.apply (csfc_csid, csfc_ops) () then ()
+          begin if FgnCnstrStd.Awake.apply csfc_csid csfc_ops () then ()
           else raise (Unify "Foreign constraint violated")
           end
 
-    let unifyW (g_, us1, us2) =
+    let unifyW g us1 us2 =
       begin
         resetAwakenCnstrs ();
-        unify1W (g_, us1, us2)
+        unify1W (g, us1, us2)
       end
 
-    let unify (g_, us1, us2) =
+    let unify g us1 us2 =
       begin
         resetAwakenCnstrs ();
-        unify1 (g_, us1, us2)
+        unify1 (g, us1, us2)
       end
   end
 
@@ -1015,7 +1003,7 @@ module MakeUnify (Whnf : WHNF) (Trail : TRAIL) : UNIFY = struct
   let unwind = unwind
   let suspend = suspend
   let resume = resume
-  let delay = delayExp
+  let delay us cnstr = delayExp (us, cnstr)
   let instantiateEVar = instantiateEVar
   let instantiateLVar = instantiateLVar
   let resetAwakenCnstrs = resetAwakenCnstrs
@@ -1028,28 +1016,28 @@ module MakeUnify (Whnf : WHNF) (Trail : TRAIL) : UNIFY = struct
   let unifySub = unifySub
   let unifyBlock = unifyBlock
 
-  let invertible (g_, us_, ss, rOccur) =
+  let invertible g us ss rOccur =
     try
       begin
-        ignore (invertExp (g_, us_, ss, rOccur));
+        ignore (invertExp (g, us, ss, rOccur));
         true
       end
     with NotInvertible -> false
 
   let invertSub = invertSub
 
-  let unifiable (g_, us1, us2) =
+  let unifiable g us1 us2 =
     try
       begin
-        unify (g_, us1, us2);
+        unify g us1 us2;
         true
       end
     with Unify msg -> false
 
-  let unifiable' (g_, us1, us2) =
+  let unifiable' g us1 us2 =
     try
       begin
-        unify (g_, us1, us2);
+        unify g us1 us2;
         None
       end
     with Unify msg -> Some msg

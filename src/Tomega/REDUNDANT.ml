@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/tomega/Redundant.sig.ml" *)
 open! Basis
 

@@ -1,3 +1,4 @@
+open! Names.Names_
 include module type of PARSETERM
 
 module ParseTerm (ParseTerm__0 : sig

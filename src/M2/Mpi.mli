@@ -1,3 +1,6 @@
+open! Names.Names_
+open! Table
+open! Timing
 include module type of MPI
 
 module Mpi (Mpi__0 : sig

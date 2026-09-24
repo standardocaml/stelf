@@ -1,3 +1,8 @@
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Index.Index_
+open! Compile
+open! Assign
 include module type of PTRECON
 
 module PtRecon (PtRecon__0 : sig

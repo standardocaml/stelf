@@ -1,3 +1,6 @@
+open! Names.Names_
+open! Formatter.Formatter_
+open! Print.Print_
 include module type of FUNPRINT
 
 module FunPrint (FunPrint__0 : sig

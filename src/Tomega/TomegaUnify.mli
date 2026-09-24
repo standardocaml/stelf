@@ -1,3 +1,7 @@
+open! Intsyn.Lambda_
+open! Print.Print_
+open! Typecheck.Typecheck_
+open! Meta
 include module type of TOMEGAUNIFY
 
 module TomegaUnify (TomegaUnify__0 : sig

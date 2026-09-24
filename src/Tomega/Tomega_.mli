@@ -1,9 +1,11 @@
+open! Intsyn
+open! Meta
+
 (* # 1 "src/tomega/Tomega_.sig.ml" *)
 
 (* # 1 "src/tomega/Tomega_.fun.ml" *)
 
 (* # 1 "src/tomega/Tomega_.sml.ml" *)
-open! Basis
 module Tomega : module type of Lambda_.Tomega
 module TomegaAbstract : TOMEGAABSTRACT.TOMEGAABSTRACT
 module TomegaPrint : Tomegaprint.TOMEGAPRINT

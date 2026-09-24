@@ -1,3 +1,9 @@
+open! Timing
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Typecheck.Typecheck_
 include module type of RECONQUERY
 
 module ReconQuery (ReconQuery__0 : sig

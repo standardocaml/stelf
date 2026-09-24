@@ -1,3 +1,5 @@
+open! Stream.Stream_
+open! Names.Names_
 include module type of PARSER
 
 module Parser (Parser__0 : sig

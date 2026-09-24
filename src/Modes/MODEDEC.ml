@@ -1,3 +1,6 @@
+open! Intsyn.Lambda_
+open! Paths.Paths_
+
 (* # 1 "src/modes/Modedec.sig.ml" *)
 open! Basis
 open Modesyn
@@ -10,8 +13,8 @@ module type MODEDEC = sig
   exception Error of string
 
   val shortToFull :
-    IntSyn.cid * ModeSyn.modeSpine * Paths.region -> ModeSyn.modeSpine
+    IntSyn.cid -> ModeSyn.modeSpine -> Paths.region -> ModeSyn.modeSpine
 
-  val checkFull : IntSyn.cid * ModeSyn.modeSpine * Paths.region -> unit
-  val checkPure : (IntSyn.cid * ModeSyn.modeSpine) * Paths.region -> unit
+  val checkFull : IntSyn.cid -> ModeSyn.modeSpine -> Paths.region -> unit
+  val checkPure : IntSyn.cid -> ModeSyn.modeSpine -> Paths.region -> unit
 end

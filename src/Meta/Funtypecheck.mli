@@ -1,3 +1,7 @@
+open! Intsyn.Lambda_
+open! Print.Print_
+open! Subordinate
+open! Typecheck.Typecheck_
 include module type of FUNTYPECHECK
 
 module FunTypeCheck (FunTypeCheck__0 : sig

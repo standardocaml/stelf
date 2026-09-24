@@ -1,3 +1,4 @@
+open! Stream.Stream_
 include module type of PARSING
 module MakeParsing (Stream : STREAM) (Lexer : Lexer.LEXER) : PARSING
 module Parsing : PARSING

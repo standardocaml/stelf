@@ -1,3 +1,4 @@
+open! Intsyn.Lambda_
 include module type of STATESYN
 
 module StateSyn (StateSyn__0 : sig

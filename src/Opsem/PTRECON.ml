@@ -1,3 +1,7 @@
+open! Intsyn.Lambda_
+open! Compile
+open! CompSyn
+
 (* # 1 "src/opsem/Ptrecon.sig.ml" *)
 open! Basis
 
@@ -13,9 +17,10 @@ module type PTRECON = sig
   exception Error of string
 
   val solve :
-    CompSyn.pskeleton
-    * (CompSyn.goal * IntSyn.sub)
-    * CompSyn.dProg
-    * (CompSyn.pskeleton * IntSyn.exp -> unit) ->
+    CompSyn.pskeleton ->
+    CompSyn.goal ->
+    IntSyn.sub ->
+    CompSyn.dProg ->
+    (CompSyn.pskeleton * IntSyn.exp -> unit) ->
     unit
 end

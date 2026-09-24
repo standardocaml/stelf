@@ -1,3 +1,5 @@
+open! M2
+
 (* # 1 "src/meta/Global.sig.ml" *)
 open! Basis
 open MetaGlobal

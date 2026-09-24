@@ -1,3 +1,10 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Formatter__Formatter_
+open! Index.Index_
+open! Paths
 include module type of REDUCES
 
 module Reduces (Reduces__0 : sig

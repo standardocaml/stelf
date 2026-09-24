@@ -63,7 +63,7 @@ module Timing : TIMING = struct
 
        Warning: the centers should not overlap!
     *)
-  let sumCenter (name, l) = (name, l)
+  let sumCenter name l = (name, l)
   let stdTime (n, time) = StringCvt.padLeft ' ' n (Time.toString time)
 
   let timesToString
@@ -87,8 +87,8 @@ module Timing : TIMING = struct
   let sumToString (name, centers) =
     let rec sumup = function
       | [], (cPUTime, realTime) -> timesToString (name, (cPUTime, realTime))
-      | (_, { contents = c_, r_ }) :: centers, (cPUTime, realTime) ->
-          sumup (centers, (plus (cPUTime, c_), Time.( + ) realTime r_))
+      | (_, { contents = c, r }) :: centers, (cPUTime, realTime) ->
+          sumup (centers, (plus (cPUTime, c), Time.( + ) realTime r))
     in
     sumup (centers, (zero, Time.zeroTime))
 end
@@ -110,14 +110,14 @@ module Counting : TIMING = struct
     ignore (counters := !counters + 1);
     f x
 
-  let sumCenter (name, l) = (name, l)
+  let sumCenter name l = (name, l)
   let toString' (name, n) = ((name ^ ": ") ^ Int.toString n) ^ "\n"
   let toString (name, { contents = n }) = toString' (name, n)
 
   let sumToString (name, centers) =
-    let rec sumup = function
-      | [], total -> toString' (name, total)
-      | (_, { contents = n }) :: centers, total -> sumup (centers, total + n)
+    let rec sumup (a, total) = match a with
+      | [] -> toString' (name, total)
+      | (_, { contents = n }) :: centers -> sumup (centers, total + n)
     in
     sumup (centers, 0)
 end

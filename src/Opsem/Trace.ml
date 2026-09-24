@@ -1,12 +1,14 @@
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+
 (* # 1 "src/opsem/Trace.sig.ml" *)
-open! Basis
 include TRACE
 
 (* reset trace, break, detail *)
 (* signature TRACE *)
 
 (* # 1 "src/opsem/Trace.fun.ml" *)
-open! Abstract
 open! Basis
 
 module Trace (Trace__0 : sig
@@ -32,27 +34,27 @@ end) : TRACE = struct
   end
 
   (* Printing Utilities *)
-  let headToString = function
-    | g_, I.Const c -> N.qidToString (N.constQid c)
-    | g_, I.Def d -> N.qidToString (N.constQid d)
-    | g_, I.BVar k -> N.bvarName (g_, k)
+  let headToString (g, a) = match a with
+    | I.Const c -> N.qidToString (N.constQid c)
+    | I.Def d -> N.qidToString (N.constQid d)
+    | I.BVar k -> N.bvarName g k
 
-  let expToString gu = P.expToString gu ^ ". "
-  let decToString gd = P.decToString gd ^ ". "
+  let expToString g u = P.expToString g u ^ ". "
+  let decToString g d = P.decToString g d ^ ". "
 
-  let eqnToString (g_, u1_, u2_) =
-    ((P.expToString (g_, u1_) ^ " = ") ^ P.expToString (g_, u2_)) ^ ". "
+  let eqnToString (g, u1, u2) =
+    ((P.expToString g u1 ^ " = ") ^ P.expToString g u2) ^ ". "
 
   let newline () = print "\n"
 
   let rec printCtx = function
     | I.Null -> print "No hypotheses or parameters. "
-    | I.Decl (I.Null, d_) -> print (decToString (I.Null, d_))
-    | I.Decl (g_, d_) -> begin
-        printCtx g_;
+    | I.Decl (I.Null, d) -> print (decToString I.Null d)
+    | I.Decl (g, d) -> begin
+        printCtx g;
         begin
           newline ();
-          print (decToString (g_, d_))
+          print (decToString g d)
         end
       end
 
@@ -72,7 +74,7 @@ end) : TRACE = struct
             print (("Trace warning: ignoring unknown variable " ^ name) ^ "\n");
             varsToEVarInst names
           end
-        | Some x_ -> (x_, name) :: varsToEVarInst names
+        | Some x -> (x, name) :: varsToEVarInst names
         end
 
   let printVars names = print (evarsToString (varsToEVarInst names))
@@ -162,14 +164,14 @@ end) : TRACE = struct
   (* dummy initialization *)
   let currentEVarInst : (I.exp * string) list ref = ref []
 
-  let setEVarInst xs_ =
+  let setEVarInst xs =
     currentEVarInst :=
-      List.map (function x_ -> (x_, N.evarName (I.Null, x_))) xs_
+      List.map (function x -> (x, N.evarName I.Null x)) xs
 
-  let setGoal (g_, v_) =
+  let setGoal (g, v) =
     begin
-      currentGoal := (g_, v_);
-      setEVarInst (Abstract.collectEVars (g_, (v_, I.id), []))
+      currentGoal := (g, v);
+      setEVarInst (Abstract.collectEVars g (v, I.id) [])
     end
 
   type nonrec goalTag = int option
@@ -200,7 +202,7 @@ end) : TRACE = struct
     | None -> watchForTag := !tag
     | Some n -> watchForTag := Some n
 
-  let rec breakAction g_ =
+  let rec breakAction g =
     ignore (print " ");
     let line = input_line stdin in
     begin match String.sub (line, 0) with
@@ -212,46 +214,46 @@ end) : TRACE = struct
         traceTSpec := All;
         begin
           print "% Now tracing all";
-          breakAction g_
+          breakAction g
         end
       end
     | 'u' -> begin
         traceTSpec := None;
         begin
           print "% Now tracing none";
-          breakAction g_
+          breakAction g
         end
       end
     | 'd' -> begin
         setDetail (Int.fromString (String.extract (line, 1, None)));
         begin
           print ("% Trace detail now " ^ Int.toString !detail);
-          breakAction g_
+          breakAction g
         end
       end
     | 'h' -> begin
-        printCtx g_;
-        breakAction g_
+        printCtx g;
+        breakAction g
       end
     | 'g' -> begin
-        print (expToString !currentGoal);
-        breakAction g_
+        print (let g__, u__ = !currentGoal in expToString g__ u__);
+        breakAction g
       end
     | 'i' -> begin
         print (evarsToString (List.rev !currentEVarInst));
-        breakAction g_
+        breakAction g
       end
     | 'v' -> begin
         printVarstring line;
-        breakAction g_
+        breakAction g
       end
     | '?' -> begin
         printHelp ();
-        breakAction g_
+        breakAction g
       end
     | _ -> begin
         print "unrecognized command (? for help)";
-        breakAction g_
+        breakAction g
       end
     end
 
@@ -284,61 +286,61 @@ end) : TRACE = struct
   (* clause c failed, fam a *)
   (* clause head == goal *)
   (* failure message *)
-  let eventToString = function
-    | g_, IntroHyp (_, d_) -> "% Introducing hypothesis\n" ^ decToString (g_, d_)
-    | g_, DischargeHyp (_, I.Dec (Some x, _)) -> "% Discharging hypothesis " ^ x
-    | g_, IntroParm (_, d_) -> "% Introducing parameter\n" ^ decToString (g_, d_)
-    | g_, DischargeParm (_, I.Dec (Some x, _)) -> "% Discharging parameter " ^ x
-    | g_, Resolved (hc, ha) ->
-        (("% Resolved with clause " ^ headToString (g_, hc)) ^ "\n")
+  let eventToString (g, a) = match a with
+    | IntroHyp (_, d) -> "% Introducing hypothesis\n" ^ decToString g d
+    | DischargeHyp (_, I.Dec (Some x, _)) -> "% Discharging hypothesis " ^ x
+    | IntroParm (_, d) -> "% Introducing parameter\n" ^ decToString g d
+    | DischargeParm (_, I.Dec (Some x, _)) -> "% Discharging parameter " ^ x
+    | Resolved (hc, ha) ->
+        (("% Resolved with clause " ^ headToString (g, hc)) ^ "\n")
         ^ evarsToString (List.rev !currentEVarInst)
-    | g_, Subgoal ((hc, ha), msg) ->
+    | Subgoal ((hc, ha), msg) ->
         (("% Solving subgoal (" ^ Int.toString (msg ())) ^ ") of clause ")
-        ^ headToString (g_, hc)
-    | g_, SolveGoal (Some tag, _, v_) ->
-        (("% Goal " ^ Int.toString tag) ^ ":\n") ^ expToString (g_, v_)
-    | g_, SucceedGoal (Some tag, _, v_) ->
+        ^ headToString (g, hc)
+    | SolveGoal (Some tag, _, v) ->
+        (("% Goal " ^ Int.toString tag) ^ ":\n") ^ expToString g v
+    | SucceedGoal (Some tag, _, v) ->
         ("% Goal " ^ Int.toString tag) ^ " succeeded"
-    | g_, CommitGoal (Some tag, _, v_) ->
+    | CommitGoal (Some tag, _, v) ->
         ("% Goal " ^ Int.toString tag) ^ " committed to first solution"
-    | g_, RetryGoal (Some tag, (hc, ha), v_) ->
-        ((((("% Backtracking from clause " ^ headToString (g_, hc)) ^ "\n")
+    | RetryGoal (Some tag, (hc, ha), v) ->
+        ((((("% Backtracking from clause " ^ headToString (g, hc)) ^ "\n")
           ^ "% Retrying goal ")
          ^ Int.toString tag)
         ^ ":\n")
-        ^ expToString (g_, v_)
-    | g_, FailGoal (Some tag, _, v_) -> "% Failed goal " ^ Int.toString tag
-    | g_, Unify ((hc, ha), q_, p_) ->
-        (("% Trying clause " ^ headToString (g_, hc)) ^ "\n")
-        ^ eqnToString (g_, q_, p_)
-    | g_, FailUnify ((hc, ha), msg) ->
-        (("% Unification failed with clause " ^ headToString (g_, hc)) ^ ":\n")
+        ^ expToString g v
+    | FailGoal (Some tag, _, v) -> "% Failed goal " ^ Int.toString tag
+    | Unify ((hc, ha), q, p) ->
+        (("% Trying clause " ^ headToString (g, hc)) ^ "\n")
+        ^ eqnToString (g, q, p)
+    | FailUnify ((hc, ha), msg) ->
+        (("% Unification failed with clause " ^ headToString (g, hc)) ^ ":\n")
         ^ msg
 
-  let traceEvent (g_, e) = print (eventToString (g_, e))
+  let traceEvent (g, e) = print (eventToString (g, e))
 
-  let monitorHead = function
-    | cids, I.Const c -> List.exists (function c' -> c = c') cids
-    | cids, I.Def d -> List.exists (function c' -> d = c') cids
-    | cids, I.BVar k -> false
+  let monitorHead (cids, a) = match a with
+    | I.Const c -> List.exists (function c' -> c = c') cids
+    | I.Def d -> List.exists (function c' -> d = c') cids
+    | I.BVar k -> false
 
   let monitorHeads (cids, (hc, ha)) =
     monitorHead (cids, hc) || monitorHead (cids, ha)
 
-  let monitorEvent = function
-    | cids, IntroHyp (h_, _) -> monitorHead (cids, h_)
-    | cids, DischargeHyp (h_, _) -> monitorHead (cids, h_)
-    | cids, IntroParm (h_, _) -> monitorHead (cids, h_)
-    | cids, DischargeParm (h_, _) -> monitorHead (cids, h_)
-    | cids, SolveGoal (_, h_, v_) -> monitorHead (cids, h_)
-    | cids, SucceedGoal (_, (hc, ha), _) -> monitorHeads (cids, (hc, ha))
-    | cids, CommitGoal (_, (hc, ha), _) -> monitorHeads (cids, (hc, ha))
-    | cids, RetryGoal (_, (hc, ha), _) -> monitorHeads (cids, (hc, ha))
-    | cids, FailGoal (_, h_, _) -> monitorHead (cids, h_)
-    | cids, Resolved (hc, ha) -> monitorHeads (cids, (hc, ha))
-    | cids, Subgoal ((hc, ha), _) -> monitorHeads (cids, (hc, ha))
-    | cids, Unify ((hc, ha), _, _) -> monitorHeads (cids, (hc, ha))
-    | cids, FailUnify ((hc, ha), _) -> monitorHeads (cids, (hc, ha))
+  let monitorEvent (cids, a) = match a with
+    | IntroHyp (h, _) -> monitorHead (cids, h)
+    | DischargeHyp (h, _) -> monitorHead (cids, h)
+    | IntroParm (h, _) -> monitorHead (cids, h)
+    | DischargeParm (h, _) -> monitorHead (cids, h)
+    | SolveGoal (_, h, v) -> monitorHead (cids, h)
+    | SucceedGoal (_, (hc, ha), _) -> monitorHeads (cids, (hc, ha))
+    | CommitGoal (_, (hc, ha), _) -> monitorHeads (cids, (hc, ha))
+    | RetryGoal (_, (hc, ha), _) -> monitorHeads (cids, (hc, ha))
+    | FailGoal (_, h, _) -> monitorHead (cids, h)
+    | Resolved (hc, ha) -> monitorHeads (cids, (hc, ha))
+    | Subgoal ((hc, ha), _) -> monitorHeads (cids, (hc, ha))
+    | Unify ((hc, ha), _, _) -> monitorHeads (cids, (hc, ha))
+    | FailUnify ((hc, ha), _) -> monitorHeads (cids, (hc, ha))
 
   let monitorDetail = function
     | Unify _ -> !detail >= 2
@@ -349,49 +351,49 @@ end) : TRACE = struct
   (* but: maintain only if break or trace is on *)
   (* may not be sufficient for some information *)
   let maintain = function
-    | g_, SolveGoal (_, _, v_) -> setGoal (g_, v_)
-    | g_, RetryGoal (_, _, v_) -> setGoal (g_, v_)
-    | g_, FailGoal (_, _, v_) -> setGoal (g_, v_)
-    | g_, Unify (_, q_, p_) ->
+    | g, SolveGoal (_, _, v) -> setGoal (g, v)
+    | g, RetryGoal (_, _, v) -> setGoal (g, v)
+    | g, FailGoal (_, _, v) -> setGoal (g, v)
+    | g, Unify (_, q, p) ->
         setEVarInst
           (Abstract.collectEVars
-             (g_, (p_, I.id), Abstract.collectEVars (g_, (q_, I.id), [])))
+             g (p, I.id) (Abstract.collectEVars g (q, I.id) []))
     | _ -> ()
   (* show substitution for variables in clause head if tracing unification *)
 
-  let monitorBreak = function
-    | None, g_, e -> false
-    | Some cids, g_, e ->
+  let monitorBreak (a, g, e) = match a with
+    | None -> false
+    | Some cids ->
         begin if monitorEvent (cids, e) then begin
-          maintain (g_, e);
+          maintain (g, e);
           begin
-            traceEvent (g_, e);
+            traceEvent (g, e);
             begin
-              breakAction g_;
+              breakAction g;
               true
             end
           end
         end
         else false
         end
-    | All, g_, e -> begin
-        maintain (g_, e);
+    | All -> begin
+        maintain (g, e);
         begin
-          traceEvent (g_, e);
+          traceEvent (g, e);
           begin
-            breakAction g_;
+            breakAction g;
             true
           end
         end
       end
 
-  let monitorTrace = function
-    | None, g_, e -> false
-    | Some cids, g_, e ->
+  let monitorTrace (a, g, e) = match a with
+    | None -> false
+    | Some cids ->
         begin if monitorEvent (cids, e) then begin
-          maintain (g_, e);
+          maintain (g, e);
           begin
-            traceEvent (g_, e);
+            traceEvent (g, e);
             begin
               newline ();
               true
@@ -400,10 +402,10 @@ end) : TRACE = struct
         end
         else false
         end
-    | All, g_, e -> begin
-        maintain (g_, e);
+    | All -> begin
+        maintain (g, e);
         begin
-          traceEvent (g_, e);
+          traceEvent (g, e);
           begin
             newline ();
             true
@@ -429,22 +431,22 @@ end) : TRACE = struct
     begin match !watchForTag with None -> false | Some _ -> true
     end
 
-  let rec signal (g_, e) =
+  let rec signal g e =
     begin if monitorDetail e then
       begin if skipping () then
         begin if watchFor e then begin
           watchForTag := None;
-          signal (g_, e)
+          signal g e
         end
         else begin
-          ignore (monitorTrace (!traceTSpec, g_, e));
+          ignore (monitorTrace (!traceTSpec, g, e));
           ()
         end
         end
       else
-        begin if monitorBreak (!breakTSpec, g_, e) then ()
+        begin if monitorBreak (!breakTSpec, g, e) then ()
         else begin
-          ignore (monitorTrace (!traceTSpec, g_, e));
+          ignore (monitorTrace (!traceTSpec, g, e));
           ()
         end
         end (* stops, continues after input *)
@@ -453,16 +455,16 @@ end) : TRACE = struct
     end
   (* prints trace, continues *)
 
-  let showSpec = function
-    | msg, None -> print (msg ^ " = None\n")
-    | msg, Some names -> begin
+  let showSpec (msg, a) = match a with
+    | None -> print (msg ^ " = None\n")
+    | Some names -> begin
         print (msg ^ " = Some [");
         begin
           List.app (function name -> print (" " ^ name)) names;
           print "]\n"
         end
       end
-    | msg, All -> print (msg ^ " = All\n")
+    | All -> print (msg ^ " = All\n")
 
   let tracing () =
     begin match (!traceSpec, !breakSpec) with None, None -> false | _ -> true

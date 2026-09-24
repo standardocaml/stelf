@@ -1,9 +1,10 @@
+open! M2
+
 (* # 1 "src/meta/Meta_.sig.ml" *)
 
 (* # 1 "src/meta/Meta_.fun.ml" *)
 
 (* # 1 "src/meta/Meta_.sml.ml" *)
-open! Basis
 open MtpGlobal
 open MetaGlobal
 open Statesyn

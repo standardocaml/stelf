@@ -1,5 +1,5 @@
+
 (* # 1 "src/m2/MetaGlobal.sig.ml" *)
-open! Basis
 
 (* Global parameters *)
 (* Author: Carsten Schuermann *)

@@ -1,5 +1,6 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/meta/Weaken.sig.ml" *)
-open! Basis
 
 (* Weakening substitutions *)
 (* Author: Carsten Schuermann *)
@@ -7,7 +8,6 @@ include WEAKEN
 (* signature PRUNE *)
 
 (* # 1 "src/meta/Weaken.fun.ml" *)
-open! Basis
 
 (* Weakening substitutions *)
 (* Author: Carsten Schuermann *)
@@ -16,21 +16,21 @@ module Make_Weaken (Whnf : WHNF) : WEAKEN.WEAKEN = struct
   open! struct
     module I = IntSyn
 
-    let strengthenExp (u_, s) = Whnf.normalize (Whnf.cloInv (u_, s), I.id)
-    let strengthenDec (I.Dec (name, v_), s) = I.Dec (name, strengthenExp (v_, s))
+    let strengthenExp u s = Whnf.normalize (Whnf.cloInv u s, I.id)
+    let strengthenDec (I.Dec (name, v)) s = I.Dec (name, strengthenExp v s)
 
-    let rec strengthenCtx = function
+    let rec strengthenCtx a b = match a, b with
       | I.Null, s -> (I.Null, s)
-      | I.Decl (g_, d_), s ->
-          let g'_, s' = strengthenCtx (g_, s) in
-          (I.Decl (g'_, strengthenDec (d_, s')), I.dot1 s')
+      | I.Decl (g, d), s ->
+          let g', s' = strengthenCtx g s in
+          (I.Decl (g', strengthenDec d s'), I.dot1 s')
 
-    let strengthenSub (s, t) = Whnf.compInv (s, t)
+    let strengthenSub s t = Whnf.compInv s t
 
-    let rec strengthenSpine = function
+    let rec strengthenSpine a b = match a, b with
       | I.Nil, t -> I.Nil
-      | I.App (u_, s_), t ->
-          I.App (strengthenExp (u_, t), strengthenSpine (s_, t))
+      | I.App (u, s), t ->
+          I.App (strengthenExp u t, strengthenSpine s t)
   end
 
   (* strengthenExp (U, s) = U'

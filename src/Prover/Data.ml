@@ -1,5 +1,5 @@
+
 (* # 1 "src/prover/Data.sig.ml" *)
-open! Basis
 
 (* Data Global parameters *)
 (* Author: Carsten Schuermann *)

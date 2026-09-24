@@ -9,8 +9,8 @@ module type FGN_OPN = sig
   type result
   type nonrec func = rep -> arg -> result
 
-  val install : csid * func -> unit
-  val apply : csid * rep -> arg -> result
+  val install : csid -> func -> unit
+  val apply : csid -> rep -> arg -> result
 end
 
 module FgnOpnTable
@@ -39,9 +39,9 @@ module FgnOpnTable
 
   let initializeTable _tbl = Hashtbl.create 53
   let table : table = initializeTable ()
-  let install (csid, f) = Hashtbl.replace table csid f
+  let install csid f = Hashtbl.replace table csid f
 
-  let apply (csid, rep) =
+  let apply csid rep =
     match Hashtbl.find_opt table csid with
     | Some f -> f rep
     | None -> raise (CSfunNotInstalled csid)
@@ -80,8 +80,8 @@ module type S = sig
     module UnifyWith :
       FGN_OPN with type arg = dec ctx * exp and type result = fgnUnify
 
-    val fold : Ast.csid * fgnExp -> (exp * 'a -> 'a) -> 'a -> 'a
-    (** [fold (csid, fe) f init] folds [f] over the internal subterms of foreign
+    val fold : Ast.csid -> fgnExp -> (exp * 'a -> 'a) -> 'a -> 'a
+    (** [fold csid fe f init] folds [f] over the internal subterms of foreign
         expression [fe], threading accumulator [init]. *)
   end
 
@@ -155,10 +155,10 @@ module FgnOpn
           type nonrec result = fgnUnify
         end)
 
-    let fold (csfe : Ast.csid * exn) (f : Ast.exp * 'a -> 'a) (b : 'a) : 'a =
+    let fold (csid : Ast.csid) (fe : exn) (f : Ast.exp * 'a -> 'a) (b : 'a) : 'a =
       let r = ref b in
-      let g u_ = r := f (u_, !r) in
-      App.apply csfe g;
+      let g u = r := f (u, !r) in
+      App.apply csid fe g;
       !r
   end
 

@@ -1,5 +1,7 @@
+open! Global.Global_
+open! Timing
+
 (* # 1 "src/meta/Strategy.sig.ml" *)
-open! Basis
 open Funsyn
 open Statesyn
 open MtpGlobal
@@ -20,7 +22,6 @@ include MTPSTRATEGY
 (* signature MTPSTRATEGY *)
 
 (* # 1 "src/meta/Strategy.fun.ml" *)
-open! Global
 open! Basis
 
 (* MTP Strategy: Version 1.3 *)
@@ -93,50 +94,50 @@ end) : MTPSTRATEGY = struct
 
     let findMin = function
       | [] -> None
-      | l_ ->
+      | l ->
           let rec findMin' = function
             | [], result -> result
-            | o'_ :: l'_, None ->
-                begin if MTPSplitting.applicable o'_ then
-                  findMin' (l'_, Some o'_)
-                else findMin' (l'_, None)
+            | o' :: l', None ->
+                begin if MTPSplitting.applicable o' then
+                  findMin' (l', Some o')
+                else findMin' (l', None)
                 end
-            | o'_ :: l'_, Some o_ ->
-                begin if MTPSplitting.applicable o'_ then
-                  begin match MTPSplitting.compare (o'_, o_) with
-                  | Less -> findMin' (l'_, Some o'_)
-                  | _ -> findMin' (l'_, Some o_)
+            | o' :: l', Some o ->
+                begin if MTPSplitting.applicable o' then
+                  begin match MTPSplitting.compare o' o with
+                  | Less -> findMin' (l', Some o')
+                  | _ -> findMin' (l', Some o)
                   end
-                else findMin' (l'_, Some o_)
+                else findMin' (l', Some o)
                 end
           in
-          findMin' (l_, None)
+          findMin' (l, None)
 
-    let rec split (s_ :: givenStates, ((openStates, solvedStates) as os)) =
+    let rec split (s :: givenStates, ((openStates, solvedStates) as os)) =
       begin match
-        findMin (Timers.time Timers.splitting MTPSplitting.expand s_)
+        findMin (Timers.time Timers.splitting MTPSplitting.expand s)
       with
-      | None -> fill (givenStates, (s_ :: openStates, solvedStates))
+      | None -> fill (givenStates, (s :: openStates, solvedStates))
       | Some splitOp ->
           ignore (printSplitting splitOp);
-          let sl_ = Timers.time Timers.splitting MTPSplitting.apply splitOp in
+          let sl = Timers.time Timers.splitting MTPSplitting.apply splitOp in
           ignore (printCloseBracket ());
           ignore (printRecursion ());
           let sl' =
             map
               (function
-                | s_ ->
+                | s ->
                     Timers.time Timers.recursion MTPRecursion.apply
-                      (MTPRecursion.expand (Obj.magic s_)))
-              sl_
+                      (MTPRecursion.expand (Obj.magic s)))
+              sl
           in
           ignore (printInference ());
           let sl'' =
             map
               (function
-                | s_ ->
+                | s ->
                     Timers.time Timers.inference Inference.apply
-                      (Inference.expand (Obj.magic s_)))
+                      (Inference.expand (Obj.magic s)))
               sl'
           in
           fill (Obj.magic sl'' @ givenStates, os)
@@ -144,21 +145,21 @@ end) : MTPSTRATEGY = struct
 
     and fill = function
       | [], os -> os
-      | s_ :: givenStates, ((openStates, solvedStates) as os) ->
+      | s :: givenStates, ((openStates, solvedStates) as os) ->
           begin match
-            Timers.time Timers.recursion MTPFilling.expand (Obj.magic s_)
+            Timers.time Timers.recursion MTPFilling.expand (Obj.magic s)
           with
           | fillingOp -> (
               try
                 ignore (printFilling ());
-                let max, p_ =
+                let max, p =
                   TimeLimit.timeLimit !Global.timeLimit
                     (Timers.time Timers.filling MTPFilling.apply)
                     fillingOp
                 in
                 ignore (printCloseBracket ());
                 fill (givenStates, os)
-              with MTPFilling.Error _ -> split (s_ :: givenStates, os))
+              with MTPFilling.Error _ -> split (s :: givenStates, os))
           end
 
     let run (givenStates : S.state list) =
@@ -166,10 +167,8 @@ end) : MTPSTRATEGY = struct
       let openStates, solvedStates = fill (Obj.magic givenStates, ([], [])) in
       let openStates' = map MTPrint.nameState (Obj.magic openStates) in
       let solvedStates' = map MTPrint.nameState (Obj.magic solvedStates) in
-      let _ =
-        begin match openStates with [] -> printQed () | _ -> ()
-        end
-      in
+      ignore begin match openStates with [] -> printQed () | _ -> ()
+        end;
       ( (Obj.magic openStates' : S.state list),
         (Obj.magic solvedStates' : S.state list) )
   end

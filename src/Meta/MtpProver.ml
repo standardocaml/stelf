@@ -1,5 +1,7 @@
+open! Intsyn.Lambda_
+open! M2
+
 (* # 1 "src/meta/Prover.sig.ml" *)
-open! Basis
 open Funsyn
 open Statesyn
 open MtpGlobal
@@ -55,23 +57,23 @@ end) : MTPPROVER.MTPROVER = struct
     let openStates : S.state list ref = ref []
     let solvedStates : S.state list ref = ref []
 
-    let rec transformOrder' = function
-      | g_, Order.Arg k ->
-          let k' = I.ctxLength g_ - k + 1 in
-          let (I.Dec (_, v_)) = I.ctxDec (g_, k') in
-          S.Arg ((I.Root (I.BVar k', I.Nil), I.id), (v_, I.id))
-      | g_, Order.Lex os_ ->
-          S.Lex (map (function o_ -> transformOrder' (g_, o_)) os_)
-      | g_, Order.Simul os_ ->
-          S.Simul (map (function o_ -> transformOrder' (g_, o_)) os_)
+    let rec transformOrder' (g, a) = match a with
+      | Order.Arg k ->
+          let k' = I.ctxLength g - k + 1 in
+          let (I.Dec (_, v)) = I.ctxDec g k' in
+          S.Arg ((I.Root (I.BVar k', I.Nil), I.id), (v, I.id))
+      | Order.Lex os ->
+          S.Lex (map (function o -> transformOrder' (g, o)) os)
+      | Order.Simul os ->
+          S.Simul (map (function o -> transformOrder' (g, o)) os)
 
-    let rec transformOrder = function
-      | g_, F.All (F.Prim d_, f_), os_ ->
-          S.All (d_, transformOrder (I.Decl (g_, d_), f_, os_))
-      | g_, F.And (f1_, f2_), o_ :: os_ ->
-          S.And (transformOrder (g_, f1_, [ o_ ]), transformOrder (g_, f2_, os_))
-      | g_, F.Ex _, o_ :: [] -> transformOrder' (g_, o_)
-      | g_, true_, o_ :: [] -> transformOrder' (g_, o_)
+    let rec transformOrder (g, true_, a) = match true_, a with
+      | F.All (F.Prim d, f), os ->
+          S.All (d, transformOrder (I.Decl (g, d), f, os))
+      | F.And (f1, f2), o :: os ->
+          S.And (transformOrder (g, f1, [ o ]), transformOrder (g, f2, os))
+      | F.Ex _, o :: [] -> transformOrder' (g, o)
+      | true_, o :: [] -> transformOrder' (g, o)
 
     let select c = try Order.selLookup c with _ -> Order.Lex []
     let error s = raise (Error s)
@@ -82,29 +84,29 @@ end) : MTPPROVER.MTPROVER = struct
         solvedStates := []
       end
 
-    let rec contains = function
-      | [], _ -> true
-      | x :: l_, l'_ ->
-          List.exists (function x' -> x = x') l'_ && contains (l_, l'_)
+    let rec contains (a, l') = match a with
+      | [] -> true
+      | x :: l ->
+          List.exists (function x' -> x = x') l' && contains (l, l')
 
-    let equiv (l1_, l2_) = contains (l1_, l2_) && contains (l2_, l1_)
-    let insertState s_ = openStates := s_ :: !openStates
+    let equiv l1 l2 = contains (l1, l2) && contains (l2, l1)
+    let insertState s = openStates := s :: !openStates
 
     let rec cLToString = function
       | [] -> ""
       | c :: [] -> I.conDecName (I.sgnLookup c)
-      | c :: l_ -> (I.conDecName (I.sgnLookup c) ^ ", ") ^ cLToString l_
+      | c :: l -> (I.conDecName (I.sgnLookup c) ^ ", ") ^ cLToString l
 
-    let init (k, (c :: _ as cL)) =
+    let init k (c :: _ as cL) =
       ignore (MTPGlobal.maxFill := k);
       ignore (reset ());
       let cL' = try Order.closure c with Order.Error _ -> cL in
-      let f_ = RelFun.convertFor cL in
-      let o_ = transformOrder (I.Null, f_, map select cL) in
-      begin if equiv (cL, cL') then
+      let f = RelFun.convertFor cL in
+      let o = transformOrder (I.Null, f, map select cL) in
+      begin if equiv cL cL' then
         List.app
-          (function s_ -> insertState s_)
-          (Obj.magic (MTPInit.init (f_, Obj.magic o_)))
+          (function s -> insertState s)
+          (Obj.magic (MTPInit.init f (Obj.magic o)))
       else
         raise
           (Error
@@ -202,32 +204,32 @@ end) : MTPPROVER.MTPROVER = struct
     | ProverOld.Error s -> raise (Error s)
 
   open! struct
-    let init args_ =
+    let init args =
       he (function () ->
           begin match !MTPGlobal.prover with
-          | New -> ProverNew.init args_
-          | Old -> ProverOld.init args_
+          | New -> ProverNew.init args
+          | Old -> ProverOld.init args
           end)
 
-    let auto args_ =
+    let auto args =
       he (function () ->
           begin match !MTPGlobal.prover with
-          | New -> ProverNew.auto args_
-          | Old -> ProverOld.auto args_
+          | New -> ProverNew.auto args
+          | Old -> ProverOld.auto args
           end)
 
-    let print args_ =
+    let print args =
       he (function () ->
           begin match !MTPGlobal.prover with
-          | New -> ProverNew.print args_
-          | Old -> ProverOld.print args_
+          | New -> ProverNew.print args
+          | Old -> ProverOld.print args
           end)
 
-    let install args_ =
+    let install args =
       he (function () ->
           begin match !MTPGlobal.prover with
-          | New -> ProverNew.install args_
-          | Old -> ProverOld.install args_
+          | New -> ProverNew.install args
+          | Old -> ProverOld.install args
           end)
   end
 

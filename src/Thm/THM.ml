@@ -1,3 +1,6 @@
+open! Intsyn.Lambda_
+open! Paths.Paths_
+
 (* # 1 "src/thm/Thm_.sig.ml" *)
 open! Basis
 open Thmsyn
@@ -15,17 +18,17 @@ module type THM = sig
   exception Error of string
 
   val installTotal :
-    ThmSyn.tDecl * (Paths.region * Paths.region list) -> IntSyn.cid list
+    ThmSyn.tDecl -> Paths.region * Paths.region list -> IntSyn.cid list
 
   val uninstallTotal : IntSyn.cid -> bool
 
   val installTerminates :
-    ThmSyn.tDecl * (Paths.region * Paths.region list) -> IntSyn.cid list
+    ThmSyn.tDecl -> Paths.region * Paths.region list -> IntSyn.cid list
 
   val uninstallTerminates : IntSyn.cid -> bool
 
   val installReduces :
-    ThmSyn.rDecl * (Paths.region * Paths.region list) -> IntSyn.cid list
+    ThmSyn.rDecl -> Paths.region * Paths.region list -> IntSyn.cid list
   (** true: was declared, false not *)
 
   val uninstallReduces : IntSyn.cid -> bool

@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/m2/Metasyn.sig.ml" *)
 open! Basis
 
@@ -30,6 +32,6 @@ module type METASYN = sig
   (* Interface signature        *)
   (* IS ::= .                   *)
   (*      | c:V, IS             *)
-  val createAtomConst : IntSyn.dctx * IntSyn.head -> IntSyn.exp * IntSyn.eclo
-  val createAtomBVar : IntSyn.dctx * int -> IntSyn.exp * IntSyn.eclo
+  val createAtomConst : IntSyn.dctx -> IntSyn.head -> IntSyn.exp * IntSyn.eclo
+  val createAtomBVar : IntSyn.dctx -> int -> IntSyn.exp * IntSyn.eclo
 end

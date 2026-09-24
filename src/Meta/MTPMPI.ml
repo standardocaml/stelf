@@ -1,3 +1,6 @@
+open! Table
+open! Timing
+
 (* # 1 "src/meta/Mpi.sig.ml" *)
 open! Basis
 open Funsyn
@@ -25,7 +28,7 @@ module type MTPI = sig
 
   exception Error of string
 
-  val init : int * string list -> unit
+  val init : int -> string list -> unit
   val select : int -> unit
   val print : unit -> unit
   val next : unit -> unit

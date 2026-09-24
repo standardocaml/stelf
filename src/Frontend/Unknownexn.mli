@@ -1,3 +1,4 @@
+open! Basis
 include module type of UNKNOWNEXN
 
 module MakeUnknownExn (UnknownExn : sig

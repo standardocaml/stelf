@@ -1,3 +1,6 @@
+open! Trail
+open! Trail.Trail_
+
 (* # 1 "src/lambda/Lambda_.sig.ml" *)
 
 (** Top-level wiring for the core lambda subsystem Modules. *)
@@ -5,7 +8,6 @@
 (* # 1 "src/lambda/Lambda_.fun.ml" *)
 
 (* # 1 "src/lambda/Lambda_.sml.ml" *)
-open! Basis
 include Fgnopn
 include Fgnopntable
 include Order

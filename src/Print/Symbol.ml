@@ -1,5 +1,5 @@
+
 (* # 1 "src/print/Symbol.sig.ml" *)
-open! Basis
 include SYMBOL
 (* signature SYMBOL *)
 

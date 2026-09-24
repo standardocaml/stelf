@@ -1,3 +1,4 @@
+
 (* # 1 "src/meta/Init.sig.ml" *)
 open! Basis
 open Funsyn
@@ -16,5 +17,5 @@ module type MTPINIT = sig
   exception Error of string
 
   (* Current restriction to non-mutual inductive theorems ! *)
-  val init : FunSyn.for_ * StateSyn.order -> StateSyn.state list
+  val init : FunSyn.for_ -> StateSyn.order -> StateSyn.state list
 end

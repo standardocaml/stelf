@@ -1,7 +1,11 @@
+open! Intsyn.Lambda_
+open! Print.Print_
+open! Compile
+open! Assign
+
 (* # 1 "src/opsem/SubtreeInst.sig.ml" *)
 
 (* # 1 "src/opsem/SubtreeInst.fun.ml" *)
-open! Basis
 open AbstractTabled
 open MemoTable
 

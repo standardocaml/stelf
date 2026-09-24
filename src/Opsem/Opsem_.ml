@@ -1,9 +1,19 @@
+open! Table
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Print.Print_
+open! Index.Index_
+open! Solvers.Solvers_
+open! Compile
+open! Compile.Compile_
+open! CompSyn
+open! Tabling
+
 (* # 1 "src/opsem/Opsem_.sig.ml" *)
 
 (* # 1 "src/opsem/Opsem_.fun.ml" *)
 
 (* # 1 "src/opsem/Opsem_.sml.ml" *)
-open! Basis
 module TabledSyn = Tabled.TabledSyn
 
 module AbsMachine = Absmachine.AbsMachine (struct

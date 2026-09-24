@@ -1,3 +1,4 @@
+
 (* # 1 "src/print/Symbol.sig.ml" *)
 open! Basis
 

@@ -21,26 +21,26 @@ module StringHashTable = HashTable (struct
   type key' = string
 
   let hash = StringHash.stringHash
-  let eq (x__op, y__op) = x__op = y__op
+  let eq x__op y__op = x__op = y__op
 end)
 
 module IntHashTable = HashTable (struct
   type key' = int
 
   let hash n = n
-  let eq (x__op, y__op) = x__op = y__op
+  let eq x__op y__op = x__op = y__op
 end)
 
 module StringRedBlackTree = RedBlackTree (struct
   type key' = string
 
-  let compare = string_compare
+  let compare x y = string_compare (x, y)
 end)
 
 module IntRedBlackTree = RedBlackTree (struct
   type key' = int
 
-  let compare = int_compare
+  let compare x y = int_compare (x, y)
 end)
 
 module SparseArray = SparseArray (struct

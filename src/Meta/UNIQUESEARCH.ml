@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/meta/Uniquesearch.sig.ml" *)
 open! Basis
 open MtpGlobal
@@ -17,5 +19,5 @@ module type UNIQUESEARCH = sig
   type nonrec acctype = IntSyn.exp
 
   val searchEx :
-    int * IntSyn.exp list * (acctype list -> acctype list) -> acctype list
+    int -> IntSyn.exp list -> (acctype list -> acctype list) -> acctype list
 end

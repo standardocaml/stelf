@@ -1,3 +1,5 @@
+open! Basis
+
 module type RECON_MODULE = sig
   module M : S.S
   module Cst = M.Cst
@@ -16,12 +18,12 @@ module type RECON_MODULE = sig
   val strexpToStrexp : Cst.strexp -> Ast.mid
 
   val sigexpToSigexp :
-    Cst.sigexp * ModSyn.module_ option -> ModSyn.module_ * whereclause list
+    Cst.sigexp -> ModSyn.module_ option -> ModSyn.module_ * whereclause list
 
   val sigdefToSigdef :
-    Cst.sigdef * ModSyn.module_ option ->
+    Cst.sigdef -> ModSyn.module_ option ->
     string option * ModSyn.module_ * whereclause list
 
-  val structdecToStructDec : Cst.structDec * ModSyn.module_ option -> structDec
-  val moduleWhere : ModSyn.module_ * whereclause -> ModSyn.module_
+  val structdecToStructDec : Cst.structDec -> ModSyn.module_ option -> structDec
+  val moduleWhere : ModSyn.module_ -> whereclause -> ModSyn.module_
 end

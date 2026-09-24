@@ -1,3 +1,5 @@
+open! Basis
+
 (** Term reconstruction: elaborating external syntax into internal LF.
 
     Reconstruction is the bridge between what the user writes and what the rest
@@ -31,9 +33,9 @@
     a counter and prints one located message, aborting early only if the count
     passes an internal threshold (200). Callers therefore use a pair of calls
     around each declaration: {!resetErrors} before, {!checkErrors} after — the
-    latter being the barrier that finally raises {!Error} if anything went wrong.
-    Reconstructing without calling {!checkErrors} will silently yield a term
-    built from erroneous input. *)
+    latter being the barrier that finally raises {!Error} if anything went
+    wrong. Reconstructing without calling {!checkErrors} will silently yield a
+    term built from erroneous input. *)
 
 module type RECON_TERM = sig
   module M : S.S
@@ -47,9 +49,9 @@ module type RECON_TERM = sig
       directly on a fatal error. The payload is already location-wrapped. *)
 
   val resetErrors : string -> unit
-  (** [resetErrors filename] zeroes the error counter and sets the filename
-      used to prefix subsequent messages. Call once per declaration, before
-      building and reconstructing its job.
+  (** [resetErrors filename] zeroes the error counter and sets the filename used
+      to prefix subsequent messages. Call once per declaration, before building
+      and reconstructing its job.
 
       Note this does {i not} clear the pending trace list; see {!traceMode}. *)
 
@@ -93,11 +95,11 @@ module type RECON_TERM = sig
   val jnothing : t
   (** The empty job. Unit for {!jand}. *)
 
-  val jand : t * t -> t
-  (** [jand (j1, j2)] reconstructs [j1] and [j2] together, sharing
-      metavariables between them. *)
+  val jand : t -> t -> t
+  (** [jand (j1, j2)] reconstructs [j1] and [j2] together, sharing metavariables
+      between them. *)
 
-  val jwithctx : Cst.decl Ast.ctx * t -> t
+  val jwithctx : Cst.decl Ast.ctx -> t -> t
   (** [jwithctx (g, j)] reconstructs [j] under the additional hypotheses [g],
       which are themselves reconstructed first. Used for the [some]/[pi] parts
       of a context block and for theorem quantifiers. *)
@@ -109,7 +111,7 @@ module type RECON_TERM = sig
   (** [jclass tm] reconstructs [tm] as a classifier — a type or a kind —
       inferring which universe it inhabits. *)
 
-  val jof : Cst.term * Cst.term -> t
+  val jof : Cst.term -> Cst.term -> t
   (** [jof (tm, ty)] reconstructs [tm] checked {i against} the classifier [ty],
       which is itself reconstructed. This is the ascription form, and it gives
       better error messages than reconstructing the two separately. *)
@@ -122,7 +124,8 @@ module type RECON_TERM = sig
     | JAnd of result * result
     | JWithCtx of Ast.dec Ast.ctx * result
     | JTerm of (Ast.exp * Paths.occExp) * Ast.exp * Ast.uni
-        (** [JTerm ((u, occ), v, l)] — object [u] of type [v] in universe [l]. *)
+        (** [JTerm ((u, occ), v, l)] — object [u] of type [v] in universe [l].
+        *)
     | JClass of (Ast.exp * Paths.occExp) * Ast.uni
         (** [JClass ((v, occ), l)] — classifier [v] inhabiting universe [l]. *)
     | JOf of (Ast.exp * Paths.occExp) * (Ast.exp * Paths.occExp) * Ast.uni
@@ -132,10 +135,10 @@ module type RECON_TERM = sig
   val recon : t -> result
   (** Reconstruct a job appearing in a {i declaration}.
 
-      An uppercase identifier that resolves to nothing becomes a {b free
-      variable}, to be abstracted into an implicit argument of the declaration
-      being elaborated. This is what makes [nat : type. z : nat.] work with
-      implicit quantification. *)
+      An uppercase identifier that resolves to nothing becomes a
+      {b free variable}, to be abstracted into an implicit argument of the
+      declaration being elaborated. This is what makes [nat : type. z : nat.]
+      work with implicit quantification. *)
 
   val reconQuery : t -> result
   (** Reconstruct a job appearing in a {i query}.

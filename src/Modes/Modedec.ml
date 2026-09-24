@@ -1,5 +1,7 @@
+open! Intsyn.Lambda_
+open! Paths.Paths_
+
 (* # 1 "src/modes/Modedec.sig.ml" *)
-open! Basis
 open Modesyn
 
 (* Modes: short and long forms *)
@@ -31,21 +33,20 @@ module MakeModeDec () : MODEDEC = struct
 
     type arg = Implicit | Explicit | Local [@@deriving eq, ord, show]
 
-    let error (r, msg) = raise (Error (P.toString r ^ ": " ^ msg))
+    let error r msg = raise (Error (P.toString r ^ ": " ^ msg))
 
     let rec checkName = function
       | M.Mnil -> ()
       | M.Mapp (M.Marg (_, Some name), mS) ->
           let rec checkName' = function
             | M.Mnil -> ()
-            | M.Mapp (M.Marg (_, Some name'), mS) ->
-                begin if name = name' then
-                  raise
-                    (Error (("Variable name clash: " ^ name) ^ " is not unique"))
-                else checkName' mS
-                end
+            | M.Mapp (M.Marg (_, Some name'), _) when name = name' ->
+                raise
+                  (Error (("Variable name clash: " ^ name) ^ " is not unique"))
+            | M.Mapp (_, mS) -> checkName' mS
           in
-          checkName' mS
+          checkName' mS;
+          checkName mS
       | M.Mapp (M.Marg (_, None), mS) -> checkName mS
 
     let modeConsistent = function
@@ -57,10 +58,10 @@ module MakeModeDec () : MODEDEC = struct
       | M.Minus1, M.Plus -> false
       | _ -> true
 
-    let rec empty = function
-      | 0, ms, v_ -> (ms, v_)
-      | k, ms, I.Pi (_, v_) ->
-          empty (k - 1, I.Decl (ms, (M.Marg (M.Star, None), Implicit)), v_)
+    let rec empty (k, ms, a) = match k, a with
+      | 0, v -> (ms, v)
+      | k, I.Pi (_, v) ->
+          empty (k - 1, I.Decl (ms, (M.Marg (M.Star, None), Implicit)), v)
 
     let rec inferVar = function
       | I.Decl (ms, (M.Marg (M.Star, nameOpt), Implicit)), mode, 1 ->
@@ -71,9 +72,12 @@ module MakeModeDec () : MODEDEC = struct
           I.Decl (ms, (M.Marg (M.Minus1, nameOpt), Implicit))
       | (I.Decl (_, (_, Implicit)) as ms), _, 1 -> ms
       | (I.Decl (_, (_, Local)) as ms), _, 1 -> ms
-      | (I.Decl (_, (M.Marg (mode', Some name), Explicit)) as ms), mode, 1 ->
+      | (I.Decl (_, (M.Marg (mode', nameOpt), Explicit)) as ms), mode, 1 ->
           begin if modeConsistent (mode', mode) then ms
           else
+            let name =
+              match nameOpt with Some name -> name | None -> "argument"
+            in
             raise
               (Error
                  ((("Mode declaration for " ^ name) ^ " expected to be ")
@@ -81,98 +85,97 @@ module MakeModeDec () : MODEDEC = struct
           end
       | I.Decl (ms, md), mode, k -> I.Decl (inferVar (ms, mode, k - 1), md)
 
-    let rec inferExp = function
-      | ms, mode, I.Root (I.BVar k, s_) ->
-          inferSpine (inferVar (ms, mode, k), mode, s_)
-      | ms, mode, I.Root (I.Const cid, s_) -> inferSpine (ms, mode, s_)
-      | ms, mode, I.Root (I.Def cid, s_) -> inferSpine (ms, mode, s_)
-      | ms, mode, I.Root (I.FgnConst (cs, conDec), s_) ->
-          inferSpine (ms, mode, s_)
-      | ms, mode, I.Lam ((I.Dec (nameOpt, _) as d_), u_) ->
+    let rec inferExp (ms, mode, a) = match a with
+      | I.Root (I.BVar k, s) ->
+          inferSpine (inferVar (ms, mode, k), mode, s)
+      | I.Root (I.Const cid, s) -> inferSpine (ms, mode, s)
+      | I.Root (I.Def cid, s) -> inferSpine (ms, mode, s)
+      | I.Root (I.FgnConst (cs, conDec), s) ->
+          inferSpine (ms, mode, s)
+      | I.Lam ((I.Dec (nameOpt, _) as d), u) ->
           I.ctxPop
             (inferExp
                ( I.Decl
-                   (inferDec (ms, mode, d_), (M.Marg (mode, nameOpt), Local)),
+                   (inferDec (ms, mode, d), (M.Marg (mode, nameOpt), Local)),
                  mode,
-                 u_ ))
-      | ms, mode, I.Pi (((I.Dec (nameOpt, _) as d_), _), v_) ->
+                 u ))
+      | I.Pi (((I.Dec (nameOpt, _) as d), _), v) ->
           I.ctxPop
             (inferExp
                ( I.Decl
-                   (inferDec (ms, mode, d_), (M.Marg (mode, nameOpt), Local)),
+                   (inferDec (ms, mode, d), (M.Marg (mode, nameOpt), Local)),
                  mode,
-                 v_ ))
-      | ms, mode, I.FgnExp _ -> ms
+                 v ))
+      | I.FgnExp _ -> ms
 
-    and inferSpine = function
-      | ms, mode, I.Nil -> ms
-      | ms, mode, I.App (u_, s_) ->
-          inferSpine (inferExp (ms, mode, u_), mode, s_)
+    and inferSpine (ms, mode, a) = match a with
+      | I.Nil -> ms
+      | I.App (u, s) ->
+          inferSpine (inferExp (ms, mode, u), mode, s)
 
-    and inferDec (ms, mode, I.Dec (_, v_)) = inferExp (ms, mode, v_)
+    and inferDec (ms, mode, I.Dec (_, v)) = inferExp (ms, mode, v)
 
     let rec inferMode = function
       | (ms, I.Uni I.Type), M.Mnil -> ms
       | (_, I.Uni I.Type), _ -> raise (Error "Too many modes specified")
-      | (ms, I.Pi ((I.Dec (name, v1_), _), v2_)), M.Mapp (M.Marg (mode, _), mS)
+      | (ms, I.Pi ((I.Dec (name, v1), _), v2)), M.Mapp (M.Marg (mode, _), mS)
         ->
           I.ctxPop
             (inferMode
                ( ( I.Decl
-                     (inferExp (ms, mode, v1_), (M.Marg (mode, name), Explicit)),
-                   v2_ ),
+                     (inferExp (ms, mode, v1), (M.Marg (mode, name), Explicit)),
+                   v2 ),
                  mS ))
       | (ms, I.Root _), _ ->
           raise (Error "Expected type family, found object constant")
       | _ -> raise (Error "Not enough modes specified")
 
     let abstractMode (ms, mS) =
-      let rec abstractMode' = function
-        | I.Null, mS, _ -> mS
-        | I.Decl (ms, (marg, _)), mS, k ->
+      let rec abstractMode' (a, mS, k) = match a with
+        | I.Null -> mS
+        | I.Decl (ms, (marg, _)) ->
             abstractMode' (ms, M.Mapp (marg, mS), k + 1)
       in
       abstractMode' (ms, mS, 1)
 
-    let shortToFull (a, mS, r) =
+    let shortToFull a mS r =
       let calcImplicit' = function
-        | I.ConDec (_, _, k, _, v_, _) ->
-            abstractMode (inferMode (empty (k, I.Null, v_), mS), mS)
-        | I.ConDef (_, _, k, _, v_, _, _) ->
-            abstractMode (inferMode (empty (k, I.Null, v_), mS), mS)
+        | I.ConDec (_, _, k, _, v, _) ->
+            abstractMode (inferMode (empty (k, I.Null, v), mS), mS)
+        | I.ConDef (_, _, k, _, v, _, _) ->
+            abstractMode (inferMode (empty (k, I.Null, v), mS), mS)
       in
       try
         begin
           checkName mS;
           calcImplicit' (I.sgnLookup a)
         end
-      with Error msg -> error (r, msg)
+      with Error msg -> error r msg
 
-    let checkFull (a, mS, r) =
+    let checkFull a mS r =
       try
         begin
           checkName mS;
           begin match I.sgnLookup a with
-          | I.ConDec (_, _, _, _, v_, _) -> begin
-              ignore (inferMode ((I.Null, v_), mS));
+          | I.ConDec (_, _, _, _, v, _) -> begin
+              ignore (inferMode ((I.Null, v), mS));
               ()
             end
-          | I.ConDef (_, _, _, _, v_, _, _) -> begin
-              ignore (inferMode ((I.Null, v_), mS));
+          | I.ConDef (_, _, _, _, v, _, _) -> begin
+              ignore (inferMode ((I.Null, v), mS));
               ()
             end
           end
         end
-      with Error msg -> error (r, msg)
+      with Error msg -> error r msg
 
-    let rec checkPure = function
+    let rec checkPure a mS r = match (a, mS), r with
       | (a, M.Mnil), r -> ()
       | (a, M.Mapp (M.Marg (M.Minus1, _), mS)), r ->
           error
-            ( r,
-              "Uniqueness modes (-1) not permitted in `%mode' declarations \
-               (use `%unique')" )
-      | (a, M.Mapp (_, mS)), r -> checkPure ((a, mS), r)
+            r ("Uniqueness modes (-1) not permitted in `%mode' declarations \
+               (use `%unique')")
+      | (a, M.Mapp (_, mS)), r -> checkPure a mS r
   end
 
   (* Representation invariant:
@@ -210,7 +213,7 @@ module MakeModeDec () : MODEDEC = struct
   (* checkname mS = ()
 
        Invariant:
-       mS modeSpine, all modes are named.
+       mS modeSpine; modes may be named or unnamed (STELF mixes them).
        If mS contains two entries with the same name
        then Error is raised
     *)
@@ -303,7 +306,7 @@ module MakeModeDec () : MODEDEC = struct
   (* shortToFull (cid, mS, r) = mS'
 
        Invariant:
-       mS modeSpine, all modes are named.
+       mS modeSpine; modes may be named or unnamed (STELF mixes them).
        r is the text region of the mode declaration
        if mS is a mode spine in short form (implicit parameters are not moded),
        then mS' is a mode spine in full form (all parameters are moded)
@@ -315,7 +318,7 @@ module MakeModeDec () : MODEDEC = struct
   (* checkFull (a, mS, r) = ()
 
        Invariant:
-       mS modeSpine, all modes are named.
+       mS modeSpine; modes may be named or unnamed (STELF mixes them).
        r is the text region of the mode declaration
        if mS is not a valid mode spine in full form then
        exception Error is raised.

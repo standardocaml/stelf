@@ -1,9 +1,24 @@
+open! Tomega_lib
+open! Intsyn.Lambda_
+open! Global.Global_
+open! Names.Names_
+open! Print.Print_
+open! Index.Index_
+open! Modes.Modes_
+open! Typecheck.Typecheck_
+open! Table
+open! Solvers.Solvers_
+open! Trail.Trail_
+open! Compile
+open! Compile.Compile_
+open! Worldcheck.Worldcheck_
+open! Formatter__Formatter_
+
 (* # 1 "src/prover/Prover_.sig.ml" *)
 
 (* # 1 "src/prover/Prover_.fun.ml" *)
 
 (* # 1 "src/prover/Prover_.sml.ml" *)
-open! Basis
 
 module State = State.State (struct
   (*! structure IntSyn' = IntSyn !*)

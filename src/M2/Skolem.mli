@@ -1,3 +1,11 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Modes
+open! Print.Print_
+open! Index.Index_
+open! Compile.Compile_
+open! Timing
 include module type of SKOLEM
 
 module Skolem (Skolem__0 : sig

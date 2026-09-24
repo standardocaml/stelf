@@ -1,3 +1,13 @@
+open! Basis
+open! Global.Global_
+open! Timing
+open! Table.Table_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Paths
+open! Print.Print_
+open! Index.Index_
+open! Subordinate
 include module type of WORLDSYN
 
 module WorldSyn (WorldSyn__0 : sig

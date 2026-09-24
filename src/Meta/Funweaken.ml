@@ -1,5 +1,6 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/meta/Funweaken.sig.ml" *)
-open! Basis
 open Funsyn
 
 (* Weakening substitutions for meta substitutions *)
@@ -8,8 +9,6 @@ include FUNWEAKEN
 (* signature FUNWEAKEN *)
 
 (* # 1 "src/meta/Funweaken.fun.ml" *)
-open! Weaken
-open! Basis
 
 (* Weakening substitutions for meta substitutions *)
 (* Author: Carsten Schuermann *)
@@ -23,27 +22,27 @@ end) : FUNWEAKEN.FUNWEAKEN = struct
     module F = FunSyn
     module I = IntSyn
 
-    let rec strengthenPsi = function
+    let rec strengthenPsi a b = match a, b with
       | I.Null, s -> (I.Null, s)
-      | I.Decl (psi, F.Prim d_), s ->
-          let psi', s' = strengthenPsi (psi, s) in
-          (I.Decl (psi', F.Prim (Weaken.strengthenDec (d_, s'))), I.dot1 s')
-      | I.Decl (psi, F.Block (F.CtxBlock (l, g_))), s ->
-          let psi', s' = strengthenPsi (psi, s) in
-          let g''_, s'' = Weaken.strengthenCtx (g_, s') in
-          (I.Decl (psi', F.Block (F.CtxBlock (l, g''_))), s'')
+      | I.Decl (psi, F.Prim d), s ->
+          let psi', s' = strengthenPsi psi s in
+          (I.Decl (psi', F.Prim (Weaken.strengthenDec d s')), I.dot1 s')
+      | I.Decl (psi, F.Block (F.CtxBlock (l, g))), s ->
+          let psi', s' = strengthenPsi psi s in
+          let g'', s'' = Weaken.strengthenCtx g s' in
+          (I.Decl (psi', F.Block (F.CtxBlock (l, g''))), s'')
 
-    let rec strengthenPsi' = function
+    let rec strengthenPsi' a b = match a, b with
       | [], s -> ([], s)
-      | F.Prim d_ :: psi, s ->
-          let d'_ = Weaken.strengthenDec (d_, s) in
+      | F.Prim d :: psi, s ->
+          let d' = Weaken.strengthenDec d s in
           let s' = I.dot1 s in
-          let psi'', s'' = strengthenPsi' (psi, s') in
-          (F.Prim d'_ :: psi'', s'')
-      | F.Block (F.CtxBlock (l, g_)) :: psi, s ->
-          let g'_, s' = Weaken.strengthenCtx (g_, s) in
-          let psi'', s'' = strengthenPsi' (psi, s') in
-          (F.Block (F.CtxBlock (l, g'_)) :: psi'', s'')
+          let psi'', s'' = strengthenPsi' psi s' in
+          (F.Prim d' :: psi'', s'')
+      | F.Block (F.CtxBlock (l, g)) :: psi, s ->
+          let g', s' = Weaken.strengthenCtx g s in
+          let psi'', s'' = strengthenPsi' psi s' in
+          (F.Block (F.CtxBlock (l, g')) :: psi'', s'')
   end
 
   (* strengthenPsi (Psi, s) = (Psi', s')

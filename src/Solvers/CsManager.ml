@@ -1,5 +1,9 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Modes.Modes_
+
 (* # 1 "src/solvers/CsManager.sig.ml" *)
-open! Basis
 
 (* Constraint Solver Manager *)
 (* Author: Roberto Virga *)
@@ -86,12 +90,10 @@ module MakeCsManager (Global : GLOBAL) (Unify : UNIFY) (Fixity : FIXITY) :
 
     let installSolver solver =
       let cs = !nextCS in
-      let _ =
-        begin if !nextCS > maxCS then
+      ignore begin if !nextCS > maxCS then
           raise (Error "too many constraint solvers")
         else ()
-        end
-      in
+        end;
       ignore (Array.update (csArray, cs, Solver (solver, ref false)));
       ignore (nextCS := !nextCS + 1);
       cs

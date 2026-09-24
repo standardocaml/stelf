@@ -1,3 +1,10 @@
+open! Intsyn.Lambda_
+open! Global.Global_
+open! Names.Names_
+open! Print.Print_
+open! Index.Index_
+open! Solvers.Solvers_
+open! Compile
 include module type of PSEARCH
 
 module Search (Search__0 : sig

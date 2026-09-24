@@ -1,3 +1,9 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Modes
+open! Formatter.Formatter_
+open! Print.Print_
 include module type of RECURSION
 
 module Recursion (Recursion__0 : sig

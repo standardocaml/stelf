@@ -1,3 +1,5 @@
+open! Intsyn.Lambda_
+
 (* # 1 "src/tabling/Tabledsyn.sig.ml" *)
 open! Basis
 

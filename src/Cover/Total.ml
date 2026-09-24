@@ -1,5 +1,15 @@
+open! Global.Global_
+open! Intsyn.Lambda_
+open! Names.Names_
+open! Paths
+open! Paths.Paths_
+open! Table.Table_
+open! Modes
+open! Terminate
+open! Index.Index_
+open! Timing
+
 (* # 1 "src/cover/Total.sig.ml" *)
-open! Basis
 
 (* Total Declarations *)
 (* Author: Frank Pfenning *)
@@ -116,32 +126,30 @@ end) : TOTAL = struct
         raise
           (Error
              (P.wrapLoc'
-                ( P.Loc (fileName, P.occToRegionDec occDec occ),
-                  Origins.linesInfoLookup fileName,
-                  msg )))
+                (P.Loc (fileName, P.occToRegionDec occDec occ)) (Origins.linesInfoLookup fileName) msg))
     end
 
   (* G is unused here *)
-  let rec checkDynOrder = function
-    | g_, vs_, 0, occ -> begin
+  let rec checkDynOrder (g, vs, a, occ) = match a with
+    | 0 -> begin
         Display.chatter_s 5
           "Output coverage: skipping redundant checking of third-order  clause\n";
         ()
       end
-    | g_, vs_, n, occ -> checkDynOrderW (g_, Whnf.whnf vs_, n, occ)
+    | n -> checkDynOrderW (g, Whnf.whnf vs, n, occ)
   (* n > 0 *)
   (* Sun Jan  5 12:17:06 2003 -fp *)
   (* Functional calculus now checks this *)
   (* raise Error' (occ, ""Output coverage for clauses of order >= 3 not yet implemented"") *)
 
-  and checkDynOrderW = function
-    | g_, (I.Root _, s), n, occ -> ()
-    | g_, (I.Pi (((I.Dec (_, v1_) as d1_), No), v2_), s), n, occ -> begin
-        checkDynOrder (g_, (v1_, s), n - 1, P.label occ);
-        checkDynOrder (I.Decl (g_, d1_), (v2_, I.dot1 s), n, P.body occ)
+  and checkDynOrderW (g, a, n, occ) = match a with
+    | (I.Root _, s) -> ()
+    | (I.Pi (((I.Dec (_, v1) as d1), No), v2), s) -> begin
+        checkDynOrder (g, (v1, s), n - 1, P.label occ);
+        checkDynOrder (I.Decl (g, d1), (v2, I.dot1 s), n, P.body occ)
       end
-    | g_, (I.Pi ((d1_, Maybe), v2_), s), n, occ ->
-        checkDynOrder (I.Decl (g_, d1_), (v2_, I.dot1 s), n, P.body occ)
+    | (I.Pi ((d1, Maybe), v2), s) ->
+        checkDynOrder (I.Decl (g, d1), (v2, I.dot1 s), n, P.body occ)
 
   (* static (= dependent) assumption --- consider only body *)
   (* dynamic (= non-dependent) assumption --- calculate dynamic order of V1 *)
@@ -155,36 +163,34 @@ end) : TOTAL = struct
 
        Invariants: G |- V[s] : type
     *)
-  let rec checkClause (g_, vs_, occ) = checkClauseW (g_, Whnf.whnf vs_, occ)
+  let rec checkClause (g, vs, occ) = checkClauseW (g, Whnf.whnf vs, occ)
 
-  and checkClauseW = function
-    | g_, (I.Pi ((d1_, Maybe), v2_), s), occ ->
-        let d1' = N.decEName (g_, I.decSub (d1_, s)) in
-        checkClause (I.Decl (g_, d1'), (v2_, I.dot1 s), P.body occ)
-    | g_, (I.Pi (((I.Dec (_, v1_) as d1_), No), v2_), s), occ ->
-        ignore (checkClause (I.Decl (g_, d1_), (v2_, I.dot1 s), P.body occ));
-        checkGoal (g_, (v1_, s), P.label occ)
-    | g_, (I.Root _, s), occ -> ()
+  and checkClauseW (g, a, occ) = match a with
+    | (I.Pi ((d1, Maybe), v2), s) ->
+        let d1' = N.decEName g (I.decSub d1 s) in
+        checkClause (I.Decl (g, d1'), (v2, I.dot1 s), P.body occ)
+    | (I.Pi (((I.Dec (_, v1) as d1), No), v2), s) ->
+        ignore (checkClause (I.Decl (g, d1), (v2, I.dot1 s), P.body occ));
+        checkGoal (g, (v1, s), P.label occ)
+    | (I.Root _, s) -> ()
   (* clause head *)
   (* subgoal *)
   (* quantifier *)
 
-  and checkGoal (g_, vs_, occ) = checkGoalW (g_, Whnf.whnf vs_, occ)
+  and checkGoal (g, vs, occ) = checkGoalW (g, Whnf.whnf vs, occ)
 
-  and checkGoalW (g_, (v_, s), occ) =
-    let a = I.targetFam v_ in
-    let _ =
-      begin if not (total a) then
+  and checkGoalW (g, (v, s), occ) =
+    let a = I.targetFam v in
+    ignore begin if not (total a) then
         raise
           (Error'
              ( occ,
                ("Subgoal " ^ N.qidToString (N.constQid a))
                ^ " not declared to be total" ))
       else ()
-      end
-    in
-    ignore (checkDynOrderW (g_, (v_, s), 2, occ));
-    try Cover.checkOut (g_, (v_, s))
+      end;
+    ignore (checkDynOrderW (g, (v, s), 2, occ));
+    try Cover.checkOut g (v, s)
     with Cover.Error msg ->
       raise (Error' (occ, "Totality: Output of subgoal not covered\n" ^ msg))
   (* can raise Cover.Error for third-order clauses *)
@@ -193,11 +199,11 @@ end) : TOTAL = struct
        iff every mode in mode spine ms is either input or output
        Effect: raises Error (msg) otherwise
     *)
-  let rec checkDefinite = function
-    | a, M.Mnil -> ()
-    | a, M.Mapp (M.Marg (M.Plus, _), ms') -> checkDefinite (a, ms')
-    | a, M.Mapp (M.Marg (M.Minus, _), ms') -> checkDefinite (a, ms')
-    | a, M.Mapp (M.Marg (M.Star, xOpt), ms') ->
+  let rec checkDefinite (a, b) = match b with
+    | M.Mnil -> ()
+    | M.Mapp (M.Marg (M.Plus, _), ms') -> checkDefinite (a, ms')
+    | M.Mapp (M.Marg (M.Minus, _), ms') -> checkDefinite (a, ms')
+    | M.Mapp (M.Marg (M.Star, xOpt), ms') ->
         error
           ( a,
             P.top,
@@ -249,44 +255,35 @@ end) : TOTAL = struct
     *)
   let checkFam a =
     ignore (Cover.checkNoDef a);
-    let _ =
-      try Subordinate.checkNoDef a
+    ignore (try Subordinate.checkNoDef a
       with Subordinate.Error msg ->
         raise
           (Subordinate.Error
              ((("Totality checking " ^ N.qidToString (N.constQid a)) ^ ":\n")
              ^ msg))
-      (* a cannot depend on type-level definitions *)
-    in
-    let _ =
-      try
+      (* a cannot depend on type-level definitions *));
+    ignore (try
         begin
           Timers.time Timers.terminate Reduces.checkFam a;
           Display.chatter_s 4
             (("Terminates: " ^ N.qidToString (N.constQid a)) ^ "\n")
         end
-      with Reduces.Error msg -> raise (Reduces.Error msg)
-    in
+      with Reduces.Error msg -> raise (Reduces.Error msg));
     let (Some ms) = ModeTable.modeLookup a in
     ignore (checkDefinite (a, ms));
-    let _ =
-      try
+    ignore (try
         begin
-          Timers.time Timers.coverage Cover.checkCovers (a, ms);
+          Timers.time Timers.coverage (fun () -> Cover.checkCovers a ms) ();
           Display.chatter_s 4
             (("Covers (input): " ^ N.qidToString (N.constQid a)) ^ "\n")
         end
-      with Cover.Error msg -> raise (Cover.Error msg)
-    in
-    let _ =
-      Display.chatter_s 4
+      with Cover.Error msg -> raise (Cover.Error msg));
+    ignore (Display.chatter_s 4
         (("Output coverage checking family " ^ N.qidToString (N.constQid a))
-        ^ "\n")
-    in
-    ignore (ModeCheck.checkFreeOut (a, ms));
+        ^ "\n"));
+    ignore (ModeCheck.checkFreeOut a ms);
     let cs = Index.lookup a in
-    let _ =
-      try
+    ignore (try
         begin
           Timers.time Timers.coverage checkOutCover cs;
           begin
@@ -296,8 +293,7 @@ end) : TOTAL = struct
               (("Covers (output): " ^ N.qidToString (N.constQid a)) ^ "\n")
           end
         end
-      with Cover.Error msg -> raise (Cover.Error msg)
-    in
+      with Cover.Error msg -> raise (Cover.Error msg));
     ()
   (* Ensuring that there is no bad interaction with type-level definitions *)
   (* a cannot be a type-level definition *)

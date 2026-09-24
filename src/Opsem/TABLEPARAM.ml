@@ -1,3 +1,8 @@
+open! Table
+open! Intsyn.Lambda_
+open! Compile
+open! CompSyn
+
 (* # 1 "src/opsem/TableParam.sig.ml" *)
 open! Basis
 open RedBlackSet
@@ -41,9 +46,9 @@ module type TABLEPARAM = sig
 
   (* destructively updates answers *)
   val addSolution :
-    ((IntSyn.dctx * IntSyn.sub) * CompSyn.pskeleton) * answer -> unit
+    IntSyn.dctx -> IntSyn.sub -> CompSyn.pskeleton -> answer -> unit
 
-  val updateAnswLookup : int * answer -> unit
+  val updateAnswLookup : int -> answer -> unit
 
   val solutions :
     answer -> ((IntSyn.dctx * IntSyn.sub) * CompSyn.pskeleton) list

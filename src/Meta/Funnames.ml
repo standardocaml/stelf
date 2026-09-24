@@ -1,5 +1,8 @@
+open! Global.Global_
+open! Table.Table_
+open! Intsyn.Lambda_
+
 (* # 1 "src/meta/Funnames.sig.ml" *)
-open! Basis
 open Funsyn
 
 (* Names of Constants and Variables *)
@@ -10,7 +13,6 @@ include FUNNAMES
 (* signature NAMES *)
 
 (* # 1 "src/meta/Funnames.fun.ml" *)
-open! Global
 open! Basis
 
 (* Names of Constants and Variables *)
@@ -97,12 +99,10 @@ end) : FUNNAMES.FUNNAMES = struct
        Effect: update mappings from constants to print names and identifiers
                to constants, taking into account shadowing
     *)
-  let installName (name, lemma) =
+  let installName name lemma =
     let shadowed = hashInsert (name, lemma) in
-    begin
-      Array.update (nameArray, lemma, NameInfo name);
-      shadow shadowed
-    end
+    Array.update (nameArray, lemma, NameInfo name);
+    shadow shadowed
   (* returns optional shadowed entry *)
 
   (* nameLookup (name) = SOME(cid),  if cid has name and is not shadowed,
